@@ -1,0 +1,4 @@
+name = "qa-reviewer"
+description = "Reviews tests, security, regression risk, and acceptance criteria."
+read_first = ["AGENTS.md", "docs/ACCEPTANCE_CRITERIA.md", "docs/TESTING.md", "docs/REVIEW_CHECKLIST.md"]
+scope = ["tests", "docs/development", "docs"]

@@ -1,0 +1,4 @@
+name = "docs-maintainer"
+description = "Maintains source-of-truth documentation, logs, README, and checklists."
+read_first = ["AGENTS.md", "docs/DOCUMENT_INDEX.md", "docs/workflows/AI_TASK_TEMPLATE.md"]
+scope = ["docs", "README.md", "AGENTS.md"]

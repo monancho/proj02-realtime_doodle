@@ -1,0 +1,9 @@
+[project]
+name = "realtime-doodle-relay"
+default_agent = "docs-maintainer"
+
+[rules]
+source_of_truth = "docs/DOCUMENT_INDEX.md"
+language = "ko"
+package_manager = "pnpm"
+secrets_policy = "never commit secrets"

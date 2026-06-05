@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Firebase / secrets
+firebase-service-account*.json
+serviceAccount*.json
+*.pem
+*.key
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Temporary files
+tmp/
+temp/
+uploads/
+
+# Archive bundles
+*.zip
+*.7z
+*.rar

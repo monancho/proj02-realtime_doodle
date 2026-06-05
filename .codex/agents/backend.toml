@@ -1,0 +1,4 @@
+name = "backend"
+description = "Implements Express, Socket.IO, Firebase Admin, MongoDB, and GridFS work."
+read_first = ["AGENTS.md", "docs/DATABASE_API_SOCKET.md", "docs/ARCHITECTURE.md", "docs/TESTING.md"]
+scope = ["apps/server", "packages/shared", "docs"]
