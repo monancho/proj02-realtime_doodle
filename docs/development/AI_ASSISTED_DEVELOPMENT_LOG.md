@@ -148,3 +148,18 @@
 - 다음 추천 작업:
   - `PHASE-02-AUTH-USER-UPSERT`
   - 인증된 Firebase UID를 기반으로 `POST /api/users/me` 사용자 upsert API를 구현.
+
+### 2026-06-05 PHASE-00-WORKFLOW-USER-ACTION-RULES
+
+- Agent: `docs-maintainer`
+- 목표: AI 작업 중 사용자가 직접 해야 하는 외부 작업과 secret 관리 절차를 문서화.
+- 수행 내용:
+  - `AGENTS.md`에 User Action Required 규칙 추가.
+  - `docs/workflows/AGENT_WORKFLOW.md`에 사용자 행동 필요 단계 추가.
+- 원칙:
+  - AI는 `.env`, private key, token, credential 값을 만들거나 채우지 않는다.
+  - Firebase Admin key, MongoDB URI, 배포 secret 등은 사용자가 직접 생성/등록한다.
+  - 사용자 행동이 필요하면 해야 할 일, 이유, 보안 주의사항, 재개용 프롬프트를 함께 제공한다.
+- 다음 추천 작업:
+  - `PHASE-02-AUTH-USER-UPSERT`
+  - 인증된 Firebase UID 기반 사용자 upsert API 구현.

@@ -35,6 +35,13 @@
 다른 환경에서 이어받을 수 있도록 필요한 작업 기록은 `docs/development/AI_ASSISTED_DEVELOPMENT_LOG.md`에 남긴다.
 상세 AI 작업 규칙은 `docs/development/AI_ASSISTED_DEVELOPMENT.md`를 따른다.
 
+## User Action Required
+
+- AI는 `.env`, private key, token, credential 값을 만들거나 채우지 않는다.
+- 실제 외부 서비스 생성, Firebase Admin key 발급, MongoDB Atlas URI 생성, 배포 secret 등록은 사용자가 직접 수행한다.
+- 작업 중 사용자 행동이 필요하면 AI는 사용자가 해야 할 일, 필요한 이유, 주의할 secret/보안 사항, 완료 후 이어서 붙여 넣을 다음 프롬프트를 함께 제공한다.
+- 사용자의 외부 작업이 완료되기 전에는 해당 secret이나 외부 리소스에 의존하는 구현/검증을 진행하지 않는다.
+
 ## Git / Commit / Push
 
 - 작업이 완료되면 변경 범위를 확인한 뒤 적절한 단위로 commit한다.

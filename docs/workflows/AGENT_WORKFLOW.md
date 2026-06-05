@@ -65,7 +65,30 @@ API, Socket, DB, env, deployment, UI flow, 테스트 결과가 바뀌면 `docs/d
 
 완료 보고에는 목표, 수행 내용, 변경 파일, 검증 결과, 미실행 사유, 충돌, 누락, 리스크, 다음 작업을 포함한다.
 
-## Step 7. Commit / Push
+## Step 7. User Action Required
+
+AI가 직접 수행할 수 없거나 수행하면 안 되는 외부 작업이 있으면 작업을 멈추고 사용자에게 명확히 안내한다.
+
+사용자 행동이 필요한 대표 상황:
+
+- `.env` 작성 또는 secret 값 입력
+- Firebase 프로젝트 생성
+- Firebase Authentication provider 활성화
+- Firebase Admin service account key 발급
+- MongoDB Atlas cluster, database user, network access, URI 생성
+- Render, GitHub Secrets 등 배포 secret 등록
+- 결제 수단, 외부 서비스 계정, 운영 권한이 필요한 작업
+
+AI는 사용자에게 다음 항목을 함께 제공한다.
+
+1. 사용자가 해야 할 일
+2. 그 일이 필요한 이유
+3. 주의할 secret/보안 사항
+4. 완료 후 이어서 붙여 넣을 다음 프롬프트
+
+사용자가 외부 작업 완료를 알리기 전에는 해당 secret이나 외부 리소스에 의존하는 구현/검증을 진행하지 않는다.
+
+## Step 8. Commit / Push
 
 작업이 완료되면 변경 범위를 확인한 뒤 적절한 단위로 commit한다. Push는 필요하다고 판단될 때 사용자 확인을 받은 뒤 수행한다.
 
