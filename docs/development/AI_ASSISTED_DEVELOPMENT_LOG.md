@@ -257,3 +257,23 @@
 - 다음 추천 작업:
   - `PHASE-04-ROOM-CONTRACT-PLAN`
   - Room create/join 구현 전에 shared room contract, API 경계, repository interface를 먼저 정리.
+
+### 2026-06-05 PHASE-04-ROOM-CONTRACT-PLAN
+
+- Agent: `architect`
+- 목표: Room create/join 구현 전 shared room contract, HTTP API 경계, repository interface, Socket 연계 범위를 설계.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Room 계약 계획을 추가.
+  - HTTP API와 Socket.IO의 역할을 분리.
+  - `RoomRepository` interface와 MongoDB `rooms` document 초안을 정리.
+  - Drawing, Chat, Upload, Timer 기능은 구현하지 않음.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일 확인 완료.
+- 남은 확인 사항:
+  - `GET /api/rooms/:roomCode`의 참가 전 조회 허용 여부
+  - `leave-room`의 영속 participants 제거 여부
+  - 방 제목 기본값 생성 주체
+- 다음 추천 작업:
+  - `PHASE-04-ROOM-CONTRACT-SHARED`
+  - `packages/shared`에 room contract 타입을 추가하고 server typecheck로 계약을 검증.

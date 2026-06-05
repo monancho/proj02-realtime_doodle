@@ -86,3 +86,23 @@
 - smoke script는 root `.env`를 로드하지만 env 값, MongoDB URI, Firebase private key, token 값을 출력하지 않는다.
 - smoke script는 서버 bootstrap과 MongoDB connection을 시도하고, 성공/실패 상태와 안전한 error name/code만 출력한다.
 - 현재 smoke 결과는 `ECONNREFUSED` 실패이며, 실제 secret 값은 출력하지 않았다.
+
+### 2026-06-05 PHASE-04-ROOM-CONTRACT-PLAN
+
+- Room create/join 구현 전 설계만 수행했다.
+- 앱 기능 코드, route, repository, shared type 파일은 아직 수정하지 않았다.
+- `docs/DATABASE_API_SOCKET.md`에 다음 계약 초안을 정리했다.
+  - shared room contract 초안
+  - `POST /api/rooms`, `GET /api/rooms/:roomCode`, `POST /api/rooms/:roomCode/join` HTTP API 경계
+  - `RoomRepository` interface 초안
+  - MongoDB `rooms` document 및 index 초안
+  - Socket `join-room`, `leave-room`, `room-updated`, `socket-error` 연계 범위
+  - Room error code 초안
+- 필요한 다음 문서 변경 범위:
+  - 구현 단계에서 `packages/shared/src/room.ts`를 추가하면 `docs/DATABASE_API_SOCKET.md`와 실제 shared export를 동기화한다.
+  - server route 구현 시 `docs/development/TEST_REPORT.md`에 route/repository 테스트 결과를 기록한다.
+  - Room behavior가 변경되면 `docs/FUNCTIONAL_SPECIFICATION.md`의 방 생성/입장 예외 처리를 함께 갱신한다.
+- 구현 전 리스크:
+  - `GET /api/rooms/:roomCode`의 참가 전 조회 허용 여부 미확정
+  - `leave-room`이 영속 participants를 제거할지 socket presence만 제거할지 미확정
+  - 방 제목 기본값 생성 주체 미확정

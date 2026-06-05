@@ -118,3 +118,15 @@
   - `git status --short`: 변경 파일 확인 완료
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 해석: 로컬 환경에서 `mongodb+srv://` SRV DNS 조회가 `querySrv ECONNREFUSED`로 실패했으나, standard MongoDB connection string 적용 후 bootstrap smoke test가 성공함.
+
+### 2026-06-05 PHASE-04-ROOM-CONTRACT-PLAN
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과
+  - `git status --short`: 변경 파일 확인 완료
+- 미실행:
+  - `test`: 이번 단계는 Room 구현 없이 문서 계약만 정리했으며, 사용자 지정 validation command에 포함되지 않음.
+  - `smoke:bootstrap`: 이번 단계는 외부 MongoDB/Firebase 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.

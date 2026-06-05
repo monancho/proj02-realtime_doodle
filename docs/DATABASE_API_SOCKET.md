@@ -263,3 +263,171 @@ Socket.IO 연결은 다음 auth payload를 사용한다.
 | 방 코드 | 6자리 대문자/숫자 조합 |
 | 라운드 상태 | `playing` 상태에서만 `draw-stroke` 허용 |
 | 권한 | `start-game`은 `hostUid`와 요청자 uid가 일치해야 허용 |
+
+## Room Create/Join 계약 계획
+
+이 섹션은 `PHASE-04-ROOM-CONTRACT-PLAN`의 기준 계약이다. 아직 구현 코드를 추가하지 않으며, 다음 구현 단계에서 `packages/shared`의 room contract와 `apps/server`의 repository/API 구현이 이 내용을 따른다.
+
+### Shared Room Contract 초안
+
+다음 타입은 다음 구현 단계에서 `packages/shared/src/room.ts`에 추가하는 것을 기준으로 한다.
+
+```ts
+export type RoomStatus = "waiting" | "playing" | "finished";
+
+export interface RoomSettings {
+  roundDurationSec: number;
+  maxPlayers: number;
+  maxImagesPerUser: number;
+}
+
+export interface RoomParticipant {
+  firebaseUid: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  isHost: boolean;
+  joinedAt: string;
+}
+
+export interface RoomSummary {
+  roomCode: string;
+  title: string;
+  status: RoomStatus;
+  hostUid: string;
+  settings: RoomSettings;
+  participantCount: number;
+  maxPlayers: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoomDetail extends RoomSummary {
+  participants: RoomParticipant[];
+  currentRoundIndex: number;
+}
+
+export interface CreateRoomRequest {
+  title?: string | null;
+  settings?: Partial<RoomSettings>;
+}
+
+export interface CreateRoomResponse {
+  room: RoomDetail;
+}
+
+export type JoinRoomRequest = Record<string, never>;
+
+export interface JoinRoomResponse {
+  room: RoomDetail;
+}
+
+export interface GetRoomResponse {
+  room: RoomDetail;
+}
+```
+
+### HTTP API 경계
+
+| Method | Endpoint | Auth | 목적 | 비고 |
+|---|---|---|---|---|
+| `POST` | `/api/rooms` | 필요 | 인증된 사용자를 host로 방 생성 | `request.auth.user.firebaseUid` 기준 |
+| `GET` | `/api/rooms/:roomCode` | 필요 | 방 상세 조회 | 참가 전 조회 허용 여부는 구현 전 확정 필요 |
+| `POST` | `/api/rooms/:roomCode/join` | 필요 | 인증된 사용자를 방 참가자로 등록 | 중복 참가 시 idempotent 응답 권장 |
+
+HTTP API는 방 생성, 방 조회, 참가자 등록 같은 영속 상태 변경을 담당한다. Socket.IO는 실시간 presence와 브로드캐스트를 담당하며, 최초 참가 권한과 room membership은 HTTP API와 repository 상태를 기준으로 검증한다.
+
+### RoomRepository Interface 초안
+
+다음 interface는 다음 구현 단계에서 `apps/server/src/rooms/repository.ts`에 추가하는 것을 기준으로 한다.
+
+```ts
+export interface CreateRoomInput {
+  host: {
+    firebaseUid: string;
+    nickname: string | null;
+    avatarUrl: string | null;
+  };
+  title: string;
+  settings: RoomSettings;
+}
+
+export interface JoinRoomInput {
+  roomCode: string;
+  participant: {
+    firebaseUid: string;
+    nickname: string | null;
+    avatarUrl: string | null;
+  };
+}
+
+export interface RoomRepository {
+  createRoom(input: CreateRoomInput): Promise<RoomDetail>;
+  findRoomByCode(roomCode: string): Promise<RoomDetail | null>;
+  joinRoom(input: JoinRoomInput): Promise<RoomDetail>;
+}
+```
+
+Repository는 MongoDB document를 shared response shape로 변환해서 반환한다. API route는 MongoDB ObjectId를 클라이언트에 노출하지 않고 `roomCode`를 외부 식별자로 사용한다.
+
+### MongoDB `rooms` Document 초안
+
+```ts
+{
+  _id: ObjectId;
+  roomCode: string;
+  title: string;
+  hostUid: string;
+  status: "waiting" | "playing" | "finished";
+  currentRoundIndex: number;
+  settings: {
+    roundDurationSec: number;
+    maxPlayers: number;
+    maxImagesPerUser: number;
+  };
+  participants: Array<{
+    firebaseUid: string;
+    nickname: string | null;
+    avatarUrl: string | null;
+    joinedAt: Date;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+Index 기준:
+
+| Collection | Index | 목적 |
+|---|---|---|
+| `rooms` | `roomCode` unique | 공개 방 코드 중복 방지 |
+| `rooms` | `hostUid`, `createdAt` | 사용자별 생성 방 조회 확장 대비 |
+| `rooms` | `status`, `updatedAt` | waiting room 조회 확장 대비 |
+
+### Socket 연계 범위
+
+| Event | 방향 | Payload 초안 | 경계 |
+|---|---|---|---|
+| `join-room` | client -> server | `{ roomCode: string }` | HTTP join 이후 socket room 참가. 서버는 auth context와 repository membership을 확인 |
+| `leave-room` | client -> server | `{ roomCode: string }` | socket room 퇴장 및 presence 갱신. MVP에서는 영속 participants 제거 여부 보류 |
+| `room-updated` | server -> client | `{ room: RoomDetail }` | 참가자 목록, status, count 갱신 |
+| `socket-error` | server -> client | `{ code: string; message: string }` | token, membership, room status 오류. secret/token 값 포함 금지 |
+
+Socket `join-room`은 DB에 새 참가자를 생성하는 주 API가 아니다. 클라이언트는 먼저 `POST /api/rooms/:roomCode/join`을 호출한 뒤 socket에 연결하거나 `join-room`을 보낸다. 서버는 socket auth context의 `firebaseUid`가 room participants에 존재하는지 확인한 뒤 Socket.IO room `room:${roomCode}`에 참가시킨다.
+
+### Room Error Code 초안
+
+| Code | 의미 | HTTP Status |
+|---|---|---|
+| `ROOM_NOT_FOUND` | 존재하지 않는 방 코드 | `404` |
+| `ROOM_FULL` | 최대 참가자 수 초과 | `409` |
+| `ROOM_ALREADY_STARTED` | MVP에서 진행 중인 방 신규 입장 차단 | `409` |
+| `ROOM_CODE_COLLISION` | 방 코드 생성 충돌 재시도 초과 | `500` |
+| `ROOM_ACCESS_DENIED` | 인증 사용자가 room action 권한 없음 | `403` |
+
+### 구현 전 확인 사항
+
+- `GET /api/rooms/:roomCode`를 참가 전 사용자에게 허용할지, 참가자에게만 허용할지 확정 필요.
+- MVP에서 `leave-room`이 영속 participants에서 제거하는지, socket presence만 제거하는지 확정 필요.
+- 방 제목 기본값을 서버에서 생성할지, 클라이언트에서 입력받을지 확정 필요.
+- `roomCode` 길이는 기존 기준대로 6자리 대문자/숫자를 유지한다.
+- Room create/join 구현 시 Drawing, Chat, Upload, Timer 동작은 포함하지 않는다.
