@@ -40,3 +40,46 @@
   - `git status --short`
 - 다음 조치:
   - 사용자 요청에 따라 변경사항 commit 후 `main` branch를 `origin`에 push.
+
+### 2026-06-05 PHASE-00-PROJECT-SCAFFOLD
+
+- Agent: `architect`
+- 목표: Realtime Doodle Relay의 MVP 개발을 시작하기 위한 pnpm workspace 기반 프로젝트 scaffold 생성.
+- 수행 내용:
+  - root `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.env.example` 생성.
+  - `apps/web`, `apps/server`, `packages/shared` package와 `src` placeholder 생성.
+  - README와 개발/테스트 로그 갱신.
+- 의도적으로 제외:
+  - Firebase Auth, Room, Upload, Socket feature 구현.
+  - React, Express, Socket.IO, Firebase, MongoDB 관련 dependency 추가 또는 설치.
+  - lint, typecheck, test, build 실행.
+- 다음 추천 작업:
+  - `PHASE-01-HEALTH-ENV`
+  - 서버 `/health` endpoint와 환경변수 검증 구조만 구현.
+
+### 2026-06-05 PHASE-01-HEALTH-ENV
+
+- Agent: `backend`
+- 목표: 서버의 `/health` endpoint와 환경변수 검증 구조만 구현.
+- 수행 내용:
+  - `packages/shared/src/api.ts`에 `HealthResponse`, `ApiErrorResponse` 계약 추가.
+  - `packages/shared/src/env.ts`에 필수 서버 환경변수 key 계약 추가.
+  - `apps/server/src/health.ts`에 `GET /health` handler 추가.
+  - `apps/server/src/config/env.ts`에 환경변수 검증 함수 추가.
+  - README, 구현 메모, 테스트 리포트 갱신.
+- 의도적으로 제외:
+  - Express wiring.
+  - Firebase Auth, Room, Upload, Socket feature.
+  - dependency 추가 또는 설치.
+- 다음 추천 작업:
+  - `PHASE-01-HEALTH-ENV-WIRING`
+  - 사용자 승인 후 Express, TypeScript 실행/빌드 도구, 테스트 도구 의존성을 추가하고 실제 HTTP server wiring과 최소 테스트를 구성.
+
+### 2026-06-05 GIT-RULES-AUTOCOMMIT-UPDATE
+
+- 목표: 작업 완료 후 commit은 자동으로 진행하고, push는 필요 시 사용자 확인 후 진행하는 규칙으로 변경.
+- 수행 내용:
+  - `AGENTS.md`의 Git / Commit / Push 규칙 갱신.
+  - `docs/workflows/AGENT_WORKFLOW.md`의 Step 7 규칙 갱신.
+- 다음 조치:
+  - 현재 작업 변경 범위를 확인한 뒤 commit 진행.

@@ -67,12 +67,12 @@ API, Socket, DB, env, deployment, UI flow, 테스트 결과가 바뀌면 `docs/d
 
 ## Step 7. Commit / Push
 
-Commit과 push는 사용자가 명시적으로 요청한 경우에만 수행한다.
+작업이 완료되면 변경 범위를 확인한 뒤 적절한 단위로 commit한다. Push는 필요하다고 판단될 때 사용자 확인을 받은 뒤 수행한다.
 
 1. `git status --short`로 변경 파일을 확인한다.
 2. 금지 파일, secret, `.env`, key, token, credential, deploy hook URL이 포함되지 않았는지 확인한다.
 3. 요청된 검증 명령을 실행했는지 확인하고, 미실행 항목은 사유를 기록한다.
 4. commit message는 영어로 작성한다.
-5. push는 사용자가 명시적으로 요청한 경우에만 실행한다.
+5. push가 필요한 상황이라고 판단되면 push 대상 branch와 이유를 한국어로 설명하고 사용자 확인을 받은 뒤 실행한다.
 6. `git reset --hard`, `git checkout --`, force push, rebase, amend는 명시 요청 없이는 실행하지 않는다.
 7. 사용자 변경으로 보이는 파일은 임의로 되돌리지 않는다.

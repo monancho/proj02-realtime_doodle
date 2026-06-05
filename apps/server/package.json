@@ -1,0 +1,12 @@
+{
+  "name": "@doodle/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo \"lint not configured for @doodle/server yet\"",
+    "typecheck": "echo \"typecheck not configured for @doodle/server yet\"",
+    "test": "echo \"test not configured for @doodle/server yet\"",
+    "build": "echo \"build not configured for @doodle/server yet\""
+  }
+}

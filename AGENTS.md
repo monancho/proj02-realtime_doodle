@@ -37,11 +37,11 @@
 
 ## Git / Commit / Push
 
-- 사용자가 명시적으로 요청하지 않으면 commit 또는 push를 하지 않는다.
+- 작업이 완료되면 변경 범위를 확인한 뒤 적절한 단위로 commit한다.
 - commit 전에는 `git status --short`로 변경 범위를 확인한다.
 - secret, `.env`, key, token, credential, deploy hook URL이 포함되지 않았는지 확인한다.
 - 요청된 검증 명령을 실행하거나 미실행 사유를 기록한다.
 - commit message는 영어로 작성한다.
-- push는 사용자가 명시적으로 요청한 경우에만 수행한다.
+- push가 필요한 상황이라고 판단되면 먼저 사용자에게 push 대상 branch와 이유를 한국어로 설명하고 확인을 받은 뒤 수행한다.
 - `git reset --hard`, `git checkout --`, force push, rebase, amend는 명시 요청 없이는 하지 않는다.
 - 사용자 변경으로 보이는 파일은 임의로 되돌리지 않는다.

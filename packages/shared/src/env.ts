@@ -1,0 +1,13 @@
+export const REQUIRED_SERVER_ENV_KEYS = [
+  "NODE_ENV",
+  "PORT",
+  "CLIENT_URL",
+  "SOCKET_CORS_ORIGIN",
+  "MONGODB_URI",
+  "MONGODB_DB_NAME",
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_CLIENT_EMAIL",
+  "FIREBASE_PRIVATE_KEY"
+] as const;
+
+export type RequiredServerEnvKey = (typeof REQUIRED_SERVER_ENV_KEYS)[number];

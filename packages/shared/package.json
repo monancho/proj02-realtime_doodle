@@ -1,0 +1,15 @@
+{
+  "name": "@doodle/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "echo \"lint not configured for @doodle/shared yet\"",
+    "typecheck": "echo \"typecheck not configured for @doodle/shared yet\"",
+    "test": "echo \"test not configured for @doodle/shared yet\"",
+    "build": "echo \"build not configured for @doodle/shared yet\""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "realtime-doodle-relay",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Realtime Doodle Relay monorepo scaffold.",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
