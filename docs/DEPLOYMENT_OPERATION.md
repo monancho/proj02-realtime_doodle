@@ -38,6 +38,14 @@ FIREBASE_PRIVATE_KEY
 SOCKET_CORS_ORIGIN
 ```
 
+### Firebase Admin 환경변수 주의사항
+
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`는 서버 전용이다.
+- 프론트엔드 bundle에는 Firebase Admin 관련 값이 포함되면 안 된다.
+- `FIREBASE_PRIVATE_KEY` 값은 로그, 문서, 테스트 fixture에 출력하지 않는다.
+- Render에는 환경변수 값으로만 등록하고 저장소에는 `.env.example`의 key 이름만 유지한다.
+- private key 줄바꿈 복원은 서버 config 계층에서 처리하되, 복원된 값을 출력하지 않는다.
+
 ## 운영 체크리스트
 
 - [ ] Render 환경변수 등록 완료

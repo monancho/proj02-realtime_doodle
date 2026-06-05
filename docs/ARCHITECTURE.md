@@ -59,6 +59,35 @@ MongoDB Atlas
 5. 서버는 Firebase Admin SDK `verifyIdToken`으로 토큰을 검증한다.
 6. 검증된 `uid`를 MongoDB `users.firebaseUid`와 매핑한다.
 
+## 인증 경계 설계
+
+### HTTP API
+
+- `GET /health`는 인증 없이 접근 가능하다.
+- `/api/*` endpoint는 기본적으로 Firebase ID Token 검증이 필요하다.
+- 인증 middleware는 `Authorization` header의 `Bearer <token>` 형식만 허용한다.
+- 검증 성공 시 request context에 shared `AuthContext` 형태의 사용자 정보를 저장한다.
+- 검증 실패 시 token 값은 로그에 남기지 않고 error code와 안전한 메시지만 반환한다.
+
+### Socket.IO
+
+- Socket 연결은 `handshake.auth.token`을 사용한다.
+- query string token은 URL/log에 노출될 수 있으므로 사용하지 않는다.
+- 연결 시점에 Firebase ID Token을 검증하고 socket context에 `AuthContext`를 저장한다.
+- 인증 실패 시 연결을 거부하고 `socket-error` payload에는 token 값 없이 code/message만 포함한다.
+- room join, chat, drawing, round control은 socket context의 `firebaseUid`와 room membership을 기준으로 추가 검증한다.
+
+### Shared Auth Contract
+
+- `packages/shared/src/auth.ts`는 다음 구현 단계에서 API/Socket 양쪽이 공유할 인증 타입 초안이다.
+- 포함 타입:
+  - `AuthenticatedUser`
+  - `AuthContext`
+  - `AuthErrorCode`
+  - `AuthErrorResponse`
+  - `SocketAuthPayload`
+- Firebase Admin SDK 호출과 token decoding은 `apps/server`에만 둔다.
+
 ## 실시간 통신 구조
 
 - Socket namespace는 MVP에서 default namespace를 사용한다.

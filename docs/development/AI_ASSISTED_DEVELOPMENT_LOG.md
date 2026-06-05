@@ -99,3 +99,25 @@
 - 다음 추천 작업:
   - `PHASE-02-AUTH-PLAN`
   - Firebase Auth 구현 전 API/Socket 인증 경계, env key, shared auth contract를 먼저 정리.
+
+### 2026-06-05 PHASE-02-AUTH-PLAN
+
+- Agent: `architect`
+- 목표: Firebase Auth 구현 전 API/Socket 인증 경계, shared auth contract, env 요구사항 정리.
+- 수행 내용:
+  - `docs/ARCHITECTURE.md`에 HTTP/Socket 인증 경계 설계 추가.
+  - `docs/DATABASE_API_SOCKET.md`에 Auth 계약 초안과 error code 추가.
+  - `docs/DEPLOYMENT_OPERATION.md`에 Firebase Admin env 주의사항 추가.
+  - `packages/shared/src/auth.ts`에 auth type contract 초안 추가.
+- 의도적으로 제외:
+  - Firebase Admin SDK 호출.
+  - Express auth middleware 구현.
+  - Socket.IO middleware 구현.
+  - Firebase Client UI 구현.
+- 리스크/확인 사항:
+  - 다음 구현 단계에서 Firebase Admin SDK 의존성 추가가 필요하다.
+  - `FIREBASE_PRIVATE_KEY` 줄바꿈 복원 방식은 구현 단계에서 secret 값을 출력하지 않도록 테스트해야 한다.
+  - Socket auth 실패 응답의 실제 전송 방식은 Socket.IO middleware 구현 시 확정해야 한다.
+- 다음 추천 작업:
+  - `PHASE-02-AUTH-BACKEND`
+  - Firebase Admin 초기화, HTTP auth middleware, Socket auth middleware 골격과 테스트 구현.

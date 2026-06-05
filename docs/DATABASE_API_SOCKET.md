@@ -129,6 +129,64 @@
 | `GET` | `/api/rooms/:roomCode/results` | 필요 | 결과 갤러리 조회 |
 | `GET` | `/api/results/:resultId/download` | 필요 | 결과 이미지 다운로드 |
 
+## Auth 계약 초안
+
+### HTTP 인증
+
+인증이 필요한 REST API는 다음 header를 요구한다.
+
+```txt
+Authorization: Bearer <Firebase ID Token>
+```
+
+검증 성공 시 서버 내부 request context는 shared `AuthContext`를 사용한다.
+
+```ts
+{
+  user: {
+    firebaseUid: string;
+    email: string | null;
+    nickname: string | null;
+    avatarUrl: string | null;
+  };
+  tokenIssuedAt?: number;
+  tokenExpiresAt?: number;
+}
+```
+
+인증 실패 응답은 shared `AuthErrorResponse` 형식을 따른다.
+
+```json
+{
+  "error": {
+    "code": "AUTH_TOKEN_MISSING",
+    "message": "Authentication is required."
+  }
+}
+```
+
+허용 error code 초안:
+
+| Code | 의미 |
+|---|---|
+| `AUTH_TOKEN_MISSING` | token 없음 또는 Bearer 형식 아님 |
+| `AUTH_TOKEN_INVALID` | Firebase token 검증 실패 |
+| `AUTH_TOKEN_EXPIRED` | 만료된 token |
+| `AUTH_USER_DISABLED` | 비활성화된 Firebase 사용자 |
+| `AUTH_FORBIDDEN` | 인증은 되었으나 권한 없음 |
+
+### Socket 인증
+
+Socket.IO 연결은 다음 auth payload를 사용한다.
+
+```ts
+{
+  token: string;
+}
+```
+
+클라이언트는 `io(serverUrl, { auth: { token } })` 형태로 전달한다. query string token은 사용하지 않는다.
+
 ## Socket.IO 이벤트
 
 | 이벤트 | 방향 | Payload | 설명 |
