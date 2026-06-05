@@ -15,11 +15,16 @@ export interface ServerEnv {
   FIREBASE_PRIVATE_KEY: string;
 }
 
-export interface EnvValidationResult {
-  ok: boolean;
-  env?: ServerEnv;
-  missingKeys: RequiredServerEnvKey[];
-}
+export type EnvValidationResult =
+  | {
+      ok: true;
+      env: ServerEnv;
+      missingKeys: [];
+    }
+  | {
+      ok: false;
+      missingKeys: RequiredServerEnvKey[];
+    };
 
 export function validateServerEnv(
   source: Partial<Record<RequiredServerEnvKey, string | undefined>>

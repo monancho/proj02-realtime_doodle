@@ -45,4 +45,4 @@ docs/
 
 ## 다음 구현 단계
 
-다음 작은 작업은 `PHASE-02-AUTH` 전 준비 검토 또는 `PHASE-01-HEALTH-ENV`의 실제 Express wiring이다. 현재는 의존성 추가 없이 framework-agnostic `/health` handler와 환경변수 검증 구조만 준비되어 있다.
+다음 작은 작업은 `PHASE-02-AUTH` 전 준비 검토다. 현재는 Express 서버 wiring, `GET /health` route, 서버 시작 전 환경변수 검증 구조가 준비되어 있다.

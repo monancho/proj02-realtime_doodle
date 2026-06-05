@@ -5,8 +5,23 @@
   "type": "module",
   "scripts": {
     "lint": "echo \"lint not configured for @doodle/server yet\"",
-    "typecheck": "echo \"typecheck not configured for @doodle/server yet\"",
-    "test": "echo \"test not configured for @doodle/server yet\"",
-    "build": "echo \"build not configured for @doodle/server yet\""
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc --noEmit",
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@doodle/shared": "workspace:^",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   }
 }

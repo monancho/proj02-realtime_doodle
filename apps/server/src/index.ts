@@ -3,6 +3,7 @@ export const serverAppBoundary = {
   responsibility: "Express, Socket.IO, Firebase Admin SDK, MongoDB, and GridFS server"
 } as const;
 
+export { createApp } from "./app";
 export { handleHealthRequest, createHealthResponse } from "./health";
 export type { HttpRequestLike, HttpResponseLike } from "./health";
 export { validateServerEnv } from "./config/env";

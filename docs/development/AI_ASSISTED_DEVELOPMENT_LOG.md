@@ -83,3 +83,19 @@
   - `docs/workflows/AGENT_WORKFLOW.md`의 Step 7 규칙 갱신.
 - 다음 조치:
   - 현재 작업 변경 범위를 확인한 뒤 commit 진행.
+
+### 2026-06-05 PHASE-01-HEALTH-ENV-WIRING
+
+- Agent: `backend`
+- 목표: Express 기반 서버 wiring을 추가하고 `/health` endpoint와 환경변수 검증을 실제 서버 시작 흐름에 연결.
+- 수행 내용:
+  - `express`, TypeScript 실행/테스트 관련 최소 의존성 추가.
+  - `createApp()`과 `GET /health` route 추가.
+  - 서버 시작 전 환경변수 검증 연결.
+  - health/env 최소 테스트 구조 추가.
+- 의도적으로 제외:
+  - Firebase Auth, Room, Upload, Socket feature.
+  - secret 값 생성 또는 출력.
+- 다음 추천 작업:
+  - `PHASE-02-AUTH-PLAN`
+  - Firebase Auth 구현 전 API/Socket 인증 경계, env key, shared auth contract를 먼저 정리.

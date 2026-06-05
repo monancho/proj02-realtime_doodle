@@ -24,3 +24,12 @@
 - 필수 서버 환경변수 이름은 `packages/shared/src/env.ts`에서 공유 계약으로 관리한다.
 - 실제 Express wiring, Firebase Auth, Room, Upload, Socket feature는 구현하지 않았다.
 - secret 값은 생성하거나 출력하지 않았다.
+
+### 2026-06-05 PHASE-01-HEALTH-ENV-WIRING
+
+- `express` 기반 `createApp()`을 `apps/server/src/app.ts`에 추가했다.
+- `GET /health` route를 기존 health handler에 연결했다.
+- `apps/server/src/server.ts`에서 서버 시작 전 `validateServerEnv(process.env)`를 호출한다.
+- 환경변수 검증 실패 시 값은 출력하지 않고 누락된 key 이름만 출력한다.
+- `apps/server/src/app.test.ts`, `apps/server/src/config/env.test.ts`에 최소 테스트 구조를 추가했다.
+- Firebase Auth, Room, Upload, Socket feature는 구현하지 않았다.
