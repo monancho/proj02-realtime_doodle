@@ -121,3 +121,13 @@
 - 다음 추천 작업:
   - `PHASE-02-AUTH-BACKEND`
   - Firebase Admin 초기화, HTTP auth middleware, Socket auth middleware 골격과 테스트 구현.
+
+### 2026-06-05 REFERENCE-ARTIFACTS-COMMIT
+
+- 목표: 다른 환경에서도 문서 기준과 reference artifact 관계가 완결되도록 `docs/references/**`와 wireframe asset을 저장소에 포함.
+- 수행 내용:
+  - reference PDF/DOCX와 `docs/design/assets/realtime-doodle-wireframe-overview.png` 파일 목록과 크기를 확인.
+  - obvious secret pattern scan을 수행.
+  - `07_deployment_operation_specification.docx`에서 env key placeholder가 감지되었으나 실제 secret 값이 아닌 `mongodb+srv://...`, `FIREBASE_PRIVATE_KEY=...` placeholder임을 확인.
+- 다음 조치:
+  - reference artifact와 wireframe asset을 commit 후 `origin/main`에 push.
