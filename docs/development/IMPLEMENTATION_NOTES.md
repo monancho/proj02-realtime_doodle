@@ -51,3 +51,11 @@
 - HTTP 인증 middleware는 `Authorization: Bearer <Firebase ID Token>` 형식을 검증하고 `request.auth`에 `AuthContext`를 저장한다.
 - Socket 인증 middleware는 `handshake.auth.token`을 검증하고 `socket.data.auth`에 `AuthContext`를 저장한다.
 - Room, Upload, Drawing, Chat feature는 구현하지 않았다.
+
+### 2026-06-05 PHASE-02-AUTH-USER-UPSERT
+
+- shared user API contract를 `packages/shared/src/user.ts`에 추가했다.
+- `POST /api/users/me` route를 `apps/server/src/users/routes.ts`에 추가했다.
+- route는 HTTP auth middleware가 설정한 `request.auth.user`를 기준으로 user profile을 upsert한다.
+- 실제 MongoDB 연결은 하지 않고 `UserRepository` interface와 `InMemoryUserRepository`로 분리했다.
+- Room, Upload, Drawing, Chat feature는 구현하지 않았다.

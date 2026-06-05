@@ -13,3 +13,4 @@ export type {
 } from "./auth";
 export { REQUIRED_SERVER_ENV_KEYS } from "./env";
 export type { RequiredServerEnvKey } from "./env";
+export type { UpsertMeRequest, UpsertMeResponse, UserProfile } from "./user";

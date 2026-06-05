@@ -129,6 +129,36 @@
 | `GET` | `/api/rooms/:roomCode/results` | 필요 | 결과 갤러리 조회 |
 | `GET` | `/api/results/:resultId/download` | 필요 | 결과 이미지 다운로드 |
 
+### `POST /api/users/me`
+
+인증된 Firebase 사용자 기준으로 서비스 사용자 프로필을 생성하거나 갱신한다.
+
+Request body:
+
+```ts
+{
+  nickname?: string | null;
+  avatarUrl?: string | null;
+}
+```
+
+Response body:
+
+```ts
+{
+  user: {
+    firebaseUid: string;
+    email: string | null;
+    nickname: string | null;
+    avatarUrl: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }
+}
+```
+
+MVP 초기 구현에서는 repository interface를 통해 동작하며, 실제 MongoDB 연결은 다음 DB 연결 단계에서 구현한다.
+
 ## Auth 계약 초안
 
 ### HTTP 인증

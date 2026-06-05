@@ -163,3 +163,20 @@
 - 다음 추천 작업:
   - `PHASE-02-AUTH-USER-UPSERT`
   - 인증된 Firebase UID 기반 사용자 upsert API 구현.
+
+### 2026-06-05 PHASE-02-AUTH-USER-UPSERT
+
+- Agent: `backend`
+- 목표: 인증된 Firebase 사용자 기준으로 `POST /api/users/me` 사용자 upsert API의 최소 구조와 테스트 구현.
+- 수행 내용:
+  - shared user API request/response contract 추가.
+  - `UserRepository` interface와 `InMemoryUserRepository` 추가.
+  - `POST /api/users/me` route 추가.
+  - auth context 기반 user upsert 테스트 추가.
+- 의도적으로 제외:
+  - MongoDB 실제 연결.
+  - Room, Upload, Drawing, Chat feature.
+  - secret 값 생성 또는 출력.
+- 다음 추천 작업:
+  - `PHASE-03-MONGODB-CONNECTION`
+  - MongoDB 연결과 실제 user repository 구현 전 사용자가 MongoDB Atlas URI를 준비해야 하는지 확인.

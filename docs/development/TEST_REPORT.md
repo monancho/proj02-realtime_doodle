@@ -46,3 +46,13 @@
   - `typecheck`: 통과
   - `test`: 통과. 5 files, 11 tests.
   - `git status --short`: 변경 파일 확인 완료
+
+### 2026-06-05 PHASE-02-AUTH-USER-UPSERT
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과
+  - `test`: 통과. 6 files, 13 tests.
+  - `git status --short`: 변경 파일 확인 완료
