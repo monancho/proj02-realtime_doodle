@@ -69,3 +69,12 @@
 - `firebaseUid` unique index 생성 helper를 추가했다.
 - 테스트는 실제 MongoDB 연결 없이 mock collection과 fake client로 유지했다.
 - 실제 MongoDB Atlas 설정이 필요한 시점은 `docs/DEPLOYMENT_OPERATION.md`에 문서화했다.
+
+### 2026-06-05 PHASE-03-MONGODB-WIRING
+
+- 서버 bootstrap wiring을 `apps/server/src/bootstrap.ts`에 추가했다.
+- 서버 시작 시 `loadLocalEnvFile()`로 로컬 `.env`를 로드한 뒤 env validation을 수행한다.
+- `createServerDependencies()`에서 MongoDB connection, Firebase token verifier, `MongoUserRepository`, HTTP auth middleware를 app에 주입한다.
+- 실제 `.env` 값, MongoDB URI, Firebase private key는 읽더라도 출력하지 않는다.
+- 테스트는 fake Mongo connection, mock Firebase verifier, in-memory repository로 유지했다.
+- Room, Upload, Drawing, Chat feature는 구현하지 않았다.

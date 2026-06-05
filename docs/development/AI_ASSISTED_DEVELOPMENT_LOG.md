@@ -201,3 +201,23 @@
 - 다음 추천 작업:
   - `PHASE-03-MONGODB-WIRING`
   - 서버 시작 흐름에서 MongoDB 연결과 `MongoUserRepository` wiring을 구성하되, 실제 연결 검증 전 사용자 MongoDB Atlas 준비 여부를 확인.
+
+### 2026-06-05 PHASE-03-MONGODB-WIRING
+
+- Agent: `backend`
+- 목표: 서버 시작 흐름에 MongoDB 연결과 `MongoUserRepository` wiring을 추가하고 로컬 `.env` 기반으로 실제 연결 전 검증 가능한 구조 구성.
+- 사용자 행동 완료:
+  - 로컬 `.env` 생성.
+  - Firebase project/Admin service account 값 준비.
+  - MongoDB Atlas cluster/user/network access/URI 등록.
+- 수행 내용:
+  - local `.env` 로더 추가.
+  - bootstrap에서 MongoDB connection, Firebase verifier, Mongo user repository, HTTP auth middleware를 app에 주입.
+  - fake/mock 기반 bootstrap 테스트 추가.
+- 의도적으로 제외:
+  - Room, Upload, Drawing, Chat feature.
+  - 실제 secret 값 출력.
+  - 실제 MongoDB 연결 검증 로그 출력.
+- 다음 추천 작업:
+  - `PHASE-03-MONGODB-SMOKE`
+  - 사용자가 원할 경우 로컬 `.env` 기반 실제 `/health` 및 DB 연결 smoke test를 secret 출력 없이 수행.

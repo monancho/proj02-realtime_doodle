@@ -1,0 +1,76 @@
+import type { Express } from "express";
+import type { Server } from "node:http";
+
+import { createApp } from "./app";
+import {
+  createFirebaseTokenVerifier,
+  getFirebaseAdminApp
+} from "./auth/firebase-admin";
+import { createHttpAuthMiddleware } from "./auth/http";
+import type { TokenVerifier } from "./auth/tokens";
+import type { ServerEnv } from "./config/env";
+import { connectMongoDb, type MongoDbConnection } from "./db/mongodb";
+import {
+  createMongoUserRepository,
+  ensureUserIndexes,
+  type UserDocument
+} from "./users/mongodb-user-repository";
+import type { UserRepository } from "./users/repository";
+
+export interface ServerDependencies {
+  app: Express;
+  mongoConnection: MongoDbConnection;
+}
+
+export interface BootstrapAdapters {
+  connectDb?: typeof connectMongoDb;
+  createVerifier?: (env: ServerEnv) => TokenVerifier;
+  createUserRepository?: (
+    connection: MongoDbConnection
+  ) => Promise<UserRepository>;
+}
+
+export async function createServerDependencies(
+  env: ServerEnv,
+  adapters: BootstrapAdapters = {}
+): Promise<ServerDependencies> {
+  const mongoConnection = await (adapters.connectDb ?? connectMongoDb)(env);
+  const tokenVerifier =
+    adapters.createVerifier?.(env) ?? createDefaultFirebaseVerifier(env);
+  const userRepository =
+    (await adapters.createUserRepository?.(mongoConnection)) ??
+    (await createDefaultUserRepository(mongoConnection));
+
+  return {
+    mongoConnection,
+    app: createApp({
+      authMiddleware: createHttpAuthMiddleware(tokenVerifier),
+      userRepository
+    })
+  };
+}
+
+export async function startHttpServer(
+  app: Express,
+  port: number
+): Promise<Server> {
+  return new Promise((resolve) => {
+    const server = app.listen(port, () => {
+      resolve(server);
+    });
+  });
+}
+
+function createDefaultFirebaseVerifier(env: ServerEnv): TokenVerifier {
+  return createFirebaseTokenVerifier(getFirebaseAdminApp(env));
+}
+
+async function createDefaultUserRepository(
+  connection: MongoDbConnection
+): Promise<UserRepository> {
+  const users = connection.db.collection<UserDocument>("users");
+
+  await ensureUserIndexes(users);
+
+  return createMongoUserRepository(users);
+}

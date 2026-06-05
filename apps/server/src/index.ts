@@ -15,8 +15,11 @@ export type { SocketNext } from "./auth/socket";
 export { verifyAuthToken, extractBearerToken } from "./auth/tokens";
 export type { TokenVerifier, VerifiedFirebaseToken } from "./auth/tokens";
 export { createApp } from "./app";
+export { createServerDependencies, startHttpServer } from "./bootstrap";
+export type { BootstrapAdapters, ServerDependencies } from "./bootstrap";
 export { connectMongoDb, createMongoClient } from "./db/mongodb";
 export type { MongoDbConnection } from "./db/mongodb";
+export { loadLocalEnvFile } from "./config/load-env";
 export { InMemoryUserRepository } from "./users/in-memory-user-repository";
 export {
   createMongoUserRepository,
