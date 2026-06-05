@@ -294,3 +294,20 @@
 - 다음 추천 작업:
   - `PHASE-04-ROOM-REPOSITORY-PLAN`
   - RoomRepository 구현 전에 roomCode 생성/충돌 처리, in-memory 테스트 전략, MongoDB index 적용 범위를 확정.
+
+### 2026-06-05 PHASE-04-ROOM-REPOSITORY-PLAN
+
+- Agent: `backend`
+- 목표: Room create/join API 구현 전에 RoomRepository 구현 전략, roomCode 생성/충돌 처리, in-memory 테스트 전략, MongoDB index 적용 범위를 확정.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 RoomRepository 구현 전략 계획을 추가.
+  - Room domain error, HTTP status mapping, roomCode 생성/충돌 재시도 정책을 정리.
+  - InMemoryRoomRepository 테스트 전략과 MongoRoomRepository atomic update 전략을 정리.
+  - shared room contract와 문서 계약의 일치 상태를 확인.
+  - Room create/join route, Drawing, Chat, Upload, Timer 기능은 구현하지 않음.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일 확인 완료.
+- 다음 추천 작업:
+  - `PHASE-04-ROOM-REPOSITORY-IMPLEMENTATION`
+  - Room route 없이 repository interface, roomCode generator, InMemoryRoomRepository, MongoRoomRepository skeleton과 테스트를 구현.

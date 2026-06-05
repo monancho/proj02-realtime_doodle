@@ -125,3 +125,18 @@
 - Room create/join route, repository, MongoDB 구현은 아직 추가하지 않았다.
 - Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
 - 문서 계약과 shared 타입은 현재 일치한다.
+
+### 2026-06-05 PHASE-04-ROOM-REPOSITORY-PLAN
+
+- Room create/join API 구현 전에 repository 구현 전략만 정리했다.
+- Room create/join route, repository 구현 파일, MongoDB room collection 코드는 아직 추가하지 않았다.
+- `docs/DATABASE_API_SOCKET.md`에 다음 항목을 확정 계획으로 추가했다.
+  - `RoomRepository` interface 확정안
+  - `RoomDomainError`와 `RoomErrorCode` 전략
+  - 6자리 대문자/숫자 `roomCode` 생성 정책
+  - unique index 충돌 시 최대 5회 재시도 정책
+  - `InMemoryRoomRepository` 테스트 전략
+  - `MongoRoomRepository` index 및 atomic update 전략
+  - shared room contract 일치 확인
+- MongoDB join 처리는 `status: "waiting"`, participant 중복 방지, 최대 인원 제한을 조건부 update로 묶는 방향을 채택했다.
+- Drawing, Chat, Upload, Timer feature는 구현하지 않았다.

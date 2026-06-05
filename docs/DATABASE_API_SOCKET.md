@@ -431,3 +431,189 @@ Socket `join-room`은 DB에 새 참가자를 생성하는 주 API가 아니다. 
 - 방 제목 기본값을 서버에서 생성할지, 클라이언트에서 입력받을지 확정 필요.
 - `roomCode` 길이는 기존 기준대로 6자리 대문자/숫자를 유지한다.
 - Room create/join 구현 시 Drawing, Chat, Upload, Timer 동작은 포함하지 않는다.
+
+## RoomRepository 구현 전략 계획
+
+이 섹션은 `PHASE-04-ROOM-REPOSITORY-PLAN`의 기준이다. 아직 Room create/join route를 구현하지 않으며, 다음 구현 단계에서 repository interface, in-memory repository, MongoDB repository가 이 내용을 따른다.
+
+### Repository 파일 경계
+
+다음 파일 구조를 기준으로 구현한다.
+
+```txt
+apps/server/src/rooms/repository.ts
+apps/server/src/rooms/in-memory-room-repository.ts
+apps/server/src/rooms/mongodb-room-repository.ts
+apps/server/src/rooms/room-code.ts
+apps/server/src/rooms/errors.ts
+```
+
+| 파일 | 책임 |
+|---|---|
+| `repository.ts` | `RoomRepository`, input type, domain error contract 정의 |
+| `room-code.ts` | 6자리 대문자/숫자 roomCode 생성 |
+| `in-memory-room-repository.ts` | route/repository 테스트용 메모리 구현 |
+| `mongodb-room-repository.ts` | MongoDB document mapping, index, atomic update 구현 |
+| `errors.ts` | Room domain error와 HTTP error mapping 보조 |
+
+### RoomRepository Interface 확정안
+
+```ts
+export interface CreateRoomInput {
+  host: {
+    firebaseUid: string;
+    nickname: string | null;
+    avatarUrl: string | null;
+  };
+  title: string;
+  settings: RoomSettings;
+}
+
+export interface JoinRoomInput {
+  roomCode: string;
+  participant: {
+    firebaseUid: string;
+    nickname: string | null;
+    avatarUrl: string | null;
+  };
+}
+
+export interface RoomRepository {
+  createRoom(input: CreateRoomInput): Promise<RoomDetail>;
+  findRoomByCode(roomCode: string): Promise<RoomDetail | null>;
+  joinRoom(input: JoinRoomInput): Promise<RoomDetail>;
+}
+```
+
+`RoomRepository`는 shared `RoomDetail`을 반환한다. MongoDB `_id`는 외부 응답에 포함하지 않는다. 외부 식별자는 `roomCode`만 사용한다.
+
+### Domain Error 전략
+
+Repository는 기능별 예외를 일반 `Error` 문자열로 흘리지 않고 Room domain error로 변환한다.
+
+```ts
+export type RoomErrorCode =
+  | "ROOM_NOT_FOUND"
+  | "ROOM_FULL"
+  | "ROOM_ALREADY_STARTED"
+  | "ROOM_CODE_COLLISION"
+  | "ROOM_ACCESS_DENIED";
+
+export class RoomDomainError extends Error {
+  public constructor(
+    public readonly code: RoomErrorCode,
+    message: string
+  ) {
+    super(message);
+  }
+}
+```
+
+HTTP route 구현 시 mapping 기준:
+
+| Error Code | HTTP Status | 기준 |
+|---|---|---|
+| `ROOM_NOT_FOUND` | `404` | `findRoomByCode` 또는 `joinRoom` 대상 없음 |
+| `ROOM_FULL` | `409` | `participants.length >= settings.maxPlayers` |
+| `ROOM_ALREADY_STARTED` | `409` | `status !== "waiting"`인 방 신규 입장 |
+| `ROOM_CODE_COLLISION` | `500` | roomCode 생성 재시도 초과 |
+| `ROOM_ACCESS_DENIED` | `403` | 추후 host-only action에서 사용 |
+
+에러 응답은 기존 shared `ApiErrorResponse` shape를 사용하며, secret/token 값을 포함하지 않는다.
+
+### roomCode 생성 및 충돌 재시도 정책
+
+- 문자 집합: `ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`
+- 길이: 6
+- 생성 위치: `apps/server/src/rooms/room-code.ts`
+- 생성 함수 초안: `export type RoomCodeGenerator = () => string`
+- 기본 generator는 cryptographically strong random source 사용을 우선한다.
+- 테스트에서는 deterministic generator를 주입해 충돌과 재시도를 검증한다.
+- `createRoom()`은 unique `roomCode` insert를 최대 5회 재시도한다.
+- 5회 모두 unique index 충돌이면 `ROOM_CODE_COLLISION`을 throw한다.
+- `roomCode`는 대문자로 normalize하며, 외부 입력 roomCode도 trim + uppercase 후 조회한다.
+
+### InMemoryRoomRepository 테스트 전략
+
+In-memory 구현은 route 테스트와 repository 단위 테스트를 위한 deterministic 저장소다.
+
+| 동작 | 기대 결과 |
+|---|---|
+| 방 생성 | host가 participants 첫 항목으로 들어가고 `isHost=true`로 mapping |
+| roomCode 생성 | 주입한 generator 값을 사용 |
+| roomCode 충돌 | 같은 code가 있으면 generator 재호출 |
+| 충돌 재시도 초과 | `ROOM_CODE_COLLISION` |
+| 방 조회 | 존재하지 않으면 `null` |
+| 참가 | waiting room이면 participant 추가 |
+| 중복 참가 | participant를 중복 추가하지 않고 기존 room detail 반환 |
+| 최대 인원 초과 | `ROOM_FULL` |
+| 진행 중 방 참가 | `ROOM_ALREADY_STARTED` |
+
+In-memory 저장소는 실제 Socket.IO presence나 `socketId`를 저장하지 않는다. Socket presence는 Socket layer에서 별도로 다룬다.
+
+### MongoRoomRepository atomic update 전략
+
+MongoDB 구현은 unique index와 조건부 update로 race condition을 줄인다.
+
+Index:
+
+```ts
+await rooms.createIndex({ roomCode: 1 }, { unique: true });
+await rooms.createIndex({ hostUid: 1, createdAt: -1 });
+await rooms.createIndex({ status: 1, updatedAt: -1 });
+```
+
+`createRoom()`:
+
+- `insertOne()`을 사용한다.
+- duplicate key error가 발생하면 roomCode generator를 재호출하고 최대 5회 재시도한다.
+- insert 성공 후 document를 shared `RoomDetail`로 mapping한다.
+
+`joinRoom()`:
+
+- 먼저 `findOne({ roomCode })`로 현재 room 상태를 확인한다.
+- `status !== "waiting"`이면 `ROOM_ALREADY_STARTED`.
+- 이미 참가 중이면 idempotent하게 현재 `RoomDetail`을 반환한다.
+- 참가자 수가 `maxPlayers` 이상이면 `ROOM_FULL`.
+- 신규 참가자는 조건부 `findOneAndUpdate()`를 사용한다.
+
+조건부 update 기준:
+
+```ts
+{
+  roomCode,
+  status: "waiting",
+  "participants.firebaseUid": { $ne: participant.firebaseUid },
+  $expr: { $lt: [{ $size: "$participants" }, "$settings.maxPlayers"] }
+}
+```
+
+update:
+
+```ts
+{
+  $push: { participants: participantDocument },
+  $set: { updatedAt: now }
+}
+```
+
+주의:
+
+- MongoDB `$expr`와 `$size` 조건이 driver typing에서 복잡하면 repository 내부 helper로 격리한다.
+- update 결과가 `null`이면 다시 `findOne({ roomCode })`로 원인을 판별해 `ROOM_NOT_FOUND`, `ROOM_ALREADY_STARTED`, `ROOM_FULL`, idempotent 중 하나로 변환한다.
+- `participants` 내 중복 방지는 application condition과 재확인으로 처리한다. 필요하면 후속 단계에서 별도 participants collection 분리를 검토한다.
+
+### Shared Contract 일치 확인
+
+현재 `packages/shared/src/room.ts`와 이 문서의 shared room contract는 다음 기준으로 일치한다.
+
+- `JoinRoomRequest`는 route param `:roomCode`와 중복되지 않도록 `Record<string, never>`를 사용한다.
+- `RoomDetail`은 `RoomSummary`를 확장하고 `participants`, `currentRoundIndex`를 포함한다.
+- 응답 타입은 `CreateRoomResponse`, `JoinRoomResponse`, `GetRoomResponse` 모두 `{ room: RoomDetail }` shape를 사용한다.
+
+### 다음 구현 전 결정 사항
+
+- `GET /api/rooms/:roomCode`는 MVP에서 인증된 사용자라면 참가 전에도 조회 가능하게 할지 결정 필요.
+- `leave-room`은 이번 repository 구현 범위에서 제외한다. 추후 socket presence와 영속 participants 제거 정책을 별도 task로 결정한다.
+- 방 제목 기본값은 서버에서 `Untitled Room` 또는 닉네임 기반으로 생성할지 결정 필요.
+- 실제 route 구현 전 shared typecheck script가 placeholder인 점을 개선할지 결정 필요.
