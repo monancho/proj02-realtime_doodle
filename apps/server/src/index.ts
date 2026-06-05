@@ -15,7 +15,18 @@ export type { SocketNext } from "./auth/socket";
 export { verifyAuthToken, extractBearerToken } from "./auth/tokens";
 export type { TokenVerifier, VerifiedFirebaseToken } from "./auth/tokens";
 export { createApp } from "./app";
+export { connectMongoDb, createMongoClient } from "./db/mongodb";
+export type { MongoDbConnection } from "./db/mongodb";
 export { InMemoryUserRepository } from "./users/in-memory-user-repository";
+export {
+  createMongoUserRepository,
+  ensureUserIndexes,
+  MongoUserRepository
+} from "./users/mongodb-user-repository";
+export type {
+  UserCollection,
+  UserDocument
+} from "./users/mongodb-user-repository";
 export { createUserRouter } from "./users/routes";
 export type { UserRepository, UpsertUserInput } from "./users/repository";
 export { handleHealthRequest, createHealthResponse } from "./health";

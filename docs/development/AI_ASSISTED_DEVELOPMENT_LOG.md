@@ -180,3 +180,24 @@
 - 다음 추천 작업:
   - `PHASE-03-MONGODB-CONNECTION`
   - MongoDB 연결과 실제 user repository 구현 전 사용자가 MongoDB Atlas URI를 준비해야 하는지 확인.
+
+### 2026-06-05 PHASE-03-MONGODB-CONNECTION
+
+- Agent: `backend`
+- 목표: MongoDB 연결 계층과 실제 UserRepository 구현 골격 추가. 실제 MongoDB Atlas 값은 사용하지 않음.
+- 수행 내용:
+  - `mongodb` dependency 추가.
+  - MongoDB client connection module 추가.
+  - MongoDB 기반 `UserRepository` 구현 골격 추가.
+  - `firebaseUid` unique index helper 추가.
+  - 실제 연결 없이 mock/fake 기반 테스트 추가.
+  - 실제 Atlas 설정이 필요한 시점을 배포 문서에 기록.
+- 의도적으로 제외:
+  - Room, Upload, Drawing, Chat feature.
+  - 실제 `MONGODB_URI` 값 생성 또는 출력.
+  - 실제 MongoDB Atlas 연결 테스트.
+- 사용자 행동 필요 시점:
+  - 실제 DB 연결 검증이나 배포 전에는 사용자가 MongoDB Atlas project/cluster/user/network access/URI 등록을 직접 완료해야 한다.
+- 다음 추천 작업:
+  - `PHASE-03-MONGODB-WIRING`
+  - 서버 시작 흐름에서 MongoDB 연결과 `MongoUserRepository` wiring을 구성하되, 실제 연결 검증 전 사용자 MongoDB Atlas 준비 여부를 확인.

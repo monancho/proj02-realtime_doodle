@@ -59,3 +59,13 @@
 - route는 HTTP auth middleware가 설정한 `request.auth.user`를 기준으로 user profile을 upsert한다.
 - 실제 MongoDB 연결은 하지 않고 `UserRepository` interface와 `InMemoryUserRepository`로 분리했다.
 - Room, Upload, Drawing, Chat feature는 구현하지 않았다.
+
+### 2026-06-05 PHASE-03-MONGODB-CONNECTION
+
+- `mongodb` dependency를 `@doodle/server`에 추가했다.
+- MongoDB client connection module을 `apps/server/src/db/mongodb.ts`에 추가했다.
+- 실제 `MONGODB_URI` 값은 만들거나 출력하지 않았다.
+- `MongoUserRepository`를 `apps/server/src/users/mongodb-user-repository.ts`에 추가했다.
+- `firebaseUid` unique index 생성 helper를 추가했다.
+- 테스트는 실제 MongoDB 연결 없이 mock collection과 fake client로 유지했다.
+- 실제 MongoDB Atlas 설정이 필요한 시점은 `docs/DEPLOYMENT_OPERATION.md`에 문서화했다.

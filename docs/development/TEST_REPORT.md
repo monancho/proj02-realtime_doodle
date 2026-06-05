@@ -56,3 +56,13 @@
   - `typecheck`: 통과
   - `test`: 통과. 6 files, 13 tests.
   - `git status --short`: 변경 파일 확인 완료
+
+### 2026-06-05 PHASE-03-MONGODB-CONNECTION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 최초 실행 시 MongoDB index type mismatch로 실패. `IndexSpecification`으로 보정 후 통과.
+  - `test`: 통과. 8 files, 16 tests.
+  - `git status --short`: 변경 파일 확인 완료

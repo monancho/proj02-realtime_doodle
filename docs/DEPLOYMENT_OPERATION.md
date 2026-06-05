@@ -46,6 +46,18 @@ SOCKET_CORS_ORIGIN
 - Render에는 환경변수 값으로만 등록하고 저장소에는 `.env.example`의 key 이름만 유지한다.
 - private key 줄바꿈 복원은 서버 config 계층에서 처리하되, 복원된 값을 출력하지 않는다.
 
+### MongoDB Atlas 사용자 작업 필요 시점
+
+실제 MongoDB 연결 검증, 배포, GridFS 저장 기능 구현을 진행하기 전에는 사용자가 아래 작업을 직접 완료해야 한다.
+
+- MongoDB Atlas project와 cluster 생성
+- Database user 생성
+- Network Access에 로컬/배포 실행 환경 IP 등록
+- `MONGODB_URI`를 로컬 `.env`, Render Environment, GitHub Secrets 등 안전한 위치에 등록
+- `MONGODB_DB_NAME` 등록
+
+AI는 실제 `MONGODB_URI` 값을 만들거나 문서/로그에 출력하지 않는다. MongoDB 연결 계층 구현과 mock 기반 테스트는 실제 URI 없이 진행할 수 있다.
+
 ## 운영 체크리스트
 
 - [ ] Render 환경변수 등록 완료
