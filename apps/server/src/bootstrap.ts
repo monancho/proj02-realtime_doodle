@@ -34,9 +34,9 @@ export async function createServerDependencies(
   env: ServerEnv,
   adapters: BootstrapAdapters = {}
 ): Promise<ServerDependencies> {
-  const mongoConnection = await (adapters.connectDb ?? connectMongoDb)(env);
   const tokenVerifier =
     adapters.createVerifier?.(env) ?? createDefaultFirebaseVerifier(env);
+  const mongoConnection = await (adapters.connectDb ?? connectMongoDb)(env);
   const userRepository =
     (await adapters.createUserRepository?.(mongoConnection)) ??
     (await createDefaultUserRepository(mongoConnection));

@@ -221,3 +221,23 @@
 - 다음 추천 작업:
   - `PHASE-03-MONGODB-SMOKE`
   - 사용자가 원할 경우 로컬 `.env` 기반 실제 `/health` 및 DB 연결 smoke test를 secret 출력 없이 수행.
+
+### 2026-06-05 PHASE-03-MONGODB-SMOKE
+
+- Agent: `backend`
+- 목표: 로컬 `.env` 기반으로 서버 bootstrap이 실제 MongoDB/Firebase 설정을 사용해 시작 가능한지 secret 출력 없이 smoke test.
+- 수행 내용:
+  - secret-safe bootstrap smoke script 추가.
+  - `smoke:bootstrap` package script 추가.
+  - root `.env` 기반 smoke test 실행.
+- 검증 결과:
+  - `smoke:bootstrap`: 실패. 안전한 error label은 `Error:ECONNREFUSED`.
+  - `typecheck`: 통과.
+  - `test`: 통과. 9 files, 17 tests.
+- secret 처리:
+  - `.env` 값, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 사용자 행동 필요:
+  - MongoDB Atlas URI, Network Access, database user/password, cluster 상태, 로컬 네트워크를 확인해야 함.
+- 다음 추천 작업:
+  - `PHASE-03-MONGODB-SMOKE-RETRY`
+  - 사용자가 MongoDB Atlas 설정을 확인한 뒤 같은 smoke test를 재실행.

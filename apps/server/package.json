@@ -9,7 +9,8 @@
     "test": "vitest run",
     "build": "tsc --noEmit",
     "dev": "tsx src/server.ts",
-    "start": "tsx src/server.ts"
+    "start": "tsx src/server.ts",
+    "smoke:bootstrap": "tsx src/smoke/bootstrap-smoke.ts"
   },
   "dependencies": {
     "@doodle/shared": "workspace:^",

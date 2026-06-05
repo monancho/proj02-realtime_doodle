@@ -76,3 +76,17 @@
   - `typecheck`: 통과
   - `test`: 통과. 9 files, 17 tests.
   - `git status --short`: 변경 파일 확인 완료
+
+### 2026-06-05 PHASE-03-MONGODB-SMOKE
+
+- 실행 명령: `corepack pnpm --filter @doodle/server smoke:bootstrap`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `smoke:bootstrap`: 실패. 안전한 error label은 `Error:ECONNREFUSED`.
+  - `typecheck`: 통과
+  - `test`: 통과. 9 files, 17 tests.
+  - `git status --short`: 변경 파일 확인 완료
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 다음 조치: 사용자가 MongoDB Atlas URI, Network Access, database user/password, local `.env` 값을 로컬에서 확인해야 함.

@@ -78,3 +78,11 @@
 - 실제 `.env` 값, MongoDB URI, Firebase private key는 읽더라도 출력하지 않는다.
 - 테스트는 fake Mongo connection, mock Firebase verifier, in-memory repository로 유지했다.
 - Room, Upload, Drawing, Chat feature는 구현하지 않았다.
+
+### 2026-06-05 PHASE-03-MONGODB-SMOKE
+
+- secret-safe bootstrap smoke script를 `apps/server/src/smoke/bootstrap-smoke.ts`에 추가했다.
+- `@doodle/server`에 `smoke:bootstrap` script를 추가했다.
+- smoke script는 root `.env`를 로드하지만 env 값, MongoDB URI, Firebase private key, token 값을 출력하지 않는다.
+- smoke script는 서버 bootstrap과 MongoDB connection을 시도하고, 성공/실패 상태와 안전한 error name/code만 출력한다.
+- 현재 smoke 결과는 `ECONNREFUSED` 실패이며, 실제 secret 값은 출력하지 않았다.
