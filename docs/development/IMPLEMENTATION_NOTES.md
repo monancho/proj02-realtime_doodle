@@ -106,3 +106,22 @@
   - `GET /api/rooms/:roomCode`의 참가 전 조회 허용 여부 미확정
   - `leave-room`이 영속 participants를 제거할지 socket presence만 제거할지 미확정
   - 방 제목 기본값 생성 주체 미확정
+
+### 2026-06-05 PHASE-04-ROOM-CONTRACT-SHARED
+
+- `packages/shared/src/room.ts`를 추가해 문서화된 Room contract 타입을 shared package에 반영했다.
+- `packages/shared/src/index.ts`에서 room contract 타입을 export했다.
+- 추가한 타입:
+  - `RoomStatus`
+  - `RoomSettings`
+  - `RoomParticipant`
+  - `RoomSummary`
+  - `RoomDetail`
+  - `CreateRoomRequest`
+  - `CreateRoomResponse`
+  - `JoinRoomRequest`
+  - `JoinRoomResponse`
+  - `GetRoomResponse`
+- Room create/join route, repository, MongoDB 구현은 아직 추가하지 않았다.
+- Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+- 문서 계약과 shared 타입은 현재 일치한다.

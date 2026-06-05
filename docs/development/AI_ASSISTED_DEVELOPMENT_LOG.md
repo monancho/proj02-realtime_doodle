@@ -277,3 +277,20 @@
 - 다음 추천 작업:
   - `PHASE-04-ROOM-CONTRACT-SHARED`
   - `packages/shared`에 room contract 타입을 추가하고 server typecheck로 계약을 검증.
+
+### 2026-06-05 PHASE-04-ROOM-CONTRACT-SHARED
+
+- Agent: `backend`
+- 목표: 문서화된 Room 계약을 기준으로 `packages/shared`에 room contract 타입 추가.
+- 수행 내용:
+  - `packages/shared/src/room.ts` 추가.
+  - `packages/shared/src/index.ts`에서 room contract 타입 export.
+  - Room create/join 서버 route, repository, MongoDB 구현은 아직 추가하지 않음.
+  - Drawing, Chat, Upload, Timer 기능은 구현하지 않음.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/shared typecheck`: 성공 exit. 현재 shared typecheck script는 echo placeholder.
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일 확인 완료.
+- 다음 추천 작업:
+  - `PHASE-04-ROOM-REPOSITORY-PLAN`
+  - RoomRepository 구현 전에 roomCode 생성/충돌 처리, in-memory 테스트 전략, MongoDB index 적용 범위를 확정.
