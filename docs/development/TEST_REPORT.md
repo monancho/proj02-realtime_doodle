@@ -90,3 +90,17 @@
   - `git status --short`: 변경 파일 확인 완료
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 다음 조치: 사용자가 MongoDB Atlas URI, Network Access, database user/password, local `.env` 값을 로컬에서 확인해야 함.
+
+### 2026-06-05 PHASE-03-MONGODB-SMOKE-DIAGNOSTIC
+
+- 실행 명령: `corepack pnpm --filter @doodle/server smoke:bootstrap`
+- 실행 명령: `node -e "require('dns').resolveSrv('_mongodb._tcp.test01.qukv9nr.mongodb.net',...)"`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 결과:
+  - `smoke:bootstrap`: 실패. 안전한 diagnostic은 `name=Error code=ECONNREFUSED syscall=querySrv`.
+  - Node DNS SRV 조회: 실패. 안전한 diagnostic은 `DNS_SRV_FAIL code=ECONNREFUSED syscall=querySrv`.
+  - `typecheck`: 통과
+  - `test`: 통과. 9 files, 17 tests.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 해석: MongoDB shard `27017` 연결 자체가 아니라, `mongodb+srv://`가 사용하는 Node DNS SRV 조회 단계에서 거부가 발생하고 있음.
