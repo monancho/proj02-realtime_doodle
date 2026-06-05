@@ -131,3 +131,20 @@
   - `07_deployment_operation_specification.docx`에서 env key placeholder가 감지되었으나 실제 secret 값이 아닌 `mongodb+srv://...`, `FIREBASE_PRIVATE_KEY=...` placeholder임을 확인.
 - 다음 조치:
   - reference artifact와 wireframe asset을 commit 후 `origin/main`에 push.
+
+### 2026-06-05 PHASE-02-AUTH-BACKEND
+
+- Agent: `backend`
+- 목표: Firebase Admin 기반 서버 인증 골격을 구현하고 HTTP API/Socket 인증 middleware의 최소 테스트를 추가.
+- 수행 내용:
+  - `firebase-admin`, `socket.io` dependencies 추가.
+  - Firebase Admin app/token verifier 초기화 골격 추가.
+  - HTTP Bearer token middleware 추가.
+  - Socket.IO handshake auth middleware 골격 추가.
+  - token verifier mock 기반 auth 테스트 추가.
+- 의도적으로 제외:
+  - Room, Upload, Drawing, Chat feature.
+  - 실제 Firebase 프로젝트 연결 또는 secret 값 생성.
+- 다음 추천 작업:
+  - `PHASE-02-AUTH-USER-UPSERT`
+  - 인증된 Firebase UID를 기반으로 `POST /api/users/me` 사용자 upsert API를 구현.

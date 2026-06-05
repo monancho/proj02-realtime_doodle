@@ -41,3 +41,13 @@
 - Socket.IO는 `handshake.auth.token`만 사용하고 query string token은 사용하지 않는다.
 - shared auth contract 초안을 `packages/shared/src/auth.ts`에 타입으로 추가했다.
 - Firebase Admin SDK 검증 구현, middleware, socket middleware는 아직 작성하지 않았다.
+
+### 2026-06-05 PHASE-02-AUTH-BACKEND
+
+- `firebase-admin`, `socket.io`를 `@doodle/server` dependencies에 추가했다.
+- Firebase Admin 초기화 골격을 `apps/server/src/auth/firebase-admin.ts`에 추가했다.
+- Firebase private key 줄바꿈 복원은 `normalizePrivateKey()`로 분리했고 값을 출력하지 않는다.
+- Firebase token 검증은 `TokenVerifier` 인터페이스로 추상화해 테스트에서 mock 처리할 수 있게 했다.
+- HTTP 인증 middleware는 `Authorization: Bearer <Firebase ID Token>` 형식을 검증하고 `request.auth`에 `AuthContext`를 저장한다.
+- Socket 인증 middleware는 `handshake.auth.token`을 검증하고 `socket.data.auth`에 `AuthContext`를 저장한다.
+- Room, Upload, Drawing, Chat feature는 구현하지 않았다.

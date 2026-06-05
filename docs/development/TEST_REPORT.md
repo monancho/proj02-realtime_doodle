@@ -36,3 +36,13 @@
 - 성공: server typecheck 통과
 - 미실행: `pnpm lint`, `pnpm test`, `pnpm build`
 - 미실행 사유: 인증 구현이 아닌 계획/계약 정리 작업이며 요청 검증 명령은 `git status --short`였음.
+
+### 2026-06-05 PHASE-02-AUTH-BACKEND
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과
+  - `test`: 통과. 5 files, 11 tests.
+  - `git status --short`: 변경 파일 확인 완료
