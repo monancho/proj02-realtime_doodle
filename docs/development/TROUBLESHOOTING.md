@@ -48,3 +48,17 @@ corepack pnpm --filter @doodle/server smoke:bootstrap
 ```bash
 corepack pnpm --filter @doodle/server smoke:bootstrap
 ```
+
+### MongoDB SRV DNS 우회 성공
+
+- 발생 단계: `PHASE-03-MONGODB-SMOKE-SUCCESS-LOG`
+- 이전 증상: `mongodb+srv://` connection string 사용 시 Node DNS SRV 조회가 `querySrv ECONNREFUSED`로 실패
+- 해결 방법: MongoDB Atlas standard connection string을 로컬 `.env`의 `MONGODB_URI`에 적용
+- 결과: `SMOKE_OK server bootstrap and MongoDB connection succeeded`
+- secret 처리: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+운영 메모:
+
+- 같은 로컬 네트워크에서 `mongodb+srv://`가 계속 실패하면 standard connection string 사용을 유지한다.
+- DNS 설정을 변경하거나 네트워크 환경이 바뀌면 `mongodb+srv://` 재검증은 가능하지만 필수는 아니다.
+- standard connection string도 username/password/full URI를 채팅, 로그, 문서에 기록하지 않는다.

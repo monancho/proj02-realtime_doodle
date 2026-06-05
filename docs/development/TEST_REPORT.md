@@ -104,3 +104,17 @@
   - `test`: 통과. 9 files, 17 tests.
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 해석: MongoDB shard `27017` 연결 자체가 아니라, `mongodb+srv://`가 사용하는 Node DNS SRV 조회 단계에서 거부가 발생하고 있음.
+
+### 2026-06-05 PHASE-03-MONGODB-SMOKE-SUCCESS-LOG
+
+- 실행 명령: `corepack pnpm --filter @doodle/server smoke:bootstrap`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `smoke:bootstrap`: 통과. `SMOKE_OK server bootstrap and MongoDB connection succeeded`.
+  - `typecheck`: 통과
+  - `test`: 통과. 9 files, 17 tests.
+  - `git status --short`: 변경 파일 확인 완료
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 해석: 로컬 환경에서 `mongodb+srv://` SRV DNS 조회가 `querySrv ECONNREFUSED`로 실패했으나, standard MongoDB connection string 적용 후 bootstrap smoke test가 성공함.

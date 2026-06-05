@@ -241,3 +241,19 @@
 - 다음 추천 작업:
   - `PHASE-03-MONGODB-SMOKE-RETRY`
   - 사용자가 MongoDB Atlas 설정을 확인한 뒤 같은 smoke test를 재실행.
+
+### 2026-06-05 PHASE-03-MONGODB-SMOKE-SUCCESS-LOG
+
+- Agent: `backend`
+- 목표: standard MongoDB connection string 적용 후 로컬 `.env` 기반 bootstrap smoke test 성공 결과 기록.
+- 수행 내용:
+  - `smoke:bootstrap`, `typecheck`, `test` 성공을 문서화.
+  - MongoDB SRV DNS `querySrv ECONNREFUSED` 문제를 standard connection string으로 우회했다고 기록.
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 검증 결과:
+  - `smoke:bootstrap`: 통과. `SMOKE_OK server bootstrap and MongoDB connection succeeded`.
+  - `typecheck`: 통과.
+  - `test`: 통과. 9 files, 17 tests.
+- 다음 추천 작업:
+  - `PHASE-04-ROOM-CONTRACT-PLAN`
+  - Room create/join 구현 전에 shared room contract, API 경계, repository interface를 먼저 정리.
