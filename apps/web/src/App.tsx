@@ -90,8 +90,21 @@ interface RoundEndedPayload {
   endedAt: string;
 }
 
+interface ResultSavedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  result: ResultMetadata;
+  createdAt: string;
+}
+
 interface ActiveRound extends RoundStartedPayload {
   endedAt: string | null;
+}
+
+interface UploadPreview {
+  file: File;
+  url: string;
 }
 
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
@@ -128,6 +141,7 @@ export function App() {
   const [message, setMessage] = useState("Google로 로그인한 뒤 방을 만들거나 입장하세요.");
   const [activeModal, setActiveModal] = useState<ModalMode | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<UploadPreview | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [socketStatus, setSocketStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const [socketError, setSocketError] = useState<string | null>(null);
@@ -188,13 +202,13 @@ export function App() {
     });
 
     socket.on("socket-error", (payload: SocketErrorPayload) => {
-      setSocketStatus("error");
       setSocketError(formatSocketError(payload));
     });
 
     socket.on("room-updated", (payload: { room: RoomDetail }) => {
       setRoom(payload.room);
       markRoomReady(payload.room);
+      void refreshRoomImages(payload.room.roomCode);
     });
 
     socket.on("receive-message", (payload: ChatMessage) => {
@@ -222,9 +236,21 @@ export function App() {
       setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다.`);
     });
 
+    socket.on("result-saved", (payload: ResultSavedPayload) => {
+      setResults((currentResults) => {
+        const knownIds = new Set(currentResults.map((result) => result.id));
+        return knownIds.has(payload.result.id) ? currentResults : [payload.result, ...currentResults];
+      });
+      setResourceState((current) => ({ ...current, results: "ready" }));
+      setViewMode("gallery");
+      setMessage(`Round ${payload.roundIndex + 1} 결과가 저장되었습니다.`);
+    });
+
     socket.on("game-finished", (payload: { roomCode: string; room: RoomDetail; finishedAt: string }) => {
       setRoom(payload.room);
       setGameFinishedAt(payload.finishedAt);
+      setViewMode("gallery");
+      void refreshResults(payload.roomCode);
       setMessage("게임이 종료되었습니다. 갤러리에서 결과를 확인하세요.");
     });
 
@@ -236,6 +262,14 @@ export function App() {
       }
     };
   }, [activeToken, room?.roomCode]);
+
+  useEffect(() => {
+    return () => {
+      if (uploadPreview) {
+        URL.revokeObjectURL(uploadPreview.url);
+      }
+    };
+  }, [uploadPreview]);
 
   useEffect(() => {
     if (!activeRound || activeRound.endedAt) {
@@ -303,6 +337,11 @@ export function App() {
       });
 
       setProfile(updatedProfile);
+      if (room && socketRef.current) {
+        socketRef.current.emit("profile-updated", {
+          roomCode: normalizeRoomCode(room.roomCode)
+        });
+      }
       setActiveModal(null);
       setMessage(`${updatedProfile.nickname ?? "사용자"} 닉네임을 저장했습니다.`);
     });
@@ -385,8 +424,13 @@ export function App() {
     });
   }
 
-  async function handleUpload(file: File | null) {
+  function handleSelectUploadFile(file: File | null) {
     if (!room || !file) {
+      return;
+    }
+
+    if (myUploadedImage) {
+      setUploadError("이미 이 방에 이미지를 업로드했습니다.");
       return;
     }
 
@@ -398,15 +442,39 @@ export function App() {
       return;
     }
 
+    clearUploadPreview();
+    setUploadError(null);
+    setUploadPreview({
+      file,
+      url: URL.createObjectURL(file)
+    });
+  }
+
+  async function handleConfirmUpload() {
+    if (!room || !uploadPreview) {
+      return;
+    }
+
     await runAction(async () => {
       setUploadError(null);
       setResourceState((current) => ({ ...current, images: "loading" }));
-      const uploadedImage = await api.uploadImage(room.roomCode, file);
+      const uploadedImage = await api.uploadImage(room.roomCode, uploadPreview.file);
       const freshImages = await api.listImages(room.roomCode);
       setImages(freshImages);
       setResourceState((current) => ({ ...current, images: "ready" }));
       setResourceErrors((current) => ({ ...current, images: null }));
+      clearUploadPreview();
       setMessage(`${uploadedImage.originalName} 업로드가 완료되었습니다.`);
+    });
+  }
+
+  function clearUploadPreview() {
+    setUploadPreview((currentPreview) => {
+      if (currentPreview) {
+        URL.revokeObjectURL(currentPreview.url);
+      }
+
+      return null;
     });
   }
 
@@ -425,6 +493,20 @@ export function App() {
       setViewMode("gallery");
       setMessage("결과 목록을 불러왔습니다.");
     });
+  }
+
+  async function refreshResults(roomCode: string) {
+    try {
+      setResourceState((current) => ({ ...current, results: "loading" }));
+      const response = await api.listResults(roomCode);
+      setResults(response.results);
+      setNextResultCursor(response.page.nextCursor);
+      setResourceState((current) => ({ ...current, results: "ready" }));
+      setResourceErrors((current) => ({ ...current, results: null }));
+    } catch (error) {
+      setResourceState((current) => ({ ...current, results: "error" }));
+      setResourceErrors((current) => ({ ...current, results: formatError(error) }));
+    }
   }
 
   async function handleDownloadResult(resultId: string) {
@@ -496,6 +578,28 @@ export function App() {
     }
   }
 
+  function handleStartGame() {
+    if (!room || !socketRef.current || socketStatus !== "connected") {
+      setSocketError("방 연결이 준비되면 시작할 수 있습니다.");
+      return;
+    }
+
+    if (!isCurrentUserHost) {
+      setSocketError("방장만 시작할 수 있습니다.");
+      return;
+    }
+
+    if (!areAllParticipantsReady) {
+      setSocketError("모든 참가자가 이미지를 1장씩 업로드해야 시작할 수 있습니다.");
+      return;
+    }
+
+    socketRef.current.emit("start-game", {
+      roomCode: normalizeRoomCode(room.roomCode)
+    });
+    setSocketError(null);
+  }
+
   async function refreshRoomData(roomCode: string, roomSeed?: RoomDetail) {
     const normalizedRoomCode = normalizeRoomCode(roomCode);
     setResourceState((current) => ({
@@ -543,6 +647,18 @@ export function App() {
     }
   }
 
+  async function refreshRoomImages(roomCode: string) {
+    try {
+      const freshImages = await api.listImages(roomCode);
+      setImages(freshImages);
+      setResourceState((current) => ({ ...current, images: "ready" }));
+      setResourceErrors((current) => ({ ...current, images: null }));
+    } catch (error) {
+      setResourceState((current) => ({ ...current, images: "error" }));
+      setResourceErrors((current) => ({ ...current, images: formatError(error) }));
+    }
+  }
+
   function mergeResults(response: ListRoomResultsResponse, cursor: string | null) {
     setResults((currentResults) => {
       if (!cursor) {
@@ -579,6 +695,7 @@ export function App() {
     setRemainingSec(null);
     setSocketError(null);
     setSocketStatus("idle");
+    clearUploadPreview();
   }
 
   function disconnectSocket() {
@@ -593,6 +710,16 @@ export function App() {
 
   const activeRoomCode = room?.roomCode ?? normalizeRoomCode(joinCode);
   const canUseRoomActions = Boolean(room);
+  const currentFirebaseUid = authUser?.uid ?? profile?.firebaseUid ?? null;
+  const uploadedFirebaseUids = new Set(images.map((image) => image.uploadedBy.firebaseUid));
+  const myUploadedImage = currentFirebaseUid
+    ? images.find((image) => image.uploadedBy.firebaseUid === currentFirebaseUid) ?? null
+    : null;
+  const readyParticipantCount = room?.participants.filter((participant) => uploadedFirebaseUids.has(participant.firebaseUid)).length ?? 0;
+  const areAllParticipantsReady = Boolean(
+    room && room.participants.length > 0 && room.participants.every((participant) => uploadedFirebaseUids.has(participant.firebaseUid))
+  );
+  const isCurrentUserHost = Boolean(room && currentFirebaseUid && room.hostUid === currentFirebaseUid);
 
   if (!isAuthenticated) {
     return (
@@ -631,12 +758,6 @@ export function App() {
           <TabButton isActive={viewMode === "room"} onClick={() => setViewMode("room")} icon={<Users size={18} />}>
             방 준비
           </TabButton>
-          <TabButton isActive={viewMode === "play"} onClick={() => setViewMode("play")} icon={<Palette size={18} />}>
-            그리기
-          </TabButton>
-          <TabButton isActive={viewMode === "gallery"} onClick={() => void handleLoadResults()} icon={<Download size={18} />}>
-            결과
-          </TabButton>
         </nav>
       ) : null}
 
@@ -662,9 +783,18 @@ export function App() {
           resourceErrors={resourceErrors}
           resourceState={resourceState}
           room={room}
+          areAllParticipantsReady={areAllParticipantsReady}
+          currentFirebaseUid={currentFirebaseUid}
+          isCurrentUserHost={isCurrentUserHost}
+          myUploadedImage={myUploadedImage}
+          readyParticipantCount={readyParticipantCount}
+          uploadPreview={uploadPreview}
           uploadError={uploadError}
+          onCancelUploadPreview={clearUploadPreview}
+          onConfirmUpload={() => void handleConfirmUpload()}
           onRefreshRoom={() => void handleRefreshRoom()}
-          onUpload={(file) => void handleUpload(file)}
+          onSelectUploadFile={handleSelectUploadFile}
+          onStartGame={handleStartGame}
         />
       ) : null}
 
@@ -683,7 +813,6 @@ export function App() {
           socketStatus={socketStatus}
           onChatDraftChange={setChatDraft}
           onDrawStroke={handleDrawStroke}
-          onOpenGallery={() => void handleLoadResults()}
           onSendMessage={handleSendMessage}
         />
       ) : null}
@@ -867,16 +996,32 @@ interface RoomViewProps {
   room: RoomDetail | null;
   images: ImageMetadata[];
   activeRoomCode: string;
+  areAllParticipantsReady: boolean;
   canUseRoomActions: boolean;
+  currentFirebaseUid: string | null;
+  isCurrentUserHost: boolean;
   isBusy: boolean;
+  myUploadedImage: ImageMetadata | null;
+  readyParticipantCount: number;
   resourceState: ResourceState;
   resourceErrors: ResourceErrors;
+  uploadPreview: UploadPreview | null;
   uploadError: string | null;
+  onCancelUploadPreview: () => void;
+  onConfirmUpload: () => void;
   onRefreshRoom: () => void;
-  onUpload: (file: File | null) => void;
+  onSelectUploadFile: (file: File | null) => void;
+  onStartGame: () => void;
 }
 
 function RoomView(props: RoomViewProps) {
+  const uploadDisabled = !props.canUseRoomActions || props.isBusy || Boolean(props.myUploadedImage);
+  const startDisabled =
+    props.isBusy ||
+    !props.canUseRoomActions ||
+    !props.areAllParticipantsReady ||
+    props.room?.status !== "waiting";
+
   return (
     <section className="room-layout">
       <div className="paper-card room-summary">
@@ -898,7 +1043,22 @@ function RoomView(props: RoomViewProps) {
             <dt>이미지</dt>
             <dd>{props.images.length}개</dd>
           </div>
+          <div>
+            <dt>준비</dt>
+            <dd>
+              {props.readyParticipantCount}/{props.room?.participants.length ?? 0}명
+            </dd>
+          </div>
         </dl>
+        {props.isCurrentUserHost ? (
+          <button className="primary-button start-button" disabled={startDisabled} onClick={props.onStartGame} type="button">
+            <Play size={18} />
+            시작하기
+          </button>
+        ) : null}
+        {!props.areAllParticipantsReady ? (
+          <p className="notice-copy">참가자마다 이미지 1장을 업로드하면 시작할 수 있습니다.</p>
+        ) : null}
         <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
           <RefreshCw size={18} />
           새로고침
@@ -910,21 +1070,54 @@ function RoomView(props: RoomViewProps) {
           <ImagePlus size={20} />
           <h2>이미지 업로드</h2>
         </div>
-        <label className="upload-box">
+        {props.myUploadedImage ? (
+          <p className="state-copy">이미 이 방에 이미지를 업로드했습니다.</p>
+        ) : null}
+        <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
           <Upload size={28} />
-          <span>JPEG, PNG, WebP 이미지를 선택하세요. 최대 10MB까지 업로드할 수 있습니다.</span>
+          <span>
+            {props.myUploadedImage
+              ? "사용자당 이미지는 1장만 업로드할 수 있습니다."
+              : "JPEG, PNG, WebP 이미지를 선택하세요. 선택 후 미리보기에서 확인합니다."}
+          </span>
           <input
             accept="image/jpeg,image/png,image/webp"
-            disabled={!props.canUseRoomActions || props.isBusy}
+            disabled={uploadDisabled}
             type="file"
-            onChange={(event) => props.onUpload(event.currentTarget.files?.item(0) ?? null)}
+            onChange={(event) => {
+              props.onSelectUploadFile(event.currentTarget.files?.item(0) ?? null);
+              event.currentTarget.value = "";
+            }}
           />
         </label>
+        {props.uploadPreview ? (
+          <section className="upload-preview" aria-label="업로드 미리보기">
+            <img alt="" src={props.uploadPreview.url} />
+            <div>
+              <strong>{props.uploadPreview.file.name}</strong>
+              <small>{formatBytes(props.uploadPreview.file.size)}</small>
+            </div>
+            <div className="preview-actions">
+              <button className="primary-button" disabled={props.isBusy} onClick={props.onConfirmUpload} type="button">
+                업로드
+              </button>
+              <button className="secondary-button" disabled={props.isBusy} onClick={props.onCancelUploadPreview} type="button">
+                취소
+              </button>
+            </div>
+          </section>
+        ) : null}
         {props.uploadError ? <p className="error-copy">{props.uploadError}</p> : null}
         <ImageList error={props.resourceErrors.images} images={props.images} state={props.resourceState.images} />
       </div>
 
-      <ParticipantPanel error={props.resourceErrors.participants} room={props.room} state={props.resourceState.participants} />
+      <ParticipantPanel
+        currentFirebaseUid={props.currentFirebaseUid}
+        error={props.resourceErrors.participants}
+        images={props.images}
+        room={props.room}
+        state={props.resourceState.participants}
+      />
     </section>
   );
 }
@@ -957,7 +1150,21 @@ function ImageList({ error, images, state }: { error: string | null; images: Ima
   );
 }
 
-function ParticipantPanel({ error, room, state }: { error: string | null; room: RoomDetail | null; state: LoadState }) {
+function ParticipantPanel({
+  currentFirebaseUid,
+  error,
+  images,
+  room,
+  state
+}: {
+  currentFirebaseUid: string | null;
+  error: string | null;
+  images: ImageMetadata[];
+  room: RoomDetail | null;
+  state: LoadState;
+}) {
+  const uploadedFirebaseUids = new Set(images.map((image) => image.uploadedBy.firebaseUid));
+
   return (
     <aside className="paper-card participants-card">
       <div className="card-heading">
@@ -970,8 +1177,12 @@ function ParticipantPanel({ error, room, state }: { error: string | null; room: 
         <ul className="participant-list">
           {room.participants.map((participant) => (
             <li key={participant.firebaseUid}>
-              <span>{participant.nickname ?? "익명 참가자"}</span>
-              {participant.isHost ? <strong>Host</strong> : null}
+              <span>
+                {participant.nickname ?? "익명 참가자"}
+                {participant.firebaseUid === currentFirebaseUid ? <small>나</small> : null}
+              </span>
+              <strong>{uploadedFirebaseUids.has(participant.firebaseUid) ? "Ready" : "Waiting"}</strong>
+              {participant.isHost ? <em>Host</em> : null}
             </li>
           ))}
         </ul>
@@ -997,7 +1208,6 @@ interface PlayViewProps {
   remainingSec: number | null;
   onChatDraftChange: (value: string) => void;
   onDrawStroke: (stroke: DrawStroke) => void;
-  onOpenGallery: () => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -1022,14 +1232,10 @@ function PlayView(props: PlayViewProps) {
           gameFinishedAt={props.gameFinishedAt}
           remainingSec={props.remainingSec}
           roundEnded={props.roundEnded}
-          onOpenGallery={props.onOpenGallery}
         />
         <div className="card-heading">
           <MessageCircle size={20} />
           <h2>채팅</h2>
-        </div>
-        <div className="socket-status" data-state={props.socketStatus}>
-          Socket: {formatSocketStatus(props.socketStatus)}
         </div>
         {props.socketError ? <p className="error-copy">{props.socketError}</p> : null}
         <div className="chat-list" aria-live="polite">
@@ -1072,7 +1278,6 @@ interface RoundStatusPanelProps {
   roundEnded: RoundEndedPayload | null;
   gameFinishedAt: string | null;
   remainingSec: number | null;
-  onOpenGallery: () => void;
 }
 
 function RoundStatusPanel(props: RoundStatusPanelProps) {
@@ -1081,9 +1286,6 @@ function RoundStatusPanel(props: RoundStatusPanelProps) {
       <section className="round-status finished">
         <strong>게임 종료</strong>
         <span>{formatDateTime(props.gameFinishedAt)}</span>
-        <button className="primary-button" onClick={props.onOpenGallery} type="button">
-          갤러리 보기
-        </button>
       </section>
     );
   }
@@ -1314,6 +1516,7 @@ function formatApiError(error: ApiClientError): string {
     ROOM_NOT_FOUND: "방을 찾을 수 없습니다.",
     ROOM_ACCESS_DENIED: "이 방에 접근할 권한이 없습니다.",
     ROOM_PAYLOAD_INVALID: "방 요청 형식이 올바르지 않습니다.",
+    IMAGE_UPLOAD_LIMIT_EXCEEDED: "이미 이 방에 이미지를 업로드했습니다.",
     IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
     RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",
     RESULT_FILE_NOT_FOUND: "결과 이미지 파일을 찾을 수 없습니다.",
@@ -1328,22 +1531,16 @@ function formatSocketError(payload: SocketErrorPayload): string {
     ROOM_PAYLOAD_INVALID: "방 연결 요청이 올바르지 않습니다.",
     ROOM_NOT_FOUND: "Socket으로 연결할 방을 찾을 수 없습니다.",
     ROOM_ACCESS_DENIED: "이 방의 Socket room에 참여할 권한이 없습니다.",
+    ROOM_HOST_REQUIRED: "방장만 게임을 시작할 수 있습니다.",
+    ROOM_PARTICIPANTS_NOT_READY: "모든 참가자가 이미지를 1장씩 업로드해야 시작할 수 있습니다.",
+    ROOM_STATE_INVALID: "현재 방 상태에서는 요청을 처리할 수 없습니다.",
+    ROUND_IMAGE_NOT_FOUND: "시작할 수 있는 이미지가 없습니다.",
+    USER_PROFILE_NOT_FOUND: "최신 프로필을 찾지 못했습니다.",
     MESSAGE_PAYLOAD_INVALID: "채팅 메시지를 확인해 주세요.",
     MESSAGE_ROOM_NOT_JOINED: "Socket room에 참여한 뒤 메시지를 보낼 수 있습니다."
   };
 
   return messages[payload.code] ?? "Socket 요청을 처리하지 못했습니다.";
-}
-
-function formatSocketStatus(status: "idle" | "connecting" | "connected" | "error"): string {
-  const labels = {
-    idle: "대기",
-    connecting: "연결 중",
-    connected: "연결됨",
-    error: "오류"
-  };
-
-  return labels[status];
 }
 
 function createPoint(event: PointerEvent<HTMLCanvasElement>): DrawPoint {

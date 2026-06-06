@@ -422,8 +422,56 @@ button:disabled {
   cursor: pointer;
 }
 
+.upload-box.disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
 .upload-box input {
   display: none;
+}
+
+.upload-preview {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  border: 2px solid #222222;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 10px;
+}
+
+.upload-preview img {
+  width: 96px;
+  height: 72px;
+  border: 2px solid #222222;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.upload-preview strong,
+.upload-preview small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.upload-preview small {
+  color: #6b6258;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.preview-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+
+.start-button {
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 .empty-copy {
@@ -495,6 +543,21 @@ button:disabled {
 .participant-list strong {
   flex: 0 0 auto;
   color: #4f7a52;
+}
+
+.participant-list em {
+  flex: 0 0 auto;
+  color: #5f5a52;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.participant-list small {
+  display: block;
+  color: #6b6258;
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
 .canvas-stage {

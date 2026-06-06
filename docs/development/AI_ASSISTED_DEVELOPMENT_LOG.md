@@ -1310,3 +1310,30 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 다음 작업 후보:
   - 프론트엔드에서 이미지 업로드 미리보기, 사용자당 1장 UI 제한, socket 연결 상태 숨김, `room-updated` 기반 준비 상태 갱신, 자동 play/result 화면 전환 UX를 반영한다.
+### 2026-06-06 PHASE-FE-ROOM-READY-UPLOAD-PREVIEW-AUTO-FLOW
+
+- Agent: `frontend`
+- 목표: 방 준비 화면을 ready 중심으로 정리하고 업로드 미리보기, 자동 플레이/결과 전환 UX를 구현.
+- 수행 내용:
+  - 방 준비 화면에서 participant별 `Ready`/`Waiting` 상태를 표시하도록 변경했다.
+  - ready 기준은 `images.uploadedBy.firebaseUid` 기준 사용자당 이미지 1장 업로드 완료로 계산한다.
+  - host에게만 `시작하기` 버튼을 표시하고, 모든 참가자가 ready일 때만 활성화했다.
+  - 파일 선택 즉시 업로드하지 않고 client validation 후 object URL preview를 표시하도록 변경했다.
+  - preview 취소/업로드 완료/cleanup 시 object URL을 정리한다.
+  - 이미 업로드한 사용자의 업로드 UI를 비활성화했다.
+  - 닉네임 저장 성공 후 현재 room이 있으면 socket `profile-updated { roomCode }`를 emit한다.
+  - `room-updated` 수신 시 room detail과 image list를 갱신한다.
+  - `round-started` 수신 시 play 화면, `result-saved`/`game-finished` 수신 시 gallery 화면으로 자동 전환한다.
+  - 일반 UI에서 socket 연결 상태 표시를 숨기고 socket 오류만 상태 메시지로 유지했다.
+  - 수동 `그리기`/`결과` 탭을 제거했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: frontend/docs 변경 및 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 백엔드 코드 변경.
+  - Drawing, Chat, Timer, Result save 기존 동작 변경.
+  - 실제 브라우저 다중 세션 E2E.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

@@ -532,3 +532,18 @@
 - `RoomRepository.updateParticipantProfile()`과 `UserRepository.findByFirebaseUid()` 계약 및 in-memory/MongoDB 구현을 추가했다.
 - 프론트엔드 코드, Drawing, Chat, Timer, Result save 기존 동작은 변경하지 않았다.
 - 실제 MongoDB/GridFS 연결 검증은 수행하지 않았고 mock/in-memory 테스트 중심으로 검증했다.
+### 2026-06-06 PHASE-FE-ROOM-READY-UPLOAD-PREVIEW-AUTO-FLOW
+
+- 방 준비 화면을 participant ready 중심으로 정리했다.
+- ready 기준은 같은 room에서 participant별 이미지 1장 업로드 완료로 계산한다.
+- participants 목록에 `Ready`/`Waiting` 상태와 현재 사용자 표시를 추가했다.
+- host에게만 `시작하기` 버튼을 표시하고, 모든 participants가 ready이며 room이 `waiting` 상태일 때만 활성화한다.
+- 이미지 업로드는 파일 선택 즉시 실행하지 않고, client validation 후 `URL.createObjectURL()` 기반 preview를 표시한다.
+- preview 취소, 업로드 완료, component cleanup 시 object URL을 정리한다.
+- 같은 room에서 이미 이미지를 업로드한 사용자는 업로드 UI를 비활성화한다.
+- 닉네임 저장 성공 후 현재 room이 있으면 socket `profile-updated { roomCode }`를 emit하도록 연결했다.
+- `room-updated { room }` 수신 시 room detail을 갱신하고 이미지 목록을 다시 불러와 ready 상태를 반영한다.
+- `round-started` 수신 시 play 화면으로 자동 전환하고, `result-saved`/`game-finished` 수신 시 gallery 화면으로 자동 전환한다.
+- 일반 사용자 UI에서 socket 연결 상태 표시는 숨기고 socket 오류는 상태 메시지로만 표시한다.
+- 수동 `그리기`/`결과` 탭은 제거하고 이벤트 기반 화면 전환을 기본 흐름으로 유지했다.
+- 백엔드 코드, Drawing/Chat/Timer/Result save 기존 동작은 변경하지 않았다.

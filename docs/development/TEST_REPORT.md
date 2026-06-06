@@ -884,3 +884,25 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-FE-ROOM-READY-UPLOAD-PREVIEW-AUTO-FLOW
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - `git status --short`: frontend/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - 업로드 preview 상태와 client validation TypeScript compile 검증.
+  - 사용자당 이미지 1장 UI 제한 및 ready 계산 TypeScript compile 검증.
+  - host 전용 시작 버튼, `start-game` emit, socket error 표시 compile 검증.
+  - `room-updated`, `profile-updated`, `round-started`, `round-ended`, `result-saved`, `game-finished` 이벤트 연결 compile 검증.
+  - 수동 `그리기`/`결과` 탭 제거 후 build 검증.
+- 미실행:
+  - 실제 브라우저 다중 세션 E2E는 사용자 조작과 로컬 서버 실행이 필요한 수동 QA 범위로 남겼다.
+  - 백엔드 검증 명령은 프론트엔드 전용 변경이므로 수행하지 않았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
