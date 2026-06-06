@@ -525,3 +525,34 @@
 - 다음 추천 작업:
   - `PHASE-06-CHAT-IMPLEMENTATION`
   - Socket.IO `send-message`/`receive-message`와 in-memory recent messages를 membership 검증 기반으로 구현.
+
+### 2026-06-06 PHASE-06-CHAT-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Socket.IO `send-message`/`receive-message`를 room membership 검증 기반으로 구현.
+- 수행 내용:
+  - `apps/server/src/socket/rooms.ts`에 `send-message` handler 추가.
+  - `send-message` payload `{ roomCode: string; message: string }` 검증 추가.
+  - `roomCode` trim + uppercase normalize 처리 추가.
+  - message trim, 빈 문자열 차단, 200자 제한 추가.
+  - socket auth context와 `RoomRepository.findRoomByCode(roomCode)` 기반 membership 검증 추가.
+  - 성공 시 `receive-message` payload를 Socket.IO room `room:${roomCode}`에만 emit하도록 구현.
+  - `RecentChatMessageStore`를 추가해 roomCode별 in-memory 최근 50개 chat message만 보관.
+  - `apps/server/src/socket/rooms.test.ts`에 mock/in-memory repository 기반 Chat handler 테스트 추가.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - 영구 채팅 아카이브.
+  - MongoDB chat repository.
+  - Chat 조회 API.
+  - Drawing, Upload, Timer, Round feature.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 14 files, 50 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-07-DRAWING-PLAN`
+  - Drawing 구현 전에 `draw-stroke` payload, throttle/batch 기준, stroke validation, 저장 범위를 문서화.

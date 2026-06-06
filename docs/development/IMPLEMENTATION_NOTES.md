@@ -214,3 +214,16 @@
 - Chat broadcast는 같은 Socket.IO room `room:${roomCode}` 사용자에게만 전달한다.
 - 영구 채팅 아카이브는 MVP 제외로 유지하고, 초기 Chat 구현의 최근 메시지는 roomCode별 in-memory 최근 50개 정책 초안으로 정리했다.
 - Drawing, Upload, Timer, Round feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-06-CHAT-IMPLEMENTATION
+
+- Socket.IO `send-message` handler를 구현했다.
+- payload는 `{ roomCode: string; message: string }`를 사용하며 `roomCode`는 trim + uppercase normalize한다.
+- message는 trim 후 빈 문자열을 `CHAT_MESSAGE_EMPTY`, 200자 초과를 `CHAT_MESSAGE_TOO_LONG`으로 거절한다.
+- 잘못된 Chat payload는 `CHAT_PAYLOAD_INVALID`로 응답한다.
+- socket auth context와 `RoomRepository.findRoomByCode(roomCode)` 기반 room membership 검증을 추가했다.
+- 검증 성공 시 `receive-message`를 Socket.IO room `room:${roomCode}`에만 emit한다.
+- `receive-message` payload는 `{ roomCode, type: "chat", firebaseUid, nickname, avatarUrl, message, createdAt }`를 사용한다.
+- `RecentChatMessageStore`를 추가해 server memory에 roomCode별 최근 50개 chat message만 보관한다.
+- 영구 채팅 아카이브, MongoDB chat repository, Chat 조회 API는 구현하지 않았다.
+- Drawing, Upload, Timer, Round feature는 구현하지 않았다.

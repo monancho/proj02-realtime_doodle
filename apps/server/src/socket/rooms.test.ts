@@ -6,7 +6,9 @@ import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
 import {
   createSocketRoomName,
   handleJoinRoom,
-  handleLeaveRoom
+  handleLeaveRoom,
+  handleSendMessage,
+  RecentChatMessageStore
 } from "./rooms";
 
 const roomSettings: RoomSettings = {
@@ -156,6 +158,137 @@ describe("room membership socket handlers", () => {
   it("creates normalized socket room names", () => {
     expect(createSocketRoomName(" abc123 ")).toBe("room:ABC123");
   });
+
+  it("broadcasts trimmed chat messages to the matching socket room", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123"
+    });
+    await createRoom(repository);
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+    const recentMessages = new RecentChatMessageStore();
+
+    await handleSendMessage(
+      createChatDependencies({ io, repository, socket, recentMessages }),
+      { roomCode: " abc123 ", message: " hello room " }
+    );
+
+    const expectedMessage = {
+      roomCode: "ABC123",
+      type: "chat",
+      firebaseUid: "host-uid",
+      nickname: "Host",
+      avatarUrl: null,
+      message: "hello room",
+      createdAt: "2026-06-06T00:00:00.000Z"
+    };
+
+    expect(io.to).toHaveBeenCalledWith("room:ABC123");
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "receive-message",
+      expectedMessage
+    );
+    expect(recentMessages.list("abc123")).toEqual([expectedMessage]);
+  });
+
+  it("rejects send-message without authenticated socket context", async () => {
+    const repository = new InMemoryRoomRepository();
+    const socket = createMockSocket(undefined);
+    const io = createMockIo();
+
+    await handleSendMessage(createChatDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      message: "hello"
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "AUTH_TOKEN_MISSING" })
+    );
+  });
+
+  it("rejects invalid, empty, and too-long chat messages", async () => {
+    const repository = new InMemoryRoomRepository();
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleSendMessage(createChatDependencies({ io, repository, socket }), {
+      roomCode: "ABC123"
+    });
+    await handleSendMessage(createChatDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      message: "   "
+    });
+    await handleSendMessage(createChatDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      message: "a".repeat(201)
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "CHAT_PAYLOAD_INVALID" })
+    );
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "CHAT_MESSAGE_EMPTY" })
+    );
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "CHAT_MESSAGE_TOO_LONG" })
+    );
+  });
+
+  it("rejects send-message for missing rooms and non-participants", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123"
+    });
+    await createRoom(repository);
+    const socket = createMockSocket(guestAuth);
+    const io = createMockIo();
+
+    await handleSendMessage(createChatDependencies({ io, repository, socket }), {
+      roomCode: "NONE01",
+      message: "hello"
+    });
+    await handleSendMessage(createChatDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      message: "hello"
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_NOT_FOUND" })
+    );
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_ACCESS_DENIED" })
+    );
+  });
+
+  it("keeps only the latest 50 recent chat messages per room", async () => {
+    const recentMessages = new RecentChatMessageStore();
+
+    for (let index = 0; index < 51; index += 1) {
+      recentMessages.append({
+        roomCode: "ABC123",
+        type: "chat",
+        firebaseUid: "host-uid",
+        nickname: "Host",
+        avatarUrl: null,
+        message: `message-${index}`,
+        createdAt: new Date(index).toISOString()
+      });
+    }
+
+    const messages = recentMessages.list("abc123");
+
+    expect(messages).toHaveLength(50);
+    expect(messages[0]?.message).toBe("message-1");
+    expect(messages[49]?.message).toBe("message-50");
+  });
 });
 
 async function createRoom(
@@ -193,5 +326,25 @@ function createMockIo(): Pick<Server, "to"> & {
     to: vi.fn().mockReturnValue({ emit: emitToRoom })
   } as unknown as Pick<Server, "to"> & {
     emitToRoom: ReturnType<typeof vi.fn>;
+  };
+}
+
+function createChatDependencies({
+  io,
+  repository,
+  socket,
+  recentMessages = new RecentChatMessageStore()
+}: {
+  io: Pick<Server, "to">;
+  repository: InMemoryRoomRepository;
+  socket: Pick<Socket, "data" | "emit" | "join" | "leave">;
+  recentMessages?: RecentChatMessageStore;
+}) {
+  return {
+    io,
+    repository,
+    socket,
+    recentMessages,
+    now: () => new Date("2026-06-06T00:00:00.000Z")
   };
 }

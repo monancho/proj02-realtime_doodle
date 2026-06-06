@@ -278,3 +278,22 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-06-CHAT-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `test`: 통과. 14 files, 50 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - `send-message` 성공 시 trim된 `receive-message`를 같은 Socket.IO room에 emit하는지 검증.
+  - auth context 없음, invalid payload, 빈 message, 200자 초과, room not found, access denied error code 검증.
+  - in-memory recent messages가 roomCode별 최근 50개만 유지하는지 검증.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
