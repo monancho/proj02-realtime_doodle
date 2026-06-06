@@ -4,6 +4,23 @@
 
 ## 검증 결과
 
+### 2026-06-07 PHASE-IMAGE-DOWNLOAD-HEADER-FIX
+
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server test`: 통과. 18 files, 89 tests
+  - `server typecheck`: 통과
+  - `git status --short`: 변경 파일 확인 완료. `package-lock.json`은 미추적 상태로 유지
+- 변경 확인:
+  - 한글/비 ASCII 원본 파일명으로 업로드된 이미지도 `GET /api/images/:imageId`가 안전한 `Content-Disposition` header로 200 stream 응답을 반환하는 테스트를 추가했다.
+  - 서버의 알 수 없는 예외는 secret 없는 JSON 500 응답으로 반환되도록 error handler를 추가했다.
+- 미실행:
+  - 실제 브라우저에서 라운드 이미지 표시와 결과 다운로드 수동 재확인은 사용자 로컬 조작이 필요해 미실행.
+- 보안:
+  - `.env`, URI, private key, token 값은 열람/출력하지 않았다.
+
 ### 2026-06-07 PHASE-LOCAL-PLAY-FLOW-FIXES
 
 - 실행 명령: `corepack pnpm --filter @doodle/web typecheck`

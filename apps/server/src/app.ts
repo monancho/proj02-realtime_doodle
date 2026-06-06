@@ -1,5 +1,9 @@
 import type { AuthErrorResponse } from "@doodle/shared";
-import express, { type Express, type RequestHandler } from "express";
+import express, {
+  type ErrorRequestHandler,
+  type Express,
+  type RequestHandler
+} from "express";
 
 import { handleHealthRequest } from "./health";
 import {
@@ -139,6 +143,8 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     })
   );
 
+  app.use(createSafeErrorHandler());
+
   return app;
 }
 
@@ -152,5 +158,21 @@ function createMissingAuthMiddleware(): RequestHandler {
     };
 
     response.status(401).json(payload);
+  };
+}
+
+function createSafeErrorHandler(): ErrorRequestHandler {
+  return (_error, _request, response, _next) => {
+    if (response.headersSent) {
+      response.end();
+      return;
+    }
+
+    response.status(500).json({
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Internal server error."
+      }
+    });
   };
 }

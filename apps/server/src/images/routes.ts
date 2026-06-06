@@ -194,7 +194,7 @@ export function createImageBinaryRouter({
         .set("Content-Length", file.size.toString())
         .set(
           "Content-Disposition",
-          `inline; filename="${escapeHeaderValue(file.originalName)}"`
+          createInlineContentDisposition(file.originalName)
         );
       file.stream.pipe(response);
     } catch (error) {
@@ -297,6 +297,31 @@ function createApiError(code: string, message: string): ApiErrorResponse {
   };
 }
 
-function escapeHeaderValue(value: string): string {
-  return value.replaceAll('"', "");
+function createInlineContentDisposition(filename: string): string {
+  const fallback = createAsciiFilenameFallback(filename);
+  const encodedFilename = encodeRfc5987Value(filename);
+
+  return `inline; filename="${fallback}"; filename*=UTF-8''${encodedFilename}`;
+}
+
+function createAsciiFilenameFallback(filename: string): string {
+  const fallback = filename
+    .replaceAll("\\", "/")
+    .split("/")
+    .pop()
+    ?.replace(/[^A-Za-z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!fallback || fallback.length === 0) {
+    return "image";
+  }
+
+  return fallback.startsWith(".") ? `image${fallback}` : fallback;
+}
+
+function encodeRfc5987Value(value: string): string {
+  return encodeURIComponent(value).replace(/[!'()*]/g, (character) =>
+    `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  );
 }

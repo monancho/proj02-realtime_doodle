@@ -8,6 +8,22 @@
 
 ## 작업 로그
 
+### 2026-06-07 PHASE-IMAGE-DOWNLOAD-HEADER-FIX
+
+- Agent: `backend`
+- 목표: 로컬 수동 점검 중 보고된 이미지 표시/다운로드 500 문제를 서버 stream header 관점에서 수정.
+- 수행 내용:
+  - 원본 이미지 download route의 `Content-Disposition` header를 ASCII fallback + RFC 5987 `filename*` 방식으로 변경했다.
+  - 한글/비 ASCII 파일명 업로드 후 원본 이미지 stream이 200으로 내려오는 테스트를 추가했다.
+  - 예상하지 못한 서버 예외가 HTML 500으로만 보이지 않도록 안전한 JSON error handler를 추가했다.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/server test`
+  - 실행: `corepack pnpm --filter @doodle/server typecheck`
+  - 결과: 모두 통과
+- 다음 확인:
+  - 서버 dev는 nodemon 기반이므로 저장 후 자동 재시작되지만, 기존 프로세스가 오래 떠 있었다면 한 번 수동 재시작한다.
+  - 브라우저에서 다시 라운드 이미지 표시와 결과 다운로드를 확인한다.
+
 ### 2026-06-07 PHASE-LOCAL-PLAY-FLOW-FIXES
 
 - Agent: `frontend/backend-devex`

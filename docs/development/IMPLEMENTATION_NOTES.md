@@ -6,6 +6,14 @@
 
 ## 구현 메모
 
+### 2026-06-07 PHASE-IMAGE-DOWNLOAD-HEADER-FIX
+
+- 로컬 수동 점검 중 원본 이미지 표시와 결과 다운로드에서 500 응답이 보고되었다.
+- 원본 이미지 stream route의 `Content-Disposition` header가 한글/비 ASCII 원본 파일명을 그대로 포함하면 Node HTTP header validation에서 500이 발생할 수 있어 보정했다.
+- 원본 이미지 다운로드 header는 ASCII fallback `filename`과 RFC 5987 `filename*`를 함께 사용한다.
+- 예상하지 못한 서버 예외도 HTML 500 대신 secret 없는 JSON `{ error: { code: "INTERNAL_SERVER_ERROR" } }` 형태로 반환하도록 안전 error handler를 추가했다.
+- 결과 다운로드 route는 이미 ASCII 파일명을 사용하므로 header 변경 대상에서 제외했다.
+
 ### 2026-06-07 PHASE-LOCAL-PLAY-FLOW-FIXES
 
 - 사용자가 로컬 수동 점검 중 라운드 사진 미표시와 drawing 실시간 반영 지연을 보고했다.

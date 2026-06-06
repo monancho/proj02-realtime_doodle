@@ -106,6 +106,26 @@ describe("image routes", () => {
     expect(Buffer.from(response.body).toString("utf8")).toBe("webp-bytes");
   });
 
+  it("streams images with safe content-disposition for non-ascii filenames", async () => {
+    const { app } = await createImageRouteTestApp(hostAuthContext);
+    await request(app)
+      .post("/api/rooms/abc123/images")
+      .attach("image", Buffer.from("png-bytes"), {
+        filename: "테스트 사진.png",
+        contentType: "image/png"
+      })
+      .expect(201);
+
+    const response = await request(app).get("/api/images/image-1").expect(200);
+
+    expect(response.headers["content-disposition"]).toContain(
+      'inline; filename="image.png"'
+    );
+    expect(response.headers["content-disposition"]).toContain(
+      "filename*=UTF-8''%ED%85%8C%EC%8A%A4%ED%8A%B8%20%EC%82%AC%EC%A7%84.png"
+    );
+  });
+
   it("rejects uploads from non-participants", async () => {
     const { app } = await createImageRouteTestApp(guestAuthContext);
 
