@@ -373,3 +373,30 @@
 - 다음 추천 작업:
   - `PHASE-04-ROOM-BOOTSTRAP-SMOKE`
   - 사용자가 원할 경우 로컬 `.env` 기반 bootstrap smoke를 재실행해 MongoDB room index 생성까지 secret 출력 없이 확인.
+
+### 2026-06-06 PHASE-04-ROOM-BOOTSTRAP-SMOKE
+
+- Agent: `backend`
+- 목표: 로컬 `.env` 기반 bootstrap smoke를 secret 출력 없이 재실행해 MongoDB users/rooms index 생성과 서버 dependency wiring 성공 여부 확인.
+- 수행 내용:
+  - smoke script가 secret-safe diagnostic만 출력하는지 확인.
+  - `corepack pnpm --filter @doodle/server smoke:bootstrap` 실행.
+  - `corepack pnpm --filter @doodle/server typecheck` 실행.
+  - `corepack pnpm --filter @doodle/server test` 실행.
+  - TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Room route 기능 추가 구현.
+  - Drawing, Chat, Upload, Timer feature.
+  - `.env` 값 출력 또는 secret 기록.
+- 검증 결과:
+  - `smoke:bootstrap`: 통과. `SMOKE_OK server bootstrap and MongoDB connection succeeded`.
+  - `typecheck`: 통과.
+  - `test`: 통과. 12 files, 36 tests.
+  - `git status --short`: 미추적 `package-lock.json`만 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-05-SOCKET-ROOM-MEMBERSHIP-PLAN`
+  - Socket `join-room` 구현 전 HTTP room membership과 socket auth context를 연결하는 검증 경계를 문서화.

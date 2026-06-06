@@ -189,3 +189,21 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-04-ROOM-BOOTSTRAP-SMOKE
+
+- 실행 명령: `corepack pnpm --filter @doodle/server smoke:bootstrap`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `smoke:bootstrap`: 통과. `SMOKE_OK server bootstrap and MongoDB connection succeeded`.
+  - `typecheck`: 통과.
+  - `test`: 통과. 12 files, 36 tests.
+  - `git status --short`: 미추적 `package-lock.json`만 확인.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 해석:
+  - 로컬 `.env` 기반 서버 bootstrap이 성공했다.
+  - MongoDB 연결, users/rooms repository wiring, users/rooms index 생성 흐름이 시작 단계에서 통과했다.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
