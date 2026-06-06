@@ -8,6 +8,25 @@
 
 ## 작업 로그
 
+### 2026-06-07 PHASE-CANVAS-RESULT-STABILITY-FIX
+
+- Agent: `frontend/backend`
+- 목표: drawing 중 선이 사라지는 문제, 사진 깜빡임, result 다운로드 파일 형식 문제 수정.
+- 수행 내용:
+  - Canvas 배경 이미지를 `backgroundImageUrl` 변경 시에만 로드하고 ref에 캐시하도록 변경했다.
+  - stroke 변경 시에는 새 이미지 로드 없이 캐시된 image와 stroke를 동기 redraw한다.
+  - result composer를 placeholder buffer에서 유효 PNG chunk 생성 방식으로 변경했다.
+  - PNG signature, IHDR, IDAT, IEND chunk를 검증하는 unit test를 추가했다.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/web typecheck`
+  - 실행: `corepack pnpm --filter @doodle/server typecheck`
+  - 실행: `corepack pnpm --filter @doodle/server test`
+  - 실행: `corepack pnpm --filter @doodle/web build`
+  - 결과: 모두 통과
+- 남은 확인:
+  - 다운로드 PNG는 유효 container이나, 원본 이미지와 stroke를 실제 픽셀 합성하는 고급 renderer는 아직 구현하지 않았다.
+  - 사용자가 로컬에서 장시간 drawing 시 깜빡임/선 사라짐이 사라졌는지 재확인한다.
+
 ### 2026-06-07 PHASE-IMAGE-DOWNLOAD-HEADER-FIX
 
 - Agent: `backend`

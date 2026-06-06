@@ -1415,8 +1415,33 @@ interface CanvasPanelProps {
 
 function CanvasPanel(props: CanvasPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const backgroundImageRef = useRef<HTMLImageElement | null>(null);
   const draftPointsRef = useRef<DrawPoint[]>([]);
   const lastSentPointRef = useRef<DrawPoint | null>(null);
+  const [backgroundImageVersion, setBackgroundImageVersion] = useState(0);
+
+  useEffect(() => {
+    if (!props.backgroundImageUrl) {
+      backgroundImageRef.current = null;
+      setBackgroundImageVersion((version) => version + 1);
+      return;
+    }
+
+    let isCancelled = false;
+    const image = new Image();
+
+    image.onload = () => {
+      if (!isCancelled) {
+        backgroundImageRef.current = image;
+        setBackgroundImageVersion((version) => version + 1);
+      }
+    };
+    image.src = props.backgroundImageUrl;
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [props.backgroundImageUrl]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1431,29 +1456,15 @@ function CanvasPanel(props: CanvasPanelProps) {
       return;
     }
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#fffefa";
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    redrawCanvas(
+      context,
+      canvas.width,
+      canvas.height,
+      backgroundImageRef.current,
+      props.strokes
+    );
+  }, [backgroundImageVersion, props.strokes]);
 
-    if (props.backgroundImageUrl) {
-      const image = new Image();
-      image.onload = () => {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        drawCanvasBackground(context, canvas.width, canvas.height);
-        drawImageCover(context, image, canvas.width, canvas.height);
-
-        for (const stroke of props.strokes) {
-          drawStroke(context, stroke, canvas.width, canvas.height);
-        }
-      };
-      image.src = props.backgroundImageUrl;
-      return;
-    }
-
-    for (const stroke of props.strokes) {
-      drawStroke(context, stroke, canvas.width, canvas.height);
-    }
-  }, [props.backgroundImageUrl, props.strokes]);
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (props.disabled) {
@@ -1704,6 +1715,25 @@ function drawStroke(context: CanvasRenderingContext2D, stroke: DrawStroke, width
   }
 
   context.stroke();
+}
+
+function redrawCanvas(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  backgroundImage: HTMLImageElement | null,
+  strokes: DrawStroke[]
+) {
+  context.clearRect(0, 0, width, height);
+  drawCanvasBackground(context, width, height);
+
+  if (backgroundImage) {
+    drawImageCover(context, backgroundImage, width, height);
+  }
+
+  for (const stroke of strokes) {
+    drawStroke(context, stroke, width, height);
+  }
 }
 
 function drawCanvasBackground(context: CanvasRenderingContext2D, width: number, height: number) {

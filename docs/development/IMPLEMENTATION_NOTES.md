@@ -6,6 +6,15 @@
 
 ## 구현 메모
 
+### 2026-06-07 PHASE-CANVAS-RESULT-STABILITY-FIX
+
+- 로컬 수동 점검 중 drawing 중 이전 선이 사라지고 사진이 깜빡이는 문제가 보고되었다.
+- Canvas redraw가 stroke 변경마다 배경 이미지를 새로 로드하던 구조를 수정했다.
+- 배경 이미지는 URL 변경 시에만 로드해 ref에 캐시하고, stroke 변경 시에는 캐시된 이미지와 stroke 목록을 동기적으로 다시 그린다.
+- 결과 다운로드 파일이 이미지 뷰어에서 열리지 않는 문제가 보고되어 result composer를 수정했다.
+- 기존 composer는 PNG signature 뒤에 JSON을 붙인 placeholder였으나, 이제 IHDR/IDAT/IEND chunk와 CRC를 포함한 유효 PNG buffer를 생성한다.
+- 실제 원본 이미지와 stroke를 시각적으로 합성하는 고급 rendering은 MVP 후속 개선으로 남겼다.
+
 ### 2026-06-07 PHASE-IMAGE-DOWNLOAD-HEADER-FIX
 
 - 로컬 수동 점검 중 원본 이미지 표시와 결과 다운로드에서 500 응답이 보고되었다.
