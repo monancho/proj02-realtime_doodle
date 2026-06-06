@@ -170,3 +170,13 @@
 - `RoomDomainError`는 shared `ApiErrorResponse` shape로 변환한다.
 - route 테스트는 `InMemoryRoomRepository` 중심으로 추가했다.
 - Drawing, Chat, Upload, Timer feature와 실제 MongoDB 연결 검증은 구현하지 않았다.
+
+### 2026-06-06 PHASE-05-SOCKET-ROOM-MEMBERSHIP-PLAN
+
+- Socket `join-room` 구현 전에 HTTP room membership과 socket auth context를 연결하는 검증 경계를 문서화했다.
+- Socket 구현 코드는 추가하지 않았다.
+- `join-room`은 participant 생성 API가 아니며, `POST /api/rooms/:roomCode/join` 이후 repository membership을 확인하는 event로 정의했다.
+- `join-room` payload는 `{ roomCode: string }`이며 `nickname`은 socket payload에서 받지 않고 auth/HTTP user profile 기준을 사용한다.
+- `room-updated` payload는 `{ room: RoomDetail }`로 shared room contract와 맞춘다.
+- `leave-room`은 MVP에서 영속 participants를 제거하지 않고 socket presence만 처리하는 정책으로 정리했다.
+- Drawing, Chat, Upload, Timer feature는 구현하지 않았다.

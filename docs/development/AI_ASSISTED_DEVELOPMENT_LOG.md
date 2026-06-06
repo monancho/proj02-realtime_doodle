@@ -400,3 +400,29 @@
 - 다음 추천 작업:
   - `PHASE-05-SOCKET-ROOM-MEMBERSHIP-PLAN`
   - Socket `join-room` 구현 전 HTTP room membership과 socket auth context를 연결하는 검증 경계를 문서화.
+
+### 2026-06-06 PHASE-05-SOCKET-ROOM-MEMBERSHIP-PLAN
+
+- Agent: `backend`
+- 목표: Socket `join-room` 구현 전에 HTTP room membership과 socket auth context를 연결하는 검증 경계 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Socket Room Membership 구현 계획 추가.
+  - `join-room`이 HTTP join 이후 repository membership을 확인하는 event임을 정리.
+  - `room-updated` payload를 `{ room: RoomDetail }` 기준으로 고정.
+  - `leave-room`은 영속 participants 제거 없이 socket presence만 처리하는 MVP 정책으로 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Socket.IO event handler 구현.
+  - Drawing, Chat, Upload, Timer feature.
+  - Redis adapter 또는 다중 instance presence.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 상단 Socket.IO 이벤트 표와 상세 Socket Room Membership 구현 계획의 payload 기준을 함께 정리했다.
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION`
+  - Socket.IO server wiring과 `join-room`/`leave-room` membership 검증을 repository mock 중심 테스트로 구현.
