@@ -421,3 +421,12 @@
 - 로그아웃 시 Firebase session, token, user profile, 현재 room/images/results 상태를 정리한다.
 - 수동 Firebase ID Token 입력은 `details` 기반 개발용 fallback으로 유지했다.
 - Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.
+### 2026-06-06 PHASE-FE-03-LOBBY-ROOM-FLOW
+
+- 로그인 전 방 생성/입장 action을 비활성화하고 안내 문구를 추가했다.
+- roomCode 입력과 API 호출 경계에서 trim 후 uppercase normalize를 적용했다.
+- 방 생성/입장 성공 후 room detail, participants, images, results를 안정적으로 refresh하도록 `Promise.allSettled` 기반 로딩 경계를 추가했다.
+- 참가자 목록과 이미지 목록에 loading, empty, error 상태를 추가했다.
+- API error code를 사용자에게 안전한 한국어 문구로 매핑했다.
+- Firebase Client SDK 로그인 흐름과 개발용 token fallback은 유지했다.
+- Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.

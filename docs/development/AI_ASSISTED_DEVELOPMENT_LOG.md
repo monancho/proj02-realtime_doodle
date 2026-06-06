@@ -1020,3 +1020,25 @@
 - 다음 추천 작업:
   - `PHASE-FE-03-LOBBY-ROOM-FLOW`
   - 로그인된 사용자 기준으로 방 생성/입장, room detail refresh, 참가자/업로드 상태 UX를 다듬는다.
+### 2026-06-06 PHASE-FE-03-LOBBY-ROOM-FLOW
+
+- Agent: `frontend`
+- 목표: 로그인된 사용자 기준 방 생성/입장, room detail refresh, 참가자/업로드 상태 UX 정리.
+- 수행 내용:
+  - 로그인 전 방 생성/입장 action 비활성화 및 안내 추가.
+  - roomCode normalize를 UI 입력과 API 호출 경계에 적용.
+  - room refresh를 `Promise.allSettled` 기반으로 안정화해 일부 목록 실패가 전체 화면을 깨지 않게 정리.
+  - 참가자/이미지/결과 목록 loading, empty, error 상태 추가.
+  - API error code를 안전한 사용자 문구로 표시하도록 매핑.
+- 의도적으로 제외:
+  - Socket.IO client 구현.
+  - Canvas drawing 구현.
+  - Chat 구현.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 작업 변경과 기존 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 자동 진행:
+  - `PHASE-FE-04-IMAGE-UPLOAD-GALLERY`

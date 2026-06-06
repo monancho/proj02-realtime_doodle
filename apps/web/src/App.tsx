@@ -20,8 +20,35 @@ import { ApiClientError, createApiClient, normalizeRoomCode } from "./api/client
 import { createFirebaseClient } from "./auth/firebase";
 
 type ViewMode = "lobby" | "room" | "play" | "gallery";
+type LoadState = "idle" | "loading" | "ready" | "error";
+
+interface ResourceState {
+  room: LoadState;
+  participants: LoadState;
+  images: LoadState;
+  results: LoadState;
+}
+
+interface ResourceErrors {
+  room: string | null;
+  participants: string | null;
+  images: string | null;
+  results: string | null;
+}
 
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const initialResourceState: ResourceState = {
+  room: "idle",
+  participants: "idle",
+  images: "idle",
+  results: "idle"
+};
+const initialResourceErrors: ResourceErrors = {
+  room: null,
+  participants: null,
+  images: null,
+  results: null
+};
 
 export function App() {
   const [apiBaseUrl, setApiBaseUrl] = useState(defaultApiBaseUrl);
@@ -41,8 +68,11 @@ export function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("lobby");
   const [message, setMessage] = useState("Firebase 로그인 또는 개발용 토큰으로 시작하세요.");
   const [isBusy, setIsBusy] = useState(false);
+  const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
+  const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
 
   const activeToken = firebaseToken || manualToken;
+  const isAuthenticated = activeToken.trim().length > 0;
 
   const api = useMemo(
     () =>
@@ -118,26 +148,46 @@ export function App() {
 
   async function handleCreateRoom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!isAuthenticated) {
+      setMessage("로그인하거나 개발용 토큰을 입력한 뒤 방을 만들 수 있습니다.");
+      return;
+    }
+
     await runAction(async () => {
       const createdRoom = await api.createRoom({ title: roomTitle.trim() });
       setRoom(createdRoom);
       setJoinCode(createdRoom.roomCode);
-      setImages([]);
-      setResults([]);
-      setNextResultCursor(null);
       setViewMode("room");
+      markRoomReady(createdRoom);
+      await refreshRoomData(createdRoom.roomCode, createdRoom);
       setMessage(`${createdRoom.roomCode} 방을 만들었습니다.`);
     });
   }
 
   async function handleJoinRoom(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!isAuthenticated) {
+      setMessage("로그인하거나 개발용 토큰을 입력한 뒤 방에 입장할 수 있습니다.");
+      return;
+    }
+
+    const normalizedRoomCode = normalizeRoomCode(joinCode);
+    setJoinCode(normalizedRoomCode);
+
+    if (!normalizedRoomCode) {
+      setMessage("방 코드를 입력해 주세요.");
+      return;
+    }
+
     await runAction(async () => {
-      const joinedRoom = await api.joinRoom(joinCode);
+      const joinedRoom = await api.joinRoom(normalizedRoomCode);
       setRoom(joinedRoom);
       setJoinCode(joinedRoom.roomCode);
-      await refreshRoomData(joinedRoom.roomCode);
       setViewMode("room");
+      markRoomReady(joinedRoom);
+      await refreshRoomData(joinedRoom.roomCode, joinedRoom);
       setMessage(`${joinedRoom.roomCode} 방에 입장했습니다.`);
     });
   }
@@ -149,7 +199,7 @@ export function App() {
     }
 
     await runAction(async () => {
-      await refreshRoomData(room.roomCode);
+      await refreshRoomData(room.roomCode, room);
       setMessage("방 정보를 새로 불러왔습니다.");
     });
   }
@@ -162,6 +212,8 @@ export function App() {
     await runAction(async () => {
       const uploadedImage = await api.uploadImage(room.roomCode, file);
       setImages((currentImages) => [uploadedImage, ...currentImages.filter((image) => image.id !== uploadedImage.id)]);
+      setResourceState((current) => ({ ...current, images: "ready" }));
+      setResourceErrors((current) => ({ ...current, images: null }));
       setMessage(`${uploadedImage.originalName} 업로드가 완료되었습니다.`);
     });
   }
@@ -173,8 +225,11 @@ export function App() {
     }
 
     await runAction(async () => {
+      setResourceState((current) => ({ ...current, results: "loading" }));
+      setResourceErrors((current) => ({ ...current, results: null }));
       const response = await api.listResults(room.roomCode, cursor);
       mergeResults(response, cursor);
+      setResourceState((current) => ({ ...current, results: "ready" }));
       setViewMode("gallery");
       setMessage("결과 목록을 불러왔습니다.");
     });
@@ -195,16 +250,51 @@ export function App() {
     });
   }
 
-  async function refreshRoomData(roomCode: string) {
-    const [freshRoom, freshImages, firstResultsPage] = await Promise.all([
-      api.getRoom(roomCode),
-      api.listImages(roomCode),
-      api.listResults(roomCode)
+  async function refreshRoomData(roomCode: string, roomSeed?: RoomDetail) {
+    const normalizedRoomCode = normalizeRoomCode(roomCode);
+    setResourceState((current) => ({
+      ...current,
+      room: roomSeed ? "ready" : "loading",
+      participants: roomSeed ? "ready" : "loading",
+      images: "loading",
+      results: "loading"
+    }));
+    setResourceErrors(initialResourceErrors);
+
+    const [roomResult, imagesResult, resultsResult] = await Promise.allSettled([
+      roomSeed ? Promise.resolve(roomSeed) : api.getRoom(normalizedRoomCode),
+      api.listImages(normalizedRoomCode),
+      api.listResults(normalizedRoomCode)
     ]);
-    setRoom(freshRoom);
-    setImages(freshImages);
-    setResults(firstResultsPage.results);
-    setNextResultCursor(firstResultsPage.page.nextCursor);
+
+    if (roomResult.status === "fulfilled") {
+      setRoom(roomResult.value);
+      setResourceState((current) => ({ ...current, room: "ready", participants: "ready" }));
+    } else {
+      const safeMessage = formatError(roomResult.reason);
+      setResourceState((current) => ({ ...current, room: "error", participants: "error" }));
+      setResourceErrors((current) => ({ ...current, room: safeMessage, participants: safeMessage }));
+    }
+
+    if (imagesResult.status === "fulfilled") {
+      setImages(imagesResult.value);
+      setResourceState((current) => ({ ...current, images: "ready" }));
+    } else {
+      setImages([]);
+      setResourceState((current) => ({ ...current, images: "error" }));
+      setResourceErrors((current) => ({ ...current, images: formatError(imagesResult.reason) }));
+    }
+
+    if (resultsResult.status === "fulfilled") {
+      setResults(resultsResult.value.results);
+      setNextResultCursor(resultsResult.value.page.nextCursor);
+      setResourceState((current) => ({ ...current, results: "ready" }));
+    } else {
+      setResults([]);
+      setNextResultCursor(null);
+      setResourceState((current) => ({ ...current, results: "error" }));
+      setResourceErrors((current) => ({ ...current, results: formatError(resultsResult.reason) }));
+    }
   }
 
   function mergeResults(response: ListRoomResultsResponse, cursor: string | null) {
@@ -219,12 +309,20 @@ export function App() {
     setNextResultCursor(response.page.nextCursor);
   }
 
+  function markRoomReady(roomDetail: RoomDetail) {
+    setRoom(roomDetail);
+    setResourceState((current) => ({ ...current, room: "ready", participants: "ready" }));
+    setResourceErrors((current) => ({ ...current, room: null, participants: null }));
+  }
+
   function resetRoomState() {
     setRoom(null);
     setImages([]);
     setResults([]);
     setNextResultCursor(null);
     setJoinCode("");
+    setResourceState(initialResourceState);
+    setResourceErrors(initialResourceErrors);
   }
 
   const activeRoomCode = room?.roomCode ?? normalizeRoomCode(joinCode);
@@ -290,11 +388,12 @@ export function App() {
 
       {viewMode === "lobby" ? (
         <LobbyView
+          isAuthenticated={isAuthenticated}
           isBusy={isBusy}
           joinCode={joinCode}
           roomTitle={roomTitle}
           onCreateRoom={handleCreateRoom}
-          onJoinCodeChange={setJoinCode}
+          onJoinCodeChange={(value) => setJoinCode(normalizeRoomCode(value))}
           onJoinRoom={handleJoinRoom}
           onRoomTitleChange={setRoomTitle}
         />
@@ -306,6 +405,8 @@ export function App() {
           canUseRoomActions={canUseRoomActions}
           images={images}
           isBusy={isBusy}
+          resourceErrors={resourceErrors}
+          resourceState={resourceState}
           room={room}
           onRefreshRoom={() => void handleRefreshRoom()}
           onUpload={(file) => void handleUpload(file)}
@@ -319,6 +420,8 @@ export function App() {
           isBusy={isBusy}
           nextCursor={nextResultCursor}
           results={results}
+          state={resourceState.results}
+          error={resourceErrors.results}
           onDownload={(resultId) => void handleDownloadResult(resultId)}
           onLoadMore={() => void handleLoadResults(nextResultCursor)}
         />
@@ -422,6 +525,7 @@ function AuthPanel(props: AuthPanelProps) {
 interface LobbyViewProps {
   roomTitle: string;
   joinCode: string;
+  isAuthenticated: boolean;
   isBusy: boolean;
   onRoomTitleChange: (value: string) => void;
   onJoinCodeChange: (value: string) => void;
@@ -430,6 +534,8 @@ interface LobbyViewProps {
 }
 
 function LobbyView(props: LobbyViewProps) {
+  const actionDisabled = props.isBusy || !props.isAuthenticated;
+
   return (
     <section className="content-grid">
       <form className="paper-card action-card" onSubmit={props.onCreateRoom}>
@@ -437,11 +543,12 @@ function LobbyView(props: LobbyViewProps) {
           <Plus size={20} />
           <h2>방 만들기</h2>
         </div>
+        {!props.isAuthenticated ? <p className="notice-copy">로그인 후 방을 만들 수 있습니다.</p> : null}
         <label>
           방 이름
-          <input value={props.roomTitle} onChange={(event) => props.onRoomTitleChange(event.target.value)} />
+          <input disabled={!props.isAuthenticated} value={props.roomTitle} onChange={(event) => props.onRoomTitleChange(event.target.value)} />
         </label>
-        <button className="primary-button" disabled={props.isBusy} type="submit">
+        <button className="primary-button" disabled={actionDisabled} type="submit">
           <Plus size={18} />새 방 만들기
         </button>
       </form>
@@ -451,16 +558,18 @@ function LobbyView(props: LobbyViewProps) {
           <LogIn size={20} />
           <h2>방 입장</h2>
         </div>
+        {!props.isAuthenticated ? <p className="notice-copy">로그인 후 방 코드로 입장할 수 있습니다.</p> : null}
         <label>
           방 코드
           <input
+            disabled={!props.isAuthenticated}
             maxLength={6}
             spellCheck={false}
             value={props.joinCode}
-            onChange={(event) => props.onJoinCodeChange(event.target.value.toUpperCase())}
+            onChange={(event) => props.onJoinCodeChange(event.target.value)}
           />
         </label>
-        <button className="secondary-button" disabled={props.isBusy} type="submit">
+        <button className="secondary-button" disabled={actionDisabled || !props.joinCode.trim()} type="submit">
           <LogIn size={18} />
           입장하기
         </button>
@@ -475,6 +584,8 @@ interface RoomViewProps {
   activeRoomCode: string;
   canUseRoomActions: boolean;
   isBusy: boolean;
+  resourceState: ResourceState;
+  resourceErrors: ResourceErrors;
   onRefreshRoom: () => void;
   onUpload: (file: File | null) => void;
 }
@@ -523,15 +634,23 @@ function RoomView(props: RoomViewProps) {
             onChange={(event) => props.onUpload(event.currentTarget.files?.item(0) ?? null)}
           />
         </label>
-        <ImageList images={props.images} />
+        <ImageList error={props.resourceErrors.images} images={props.images} state={props.resourceState.images} />
       </div>
 
-      <ParticipantPanel room={props.room} />
+      <ParticipantPanel error={props.resourceErrors.participants} room={props.room} state={props.resourceState.participants} />
     </section>
   );
 }
 
-function ImageList({ images }: { images: ImageMetadata[] }) {
+function ImageList({ error, images, state }: { error: string | null; images: ImageMetadata[]; state: LoadState }) {
+  if (state === "loading") {
+    return <p className="state-copy">이미지 목록을 불러오는 중입니다.</p>;
+  }
+
+  if (state === "error") {
+    return <p className="error-copy">{error ?? "이미지 목록을 불러오지 못했습니다."}</p>;
+  }
+
   if (images.length === 0) {
     return <p className="empty-copy">아직 업로드된 이미지가 없습니다.</p>;
   }
@@ -548,14 +667,16 @@ function ImageList({ images }: { images: ImageMetadata[] }) {
   );
 }
 
-function ParticipantPanel({ room }: { room: RoomDetail | null }) {
+function ParticipantPanel({ error, room, state }: { error: string | null; room: RoomDetail | null; state: LoadState }) {
   return (
     <aside className="paper-card participants-card">
       <div className="card-heading">
         <Users size={20} />
         <h2>참가자</h2>
       </div>
-      {room ? (
+      {state === "loading" ? <p className="state-copy">참가자 목록을 불러오는 중입니다.</p> : null}
+      {state === "error" ? <p className="error-copy">{error ?? "참가자 목록을 불러오지 못했습니다."}</p> : null}
+      {state !== "loading" && state !== "error" && room && room.participants.length > 0 ? (
         <ul className="participant-list">
           {room.participants.map((participant) => (
             <li key={participant.firebaseUid}>
@@ -564,9 +685,10 @@ function ParticipantPanel({ room }: { room: RoomDetail | null }) {
             </li>
           ))}
         </ul>
-      ) : (
-        <p className="empty-copy">방에 입장하면 참가자 목록이 표시됩니다.</p>
-      )}
+      ) : null}
+      {state !== "loading" && state !== "error" && (!room || room.participants.length === 0) ? (
+        <p className="empty-copy">아직 참가자가 없습니다.</p>
+      ) : null}
     </aside>
   );
 }
@@ -599,11 +721,31 @@ interface GalleryViewProps {
   results: ResultMetadata[];
   nextCursor: string | null;
   isBusy: boolean;
+  state: LoadState;
+  error: string | null;
   onLoadMore: () => void;
   onDownload: (resultId: string) => void;
 }
 
 function GalleryView(props: GalleryViewProps) {
+  if (props.state === "loading") {
+    return (
+      <section className="paper-card gallery-empty">
+        <RefreshCw size={28} />
+        <h2>결과를 불러오는 중입니다.</h2>
+      </section>
+    );
+  }
+
+  if (props.state === "error") {
+    return (
+      <section className="paper-card gallery-empty">
+        <Download size={28} />
+        <h2>{props.error ?? "결과 목록을 불러오지 못했습니다."}</h2>
+      </section>
+    );
+  }
+
   if (props.results.length === 0) {
     return (
       <section className="paper-card gallery-empty">
@@ -661,7 +803,7 @@ function TabButton(props: TabButtonProps) {
 
 function formatError(error: unknown): string {
   if (error instanceof ApiClientError) {
-    return `${error.code}: ${error.message}`;
+    return formatApiError(error);
   }
 
   if (error instanceof Error) {
@@ -669,6 +811,21 @@ function formatError(error: unknown): string {
   }
 
   return "알 수 없는 오류가 발생했습니다.";
+}
+
+function formatApiError(error: ApiClientError): string {
+  const messages: Record<string, string> = {
+    AUTH_TOKEN_MISSING: "로그인이 필요합니다.",
+    ROOM_NOT_FOUND: "방을 찾을 수 없습니다.",
+    ROOM_ACCESS_DENIED: "이 방에 접근할 권한이 없습니다.",
+    ROOM_PAYLOAD_INVALID: "방 요청 형식이 올바르지 않습니다.",
+    IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
+    RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",
+    RESULT_FILE_NOT_FOUND: "결과 이미지 파일을 찾을 수 없습니다.",
+    RESULT_QUERY_INVALID: "결과 목록 요청 조건이 올바르지 않습니다."
+  };
+
+  return messages[error.code] ?? "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
 }
 
 function formatDateTime(value: string): string {

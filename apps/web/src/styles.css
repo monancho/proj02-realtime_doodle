@@ -340,6 +340,33 @@ button:disabled {
   line-height: 1.6;
 }
 
+.notice-copy,
+.state-copy,
+.error-copy {
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+.notice-copy {
+  background: #e8dcc8;
+  color: #4f463c;
+  font-weight: 800;
+}
+
+.state-copy {
+  background: #d8e8f7;
+  color: #2e526e;
+  font-weight: 800;
+}
+
+.error-copy {
+  background: #f6d8d8;
+  color: #8a3434;
+  font-weight: 800;
+}
+
 .image-list,
 .participant-list {
   display: grid;
