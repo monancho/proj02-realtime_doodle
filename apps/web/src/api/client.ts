@@ -23,6 +23,7 @@ export interface ApiClient {
   joinRoom(roomCode: string): Promise<RoomDetail>;
   listImages(roomCode: string): Promise<ImageMetadata[]>;
   uploadImage(roomCode: string, file: File): Promise<ImageMetadata>;
+  downloadImage(imageId: string): Promise<Blob>;
   listResults(roomCode: string, cursor?: string | null): Promise<ListRoomResultsResponse>;
   downloadResult(resultId: string): Promise<{ blob: Blob; filename: string }>;
 }
@@ -106,6 +107,25 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         body
       });
       return response.image;
+    },
+    async downloadImage(imageId) {
+      const token = options.getToken().trim();
+
+      if (!token) {
+        throw new ApiClientError("로그인 토큰을 먼저 입력해 주세요.", "AUTH_TOKEN_MISSING", 401);
+      }
+
+      const response = await fetch(`${baseUrl}/api/images/${encodeURIComponent(imageId)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw await createApiError(response);
+      }
+
+      return response.blob();
     },
     async listResults(roomCode, cursor) {
       const search = new URLSearchParams();

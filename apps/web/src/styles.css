@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap");
+
 :root {
   color: #222222;
   background: #f7f3ec;
@@ -109,13 +111,16 @@ p {
 h1 {
   max-width: 760px;
   margin-bottom: 16px;
+  font-family: "Gaegu", "Pretendard", sans-serif;
   font-size: clamp(2.4rem, 8vw, 5.4rem);
+  font-weight: 700;
   line-height: 0.96;
 }
 
 h2 {
+  font-family: "Gaegu", "Pretendard", sans-serif;
   margin-bottom: 0;
-  font-size: 1.1rem;
+  font-size: 1.28rem;
 }
 
 .hero-copy {
@@ -130,6 +135,7 @@ h2 {
   border-radius: 8px;
   background: rgba(255, 252, 247, 0.92);
   box-shadow: 5px 5px 0 rgba(34, 34, 34, 0.16);
+  transform: rotate(-0.2deg);
 }
 
 .google-button {
@@ -181,6 +187,7 @@ textarea {
   border: 2px solid #222222;
   border-radius: 8px;
   color: #222222;
+  font-family: "Pretendard", sans-serif;
   font-weight: 800;
   text-decoration: none;
   cursor: pointer;
@@ -386,8 +393,10 @@ button:disabled {
   border: 2px dashed #222222;
   border-radius: 8px;
   background: #f4c542;
+  font-family: "Gaegu", "Pretendard", sans-serif;
   font-size: 1.55rem;
   font-weight: 900;
+  transform: rotate(0.6deg);
 }
 
 .summary-list {

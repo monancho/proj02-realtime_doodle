@@ -906,3 +906,22 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-FE-PLAY-CANVAS-IMAGE-SOCKET-FIX
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과:
+  - 최초 `web typecheck`: 실패. preview helper에 존재하지 않는 `stroke` 참조가 있어 고정 preview stroke metadata로 수정했다.
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+- 테스트 범위:
+  - `draw-stroke` payload가 백엔드 validation에 필요한 `strokeId`/`tool`을 포함하는지 TypeScript compile로 확인.
+  - active round image download API client와 canvas background 렌더링 경로 compile 확인.
+  - Gaegu/Pretendard 기반 CSS 변경 build 확인.
+- 미실행:
+  - 실제 브라우저에서 라운드 이미지 표시와 다중 클라이언트 drawing socket 반영은 수동 E2E 확인이 필요하다.
+  - 백엔드 코드는 변경하지 않아 server test는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

@@ -547,3 +547,13 @@
 - 일반 사용자 UI에서 socket 연결 상태 표시는 숨기고 socket 오류는 상태 메시지로만 표시한다.
 - 수동 `그리기`/`결과` 탭은 제거하고 이벤트 기반 화면 전환을 기본 흐름으로 유지했다.
 - 백엔드 코드, Drawing/Chat/Timer/Result save 기존 동작은 변경하지 않았다.
+### 2026-06-06 PHASE-FE-PLAY-CANVAS-IMAGE-SOCKET-FIX
+
+- `round-started.image`를 사용해 원본 이미지를 인증 API `GET /api/images/:imageId`로 불러오고 canvas 배경에 그리도록 수정했다.
+- active round image object URL은 round 변경/cleanup 시 정리한다.
+- 프론트 `draw-stroke` payload를 백엔드 계약에 맞춰 `strokeId`, `tool`, `color`, `width`, `points`를 포함하도록 수정했다.
+- stroke chunk 전송 시 chunk별 `strokeId`를 안정적으로 부여한다.
+- Canvas drawing preview와 수신 stroke 렌더링은 기존 흐름을 유지한다.
+- 제목/강조 UI는 `Gaegu`, 본문/버튼은 `Pretendard` fallback 중심으로 조정했다.
+- Rough.js 패키지는 이번 즉시 수정에서 추가하지 않고 CSS 기반 손그림 톤만 1차 반영했다.
+- 백엔드 코드, `.env`, secret 파일은 수정하지 않았다.

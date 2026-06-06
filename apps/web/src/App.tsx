@@ -60,6 +60,8 @@ interface DrawPoint {
 }
 
 interface DrawStroke {
+  strokeId: string;
+  tool: "pen" | "eraser";
   color: string;
   width: number;
   points: DrawPoint[];
@@ -149,6 +151,7 @@ export function App() {
   const [chatDraft, setChatDraft] = useState("");
   const [drawStrokes, setDrawStrokes] = useState<DrawStroke[]>([]);
   const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
+  const [activeRoundImageUrl, setActiveRoundImageUrl] = useState<string | null>(null);
   const [roundEnded, setRoundEnded] = useState<RoundEndedPayload | null>(null);
   const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
@@ -288,6 +291,51 @@ export function App() {
 
     return () => window.clearInterval(intervalId);
   }, [activeRound]);
+
+  useEffect(() => {
+    if (!activeRound) {
+      setActiveRoundImageUrl((currentUrl) => {
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+        }
+
+        return null;
+      });
+      return;
+    }
+
+    let isCancelled = false;
+    let nextUrl: string | null = null;
+
+    api
+      .downloadImage(activeRound.image.id)
+      .then((blob) => {
+        if (isCancelled) {
+          return;
+        }
+
+        nextUrl = URL.createObjectURL(blob);
+        setActiveRoundImageUrl((currentUrl) => {
+          if (currentUrl) {
+            URL.revokeObjectURL(currentUrl);
+          }
+
+          return nextUrl;
+        });
+      })
+      .catch((error) => {
+        if (!isCancelled) {
+          setSocketError(formatError(error));
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      if (nextUrl) {
+        URL.revokeObjectURL(nextUrl);
+      }
+    };
+  }, [activeRound?.image.id, api]);
 
   async function runAction(action: () => Promise<void>) {
     setIsBusy(true);
@@ -690,6 +738,7 @@ export function App() {
     setChatDraft("");
     setDrawStrokes([]);
     setActiveRound(null);
+    setActiveRoundImageUrl(null);
     setRoundEnded(null);
     setGameFinishedAt(null);
     setRemainingSec(null);
@@ -801,6 +850,7 @@ export function App() {
       {viewMode === "play" ? (
         <PlayView
           activeRound={activeRound}
+          activeRoundImageUrl={activeRoundImageUrl}
           chatDraft={chatDraft}
           chatMessages={chatMessages}
           drawStrokes={drawStrokes}
@@ -1203,6 +1253,7 @@ interface PlayViewProps {
   chatDraft: string;
   drawStrokes: DrawStroke[];
   activeRound: ActiveRound | null;
+  activeRoundImageUrl: string | null;
   roundEnded: RoundEndedPayload | null;
   gameFinishedAt: string | null;
   remainingSec: number | null;
@@ -1222,6 +1273,7 @@ function PlayView(props: PlayViewProps) {
           !props.activeRound ||
           Boolean(props.activeRound.endedAt)
         }
+        backgroundImageUrl={props.activeRoundImageUrl}
         strokes={props.drawStrokes}
         title={props.activeRound ? `Round ${props.activeRound.roundIndex + 1}` : "캔버스 준비 중"}
         onDrawStroke={props.onDrawStroke}
@@ -1317,6 +1369,7 @@ function RoundStatusPanel(props: RoundStatusPanelProps) {
 }
 interface CanvasPanelProps {
   disabled: boolean;
+  backgroundImageUrl: string | null;
   strokes: DrawStroke[];
   title: string;
   onDrawStroke: (stroke: DrawStroke) => void;
@@ -1343,10 +1396,25 @@ function CanvasPanel(props: CanvasPanelProps) {
     context.fillStyle = "#fffefa";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
+    if (props.backgroundImageUrl) {
+      const image = new Image();
+      image.onload = () => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        drawCanvasBackground(context, canvas.width, canvas.height);
+        drawImageCover(context, image, canvas.width, canvas.height);
+
+        for (const stroke of props.strokes) {
+          drawStroke(context, stroke, canvas.width, canvas.height);
+        }
+      };
+      image.src = props.backgroundImageUrl;
+      return;
+    }
+
     for (const stroke of props.strokes) {
       drawStroke(context, stroke, canvas.width, canvas.height);
     }
-  }, [props.strokes]);
+  }, [props.backgroundImageUrl, props.strokes]);
 
   function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
     if (props.disabled) {
@@ -1379,6 +1447,8 @@ function CanvasPanel(props: CanvasPanelProps) {
     }
 
     props.onDrawStroke({
+      strokeId: createStrokeId(),
+      tool: "pen",
       color: "#222222",
       width: 4,
       points
@@ -1574,6 +1644,21 @@ function drawStroke(context: CanvasRenderingContext2D, stroke: DrawStroke, width
   context.stroke();
 }
 
+function drawCanvasBackground(context: CanvasRenderingContext2D, width: number, height: number) {
+  context.fillStyle = "#fffefa";
+  context.fillRect(0, 0, width, height);
+}
+
+function drawImageCover(context: CanvasRenderingContext2D, image: HTMLImageElement, width: number, height: number) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  const drawX = (width - drawWidth) / 2;
+  const drawY = (height - drawHeight) / 2;
+
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+}
+
 function previewDraftStroke(canvas: HTMLCanvasElement, points: DrawPoint[]) {
   const context = canvas.getContext("2d");
 
@@ -1584,6 +1669,8 @@ function previewDraftStroke(canvas: HTMLCanvasElement, points: DrawPoint[]) {
   drawStroke(
     context,
     {
+      strokeId: "preview",
+      tool: "pen",
       color: "#222222",
       width: 4,
       points: points.slice(-2)
@@ -1599,6 +1686,7 @@ function chunkStroke(stroke: DrawStroke, chunkSize: number): DrawStroke[] {
   for (let index = 0; index < stroke.points.length; index += chunkSize) {
     chunks.push({
       ...stroke,
+      strokeId: chunks.length === 0 ? stroke.strokeId : `${stroke.strokeId}-${chunks.length + 1}`,
       points: stroke.points.slice(index, index + chunkSize)
     });
   }
@@ -1608,6 +1696,14 @@ function chunkStroke(stroke: DrawStroke, chunkSize: number): DrawStroke[] {
 
 function createClientRoundId(room: RoomDetail): string {
   return `round-${room.currentRoundIndex}`;
+}
+
+function createStrokeId(): string {
+  if (globalThis.crypto?.randomUUID) {
+    return `stroke-${globalThis.crypto.randomUUID()}`;
+  }
+
+  return `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function clamp(value: number): number {
