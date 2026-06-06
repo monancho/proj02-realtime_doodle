@@ -266,3 +266,16 @@
 - `currentRoundIndex`는 첫 라운드에서 `0`을 사용하고 다음 라운드가 있으면 1씩 증가하는 기준으로 정리했다.
 - MVP timer는 `roundDurationSec` 기반 server memory `setTimeout` scheduling으로 정리했다.
 - Drawing, Chat, Upload feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-07-IMAGE-UPLOAD-GRIDFS-PLAN
+
+- Image upload/GridFS 구현 전에 업로드 API, 파일 검증, GridFS 저장, `images` metadata 저장 범위를 문서화했다.
+- Image upload 구현 코드는 추가하지 않았다.
+- `POST /api/rooms/:roomCode/images`는 `multipart/form-data`의 단일 `image` file field를 사용하는 기준으로 정리했다.
+- `GET /api/rooms/:roomCode/images`, `GET /api/images/:imageId` 조회/stream API 기준을 정리했다.
+- 인증된 room participant만 업로드할 수 있고, `waiting` room에서만 허용하는 기준으로 정리했다.
+- 사용자별 업로드 수는 `room.settings.maxImagesPerUser` 이하로 제한하는 기준으로 정리했다.
+- 허용 MIME type은 `image/jpeg`, `image/png`, `image/webp`, 파일 크기는 MVP 기본 10MB 이하로 정리했다.
+- 원본 이미지 바이너리는 MongoDB GridFS bucket `originalImages`에 저장하고, API/랜덤 선택은 `images` metadata를 기준으로 한다.
+- Render local filesystem에는 업로드 이미지나 결과 이미지를 영구 저장하지 않는 정책을 명시했다.
+- Random round start, Timer, Result save는 구현하지 않았다.
