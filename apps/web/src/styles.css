@@ -424,12 +424,65 @@ button:disabled {
 }
 
 .chat-placeholder,
-.round-meter {
+.round-meter,
+.socket-status {
   border: 2px dashed #222222;
   border-radius: 8px;
   padding: 14px;
   color: #6b6258;
   line-height: 1.6;
+}
+
+.socket-status {
+  margin-bottom: 12px;
+  background: #fffefa;
+  font-weight: 900;
+}
+
+.socket-status[data-state="connected"] {
+  background: #dff0df;
+  color: #315c34;
+}
+
+.socket-status[data-state="error"] {
+  background: #f6d8d8;
+  color: #8a3434;
+}
+
+.chat-list {
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow: auto;
+  border: 2px solid rgba(34, 34, 34, 0.2);
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 10px;
+}
+
+.chat-message {
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid rgba(34, 34, 34, 0.12);
+  padding-bottom: 8px;
+}
+
+.chat-message p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.chat-message time {
+  color: #6b6258;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.chat-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .round-meter {

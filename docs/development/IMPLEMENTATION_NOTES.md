@@ -437,3 +437,13 @@
 - 이미지 목록에 파일 크기와 used 상태 표시를 추가했다.
 - 결과 갤러리에 result count, pagination 상태, `PNG 다운로드` 버튼 문구를 추가해 download UX를 다듬었다.
 - Thumbnail API, Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.
+### 2026-06-06 PHASE-FE-05-SOCKET-ROOM-AND-CHAT
+
+- `socket.io-client`를 `@doodle/web`에 추가했다.
+- room이 선택되고 token이 존재할 때 Socket.IO client를 연결하고 `join-room`을 보낸다.
+- room 변경, logout, unmount 시 `leave-room` 후 socket을 disconnect한다.
+- `room-updated` `{ room }` payload를 받아 room detail UI를 갱신한다.
+- `socket-error` code를 안전한 사용자 문구로 매핑한다.
+- `send-message` UI를 추가하고 trim, 빈 문자열 차단, 200자 이하 제한을 적용했다.
+- `receive-message` payload를 chat list에 표시한다.
+- Canvas drawing과 Timer UX는 구현하지 않았다.

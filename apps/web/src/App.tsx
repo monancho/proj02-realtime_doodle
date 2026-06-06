@@ -12,10 +12,11 @@ import {
   Upload,
   Users
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ImageMetadata, ListRoomResultsResponse, ResultMetadata, RoomDetail, UserProfile } from "@doodle/shared";
 import type { User } from "firebase/auth";
+import { io, type Socket } from "socket.io-client";
 import { ApiClientError, createApiClient, normalizeRoomCode } from "./api/client";
 import { createFirebaseClient } from "./auth/firebase";
 
@@ -36,9 +37,26 @@ interface ResourceErrors {
   results: string | null;
 }
 
+interface ChatMessage {
+  roomCode: string;
+  type: "chat";
+  firebaseUid: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  message: string;
+  createdAt: string;
+}
+
+interface SocketErrorPayload {
+  code: string;
+  message?: string;
+}
+
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const defaultSocketUrl = import.meta.env.VITE_SOCKET_URL ?? defaultApiBaseUrl;
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxImageSizeBytes = 10 * 1024 * 1024;
+const maxChatMessageLength = 200;
 const initialResourceState: ResourceState = {
   room: "idle",
   participants: "idle",
@@ -71,8 +89,13 @@ export function App() {
   const [message, setMessage] = useState("Firebase 로그인 또는 개발용 토큰으로 시작하세요.");
   const [isBusy, setIsBusy] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [socketStatus, setSocketStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
+  const [socketError, setSocketError] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatDraft, setChatDraft] = useState("");
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
+  const socketRef = useRef<Socket | null>(null);
 
   const activeToken = firebaseToken || manualToken;
   const isAuthenticated = activeToken.trim().length > 0;
@@ -85,6 +108,62 @@ export function App() {
       }),
     [apiBaseUrl, activeToken]
   );
+
+  useEffect(() => {
+    if (!room || !activeToken.trim()) {
+      disconnectSocket();
+      return;
+    }
+
+    const roomCode = normalizeRoomCode(room.roomCode);
+    setSocketStatus("connecting");
+    setSocketError(null);
+
+    const socket = io(defaultSocketUrl, {
+      auth: {
+        token: activeToken
+      },
+      transports: ["websocket"]
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setSocketStatus("connected");
+      socket.emit("join-room", { roomCode });
+    });
+
+    socket.on("disconnect", () => {
+      setSocketStatus("idle");
+    });
+
+    socket.on("connect_error", () => {
+      setSocketStatus("error");
+      setSocketError("Socket 연결에 실패했습니다.");
+    });
+
+    socket.on("socket-error", (payload: SocketErrorPayload) => {
+      setSocketStatus("error");
+      setSocketError(formatSocketError(payload));
+    });
+
+    socket.on("room-updated", (payload: { room: RoomDetail }) => {
+      setRoom(payload.room);
+      markRoomReady(payload.room);
+    });
+
+    socket.on("receive-message", (payload: ChatMessage) => {
+      setChatMessages((currentMessages) => [...currentMessages.slice(-99), payload]);
+    });
+
+    return () => {
+      socket.emit("leave-room", { roomCode });
+      socket.disconnect();
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
+    };
+  }, [activeToken, room?.roomCode]);
 
   async function runAction(action: () => Promise<void>) {
     setIsBusy(true);
@@ -264,6 +343,34 @@ export function App() {
     });
   }
 
+  function handleSendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!room || !socketRef.current || socketStatus !== "connected") {
+      setSocketError("Socket room에 연결된 뒤 채팅을 보낼 수 있습니다.");
+      return;
+    }
+
+    const trimmedMessage = chatDraft.trim();
+
+    if (!trimmedMessage) {
+      setSocketError("빈 메시지는 보낼 수 없습니다.");
+      return;
+    }
+
+    if (trimmedMessage.length > maxChatMessageLength) {
+      setSocketError("메시지는 200자 이하로 입력해 주세요.");
+      return;
+    }
+
+    socketRef.current.emit("send-message", {
+      roomCode: normalizeRoomCode(room.roomCode),
+      message: trimmedMessage
+    });
+    setChatDraft("");
+    setSocketError(null);
+  }
+
   async function refreshRoomData(roomCode: string, roomSeed?: RoomDetail) {
     const normalizedRoomCode = normalizeRoomCode(roomCode);
     setResourceState((current) => ({
@@ -330,6 +437,7 @@ export function App() {
   }
 
   function resetRoomState() {
+    disconnectSocket();
     setRoom(null);
     setImages([]);
     setResults([]);
@@ -337,6 +445,20 @@ export function App() {
     setJoinCode("");
     setResourceState(initialResourceState);
     setResourceErrors(initialResourceErrors);
+    setChatMessages([]);
+    setChatDraft("");
+    setSocketError(null);
+    setSocketStatus("idle");
+  }
+
+  function disconnectSocket() {
+    if (socketRef.current) {
+      if (room) {
+        socketRef.current.emit("leave-room", { roomCode: normalizeRoomCode(room.roomCode) });
+      }
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
   }
 
   const activeRoomCode = room?.roomCode ?? normalizeRoomCode(joinCode);
@@ -428,7 +550,18 @@ export function App() {
         />
       ) : null}
 
-      {viewMode === "play" ? <PlayView imageCount={images.length} room={room} /> : null}
+      {viewMode === "play" ? (
+        <PlayView
+          chatDraft={chatDraft}
+          chatMessages={chatMessages}
+          imageCount={images.length}
+          room={room}
+          socketError={socketError}
+          socketStatus={socketStatus}
+          onChatDraftChange={setChatDraft}
+          onSendMessage={handleSendMessage}
+        />
+      ) : null}
 
       {viewMode === "gallery" ? (
         <GalleryView
@@ -713,13 +846,24 @@ function ParticipantPanel({ error, room, state }: { error: string | null; room: 
   );
 }
 
-function PlayView({ room, imageCount }: { room: RoomDetail | null; imageCount: number }) {
+interface PlayViewProps {
+  room: RoomDetail | null;
+  imageCount: number;
+  socketStatus: "idle" | "connecting" | "connected" | "error";
+  socketError: string | null;
+  chatMessages: ChatMessage[];
+  chatDraft: string;
+  onChatDraftChange: (value: string) => void;
+  onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
+}
+
+function PlayView(props: PlayViewProps) {
   return (
     <section className="play-layout">
       <div className="canvas-stage" aria-label="캔버스 자리 표시">
         <div className="canvas-placeholder">
           <Palette size={44} />
-          <span>{room?.status === "playing" ? "라운드 진행 중" : "캔버스 준비 중"}</span>
+          <span>{props.room?.status === "playing" ? "라운드 진행 중" : "캔버스 준비 중"}</span>
         </div>
       </div>
       <aside className="paper-card chat-card">
@@ -727,10 +871,39 @@ function PlayView({ room, imageCount }: { room: RoomDetail | null; imageCount: n
           <MessageCircle size={20} />
           <h2>채팅</h2>
         </div>
-        <div className="chat-placeholder">Socket 채팅 UI는 다음 프론트 slice에서 연결합니다.</div>
+        <div className="socket-status" data-state={props.socketStatus}>
+          Socket: {formatSocketStatus(props.socketStatus)}
+        </div>
+        {props.socketError ? <p className="error-copy">{props.socketError}</p> : null}
+        <div className="chat-list" aria-live="polite">
+          {props.chatMessages.length === 0 ? (
+            <p className="empty-copy">아직 메시지가 없습니다.</p>
+          ) : (
+            props.chatMessages.map((chatMessage, index) => (
+              <article className="chat-message" key={`${chatMessage.createdAt}-${index}`}>
+                <strong>{chatMessage.nickname ?? "익명 참가자"}</strong>
+                <p>{chatMessage.message}</p>
+                <time>{formatDateTime(chatMessage.createdAt)}</time>
+              </article>
+            ))
+          )}
+        </div>
+        <form className="chat-form" onSubmit={props.onSendMessage}>
+          <label>
+            메시지
+            <input
+              maxLength={maxChatMessageLength}
+              value={props.chatDraft}
+              onChange={(event) => props.onChatDraftChange(event.target.value)}
+            />
+          </label>
+          <button className="primary-button" disabled={props.socketStatus !== "connected"} type="submit">
+            보내기
+          </button>
+        </form>
         <div className="round-meter">
           <Play size={18} />
-          <span>{imageCount}개 이미지 준비됨</span>
+          <span>{props.imageCount}개 이미지 준비됨</span>
         </div>
       </aside>
     </section>
@@ -852,6 +1025,29 @@ function formatApiError(error: ApiClientError): string {
   };
 
   return messages[error.code] ?? "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+}
+
+function formatSocketError(payload: SocketErrorPayload): string {
+  const messages: Record<string, string> = {
+    ROOM_PAYLOAD_INVALID: "방 연결 요청이 올바르지 않습니다.",
+    ROOM_NOT_FOUND: "Socket으로 연결할 방을 찾을 수 없습니다.",
+    ROOM_ACCESS_DENIED: "이 방의 Socket room에 참여할 권한이 없습니다.",
+    MESSAGE_PAYLOAD_INVALID: "채팅 메시지를 확인해 주세요.",
+    MESSAGE_ROOM_NOT_JOINED: "Socket room에 참여한 뒤 메시지를 보낼 수 있습니다."
+  };
+
+  return messages[payload.code] ?? "Socket 요청을 처리하지 못했습니다.";
+}
+
+function formatSocketStatus(status: "idle" | "connecting" | "connected" | "error"): string {
+  const labels = {
+    idle: "대기",
+    connecting: "연결 중",
+    connected: "연결됨",
+    error: "오류"
+  };
+
+  return labels[status];
 }
 
 function formatDateTime(value: string): string {

@@ -1064,3 +1064,24 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 다음 자동 진행:
   - `PHASE-FE-05-SOCKET-ROOM-AND-CHAT`
+### 2026-06-06 PHASE-FE-05-SOCKET-ROOM-AND-CHAT
+
+- Agent: `frontend`
+- 목표: Socket.IO client 연결, room join/leave, room-updated, chat UI 구현.
+- 수행 내용:
+  - `socket.io-client` 의존성 추가.
+  - token 기반 socket auth와 `join-room`/`leave-room` emit 추가.
+  - `room-updated`, `socket-error`, `receive-message` handler 추가.
+  - `send-message` form과 200자 이하 validation 추가.
+  - chat list와 socket connection 상태 UI 추가.
+- 의도적으로 제외:
+  - Canvas drawing 구현.
+  - Timer UX 구현.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 작업 변경과 기존 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 자동 진행:
+  - `PHASE-FE-06-CANVAS-DRAWING`
