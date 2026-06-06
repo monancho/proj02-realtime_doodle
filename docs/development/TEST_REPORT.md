@@ -237,3 +237,14 @@
   - 현재 저장소는 pnpm workspace와 `pnpm-lock.yaml`을 기준으로 한다.
   - `package-lock.json`은 npm lockfile이므로 pnpm 기준 프로젝트에서는 일반적으로 추적하지 않는 것이 일관적이다.
   - 사용자 승인 없이 삭제하지 않았고 commit 대상에도 포함하지 않았다.
+
+### 2026-06-06 AGENTS-NEXT-TASK-TEMPLATE-RULE
+
+- 실행 명령: `git status --short`
+- 결과:
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- 미실행:
+  - `typecheck`, `test`: AGENTS.md와 개발 로그만 수정하는 문서 규칙 변경이며 앱/패키지 코드 변경이 없음.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.

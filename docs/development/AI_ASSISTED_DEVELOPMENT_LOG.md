@@ -451,3 +451,21 @@
 - 다음 추천 작업:
   - `PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION`
   - Socket.IO server wiring과 `join-room`/`leave-room` membership 검증을 repository mock 중심 테스트로 구현.
+
+### 2026-06-06 AGENTS-NEXT-TASK-TEMPLATE-RULE
+
+- Agent: `docs-maintainer`
+- 목표: 다음 작업 추천 프롬프트를 `docs/workflows/AI_TASK_TEMPLATE.md` 형식에 맞추도록 최상위 규칙에 명시.
+- 수행 내용:
+  - `AGENTS.md`의 완료 보고 규칙에 다음 작업 추천 프롬프트 작성 기준을 추가.
+  - 추천 프롬프트는 `docs/workflows/AI_TASK_TEMPLATE.md`의 `AI Task Spec` 형식을 참조하도록 명시.
+  - TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - 앱 기능 코드 구현.
+  - `.env`, 앱/패키지 코드, reference artifact 수정.
+- 검증 결과:
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.

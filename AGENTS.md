@@ -32,6 +32,7 @@
 
 모든 작업은 변경 파일, 실행한 검증 명령, 실패/미실행 사유, 충돌/누락/리스크를 요약한다.
 작업 종료 시 다음 작업이 무엇인지와 바로 붙여 넣어 사용할 수 있는 추천 프롬프트를 한국어 설명과 함께 제공한다.
+다음 작업 추천 프롬프트는 `docs/workflows/AI_TASK_TEMPLATE.md`의 `AI Task Spec` 형식을 참조해 작성한다.
 다른 환경에서 이어받을 수 있도록 필요한 작업 기록은 `docs/development/AI_ASSISTED_DEVELOPMENT_LOG.md`에 남긴다.
 상세 AI 작업 규칙은 `docs/development/AI_ASSISTED_DEVELOPMENT.md`를 따른다.
 
