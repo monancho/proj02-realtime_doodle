@@ -154,3 +154,19 @@
   - `joinRoom()`은 사전 상태 확인 후 조건부 `findOneAndUpdate()` skeleton으로 구현했다.
 - MongoDB `_id`는 shared `RoomDetail` 응답에 노출하지 않는다.
 - Room create/join HTTP route, Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-04-ROOM-ROUTE-IMPLEMENTATION
+
+- 인증 middleware와 `RoomRepository`를 연결한 HTTP route를 추가했다.
+- `apps/server/src/rooms/routes.ts`에 다음 endpoint를 구현했다.
+  - `POST /api/rooms`
+  - `GET /api/rooms/:roomCode`
+  - `POST /api/rooms/:roomCode/join`
+- `createApp()`은 `roomRepository` dependency를 받으며 기본값으로 `InMemoryRoomRepository`를 사용한다.
+- `createServerDependencies()`는 MongoDB `rooms` collection에 index를 보장한 뒤 `MongoRoomRepository`를 app에 주입한다.
+- `POST /api/rooms`는 인증 context의 `firebaseUid`, `nickname`, `avatarUrl`을 host 정보로 사용한다.
+- 방 생성 기본값은 `Untitled Room`, `roundDurationSec=60`, `maxPlayers=8`, `maxImagesPerUser=3`이다.
+- `GET /api/rooms/:roomCode`는 MVP에서 인증된 사용자라면 참가 전에도 조회 가능하게 구현했다.
+- `RoomDomainError`는 shared `ApiErrorResponse` shape로 변환한다.
+- route 테스트는 `InMemoryRoomRepository` 중심으로 추가했다.
+- Drawing, Chat, Upload, Timer feature와 실제 MongoDB 연결 검증은 구현하지 않았다.

@@ -173,3 +173,19 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-04-ROOM-ROUTE-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - 최초 `typecheck`: 실패. Express 5 route param type이 `string | string[]`로 추론되어 `roomCode` string 인자와 맞지 않았음.
+  - 수정 후 `typecheck`: 통과.
+  - `test`: 통과. 12 files, 36 tests.
+  - `git status --short`: 변경 파일 확인 완료.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.

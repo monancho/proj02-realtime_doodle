@@ -426,9 +426,9 @@ Socket `join-room`은 DB에 새 참가자를 생성하는 주 API가 아니다. 
 
 ### 구현 전 확인 사항
 
-- `GET /api/rooms/:roomCode`를 참가 전 사용자에게 허용할지, 참가자에게만 허용할지 확정 필요.
+- `GET /api/rooms/:roomCode`는 MVP에서 인증된 사용자라면 참가 전에도 조회 가능하게 구현했다.
 - MVP에서 `leave-room`이 영속 participants에서 제거하는지, socket presence만 제거하는지 확정 필요.
-- 방 제목 기본값을 서버에서 생성할지, 클라이언트에서 입력받을지 확정 필요.
+- 방 제목 기본값은 서버에서 `Untitled Room`으로 생성한다.
 - `roomCode` 길이는 기존 기준대로 6자리 대문자/숫자를 유지한다.
 - Room create/join 구현 시 Drawing, Chat, Upload, Timer 동작은 포함하지 않는다.
 
@@ -613,7 +613,54 @@ update:
 
 ### 다음 구현 전 결정 사항
 
-- `GET /api/rooms/:roomCode`는 MVP에서 인증된 사용자라면 참가 전에도 조회 가능하게 할지 결정 필요.
 - `leave-room`은 이번 repository 구현 범위에서 제외한다. 추후 socket presence와 영속 participants 제거 정책을 별도 task로 결정한다.
-- 방 제목 기본값은 서버에서 `Untitled Room` 또는 닉네임 기반으로 생성할지 결정 필요.
 - 실제 route 구현 전 shared typecheck script가 placeholder인 점을 개선할지 결정 필요.
+
+## Room Create/Join HTTP Route 구현 기록
+
+이 섹션은 `PHASE-04-ROOM-ROUTE-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 endpoint
+
+| Method | Endpoint | Auth | 구현 상태 |
+|---|---|---|---|
+| `POST` | `/api/rooms` | 필요 | 구현됨 |
+| `GET` | `/api/rooms/:roomCode` | 필요 | 구현됨. 참가 전 인증 사용자 조회 허용 |
+| `POST` | `/api/rooms/:roomCode/join` | 필요 | 구현됨. 중복 참가 idempotent |
+
+### Create Room 기본값
+
+`POST /api/rooms` 요청 body가 비어 있거나 일부 setting이 생략된 경우 서버는 다음 기본값을 사용한다.
+
+```ts
+{
+  title: "Untitled Room",
+  settings: {
+    roundDurationSec: 60,
+    maxPlayers: 8,
+    maxImagesPerUser: 3
+  }
+}
+```
+
+`title`은 trim 후 빈 문자열이면 기본값을 사용한다. `settings`의 각 값은 양의 정수일 때만 반영하고, 그 외 값은 기본값을 유지한다.
+
+### Route Error Mapping
+
+Room route는 `RoomDomainError`를 shared `ApiErrorResponse` shape로 변환한다.
+
+| Error Code | HTTP Status |
+|---|---:|
+| `ROOM_NOT_FOUND` | `404` |
+| `ROOM_FULL` | `409` |
+| `ROOM_ALREADY_STARTED` | `409` |
+| `ROOM_ACCESS_DENIED` | `403` |
+| `ROOM_CODE_COLLISION` | `500` |
+
+인증 context가 없으면 `AUTH_TOKEN_MISSING` 401 응답을 반환한다.
+
+### 제외 범위
+
+- Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+- Socket.IO room membership 검증은 아직 구현하지 않았다.
+- 실제 MongoDB 연결 검증은 이번 route 테스트 범위에서 제외하고 `InMemoryRoomRepository` 중심으로 검증했다.

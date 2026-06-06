@@ -11,6 +11,12 @@ import type { TokenVerifier } from "./auth/tokens";
 import type { ServerEnv } from "./config/env";
 import { connectMongoDb, type MongoDbConnection } from "./db/mongodb";
 import {
+  createMongoRoomRepository,
+  ensureRoomIndexes,
+  type RoomDocument
+} from "./rooms/mongodb-room-repository";
+import type { RoomRepository } from "./rooms/repository";
+import {
   createMongoUserRepository,
   ensureUserIndexes,
   type UserDocument
@@ -28,6 +34,9 @@ export interface BootstrapAdapters {
   createUserRepository?: (
     connection: MongoDbConnection
   ) => Promise<UserRepository>;
+  createRoomRepository?: (
+    connection: MongoDbConnection
+  ) => Promise<RoomRepository>;
 }
 
 export async function createServerDependencies(
@@ -40,11 +49,15 @@ export async function createServerDependencies(
   const userRepository =
     (await adapters.createUserRepository?.(mongoConnection)) ??
     (await createDefaultUserRepository(mongoConnection));
+  const roomRepository =
+    (await adapters.createRoomRepository?.(mongoConnection)) ??
+    (await createDefaultRoomRepository(mongoConnection));
 
   return {
     mongoConnection,
     app: createApp({
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
+      roomRepository,
       userRepository
     })
   };
@@ -73,4 +86,14 @@ async function createDefaultUserRepository(
   await ensureUserIndexes(users);
 
   return createMongoUserRepository(users);
+}
+
+async function createDefaultRoomRepository(
+  connection: MongoDbConnection
+): Promise<RoomRepository> {
+  const rooms = connection.db.collection<RoomDocument>("rooms");
+
+  await ensureRoomIndexes(rooms);
+
+  return createMongoRoomRepository(rooms);
 }

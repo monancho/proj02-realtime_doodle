@@ -341,3 +341,35 @@
 - 다음 추천 작업:
   - `PHASE-04-ROOM-ROUTE-IMPLEMENTATION`
   - 인증 middleware와 RoomRepository를 연결해 `POST /api/rooms`, `GET /api/rooms/:roomCode`, `POST /api/rooms/:roomCode/join` route와 route 테스트를 구현.
+
+### 2026-06-06 PHASE-04-ROOM-ROUTE-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: 인증 middleware와 RoomRepository를 연결해 Room HTTP route 구현.
+- 수행 내용:
+  - `apps/server/src/rooms/routes.ts` 추가.
+  - `POST /api/rooms`, `GET /api/rooms/:roomCode`, `POST /api/rooms/:roomCode/join` 구현.
+  - `apps/server/src/app.ts`에 `/api/rooms` router wiring 추가.
+  - `apps/server/src/bootstrap.ts`에 `MongoRoomRepository` wiring과 room index 보장 추가.
+  - `apps/server/src/rooms/routes.test.ts` 추가.
+  - `apps/server/src/bootstrap.test.ts`에 room repository wiring 검증 추가.
+  - `docs/DATABASE_API_SOCKET.md`, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 결정 사항:
+  - 방 제목 기본값은 `Untitled Room`.
+  - 기본 room settings는 `roundDurationSec=60`, `maxPlayers=8`, `maxImagesPerUser=3`.
+  - `GET /api/rooms/:roomCode`는 인증된 사용자라면 참가 전에도 조회 가능.
+- 의도적으로 제외:
+  - Drawing, Chat, Upload, Timer feature.
+  - Socket.IO room membership 검증.
+  - 실제 MongoDB 연결 검증.
+- 검증 결과:
+  - 최초 `corepack pnpm --filter @doodle/server typecheck`: 실패. Express route param type 보정 필요.
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 12 files, 36 tests.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-04-ROOM-BOOTSTRAP-SMOKE`
+  - 사용자가 원할 경우 로컬 `.env` 기반 bootstrap smoke를 재실행해 MongoDB room index 생성까지 secret 출력 없이 확인.
