@@ -469,3 +469,32 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 충돌/주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+
+### 2026-06-06 PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Socket.IO server wiring과 `join-room`/`leave-room` membership 검증 구현.
+- 수행 내용:
+  - `apps/server/src/socket/server.ts` 추가.
+  - `apps/server/src/socket/rooms.ts` 추가.
+  - Socket.IO server를 HTTP server 시작 흐름에 연결.
+  - `join-room`에서 repository membership 확인 후 `room:${roomCode}` join 구현.
+  - `leave-room`에서 socket room leave만 수행하도록 구현.
+  - `room-updated` payload를 `{ room: RoomDetail }`로 emit.
+  - mock/in-memory repository 기반 socket handler 테스트 추가.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Drawing, Chat, Upload, Timer feature.
+  - Redis adapter, 다중 instance presence, 영속 presence store.
+  - 실제 MongoDB 연결 검증.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 최초 실패 후 테스트 안정화, 최종 통과. 14 files, 45 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-06-CHAT-PLAN`
+  - Chat 구현 전에 `send-message`/`receive-message` payload, message validation, 최근 메시지 저장 여부를 문서화.

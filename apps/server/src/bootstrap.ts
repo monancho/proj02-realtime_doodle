@@ -26,6 +26,8 @@ import type { UserRepository } from "./users/repository";
 export interface ServerDependencies {
   app: Express;
   mongoConnection: MongoDbConnection;
+  roomRepository: RoomRepository;
+  tokenVerifier: TokenVerifier;
 }
 
 export interface BootstrapAdapters {
@@ -55,6 +57,8 @@ export async function createServerDependencies(
 
   return {
     mongoConnection,
+    roomRepository,
+    tokenVerifier,
     app: createApp({
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
       roomRepository,

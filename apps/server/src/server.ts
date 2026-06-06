@@ -1,6 +1,7 @@
 import { createServerDependencies, startHttpServer } from "./bootstrap";
 import { validateServerEnv } from "./config/env";
 import { loadLocalEnvFile } from "./config/load-env";
+import { createSocketServer } from "./socket/server";
 
 loadLocalEnvFile();
 const validation = validateServerEnv(process.env);
@@ -15,12 +16,20 @@ if (!validation.ok) {
 const port = Number.parseInt(validation.env.PORT, 10);
 
 try {
-  const { app, mongoConnection } = await createServerDependencies(validation.env);
+  const { app, mongoConnection, roomRepository, tokenVerifier } =
+    await createServerDependencies(validation.env);
   const server = await startHttpServer(app, port);
+  const io = createSocketServer({
+    env: validation.env,
+    httpServer: server,
+    roomRepository,
+    tokenVerifier
+  });
 
   console.log(`Realtime Doodle Relay server listening on port ${port}`);
 
   const shutdown = async () => {
+    io.close();
     server.close();
     await mongoConnection.client.close();
   };

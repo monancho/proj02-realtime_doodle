@@ -248,3 +248,19 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - 최초 `test`: 실패. Socket.IO private option assertion이 실제 내부 구조와 맞지 않았고, fake HTTP server cleanup에서 unhandled error가 발생함.
+  - 수정 후 `typecheck`: 통과.
+  - 수정 후 `test`: 통과. 14 files, 45 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.

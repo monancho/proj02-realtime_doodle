@@ -191,3 +191,15 @@
   - 영속 participants에서 `socketId`를 제거하고 socket presence는 socket layer 메모리 상태로 분리한다고 명시했다.
 - `docs/USER_FLOW.md`의 이탈/재접속 정책을 Socket membership 계획과 맞췄다.
 - 앱 기능 코드, packages 코드, `.env`, reference artifact는 수정하지 않았다.
+
+### 2026-06-06 PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION
+
+- HTTP server에 Socket.IO server를 연결하는 `apps/server/src/socket/server.ts`를 추가했다.
+- Socket.IO server는 기존 socket auth middleware를 사용해 `socket.data.auth`에 저장된 `AuthContext`를 기준으로 동작한다.
+- `apps/server/src/socket/rooms.ts`에 `join-room`/`leave-room` membership handler를 추가했다.
+- `join-room`은 `RoomRepository.findRoomByCode()`로 room을 조회하고 socket auth user가 participants에 있는지 확인한다.
+- 검증 성공 시 `room:${roomCode}`에 join하고 `{ room: RoomDetail }` 형태의 `room-updated`를 emit한다.
+- 중복 `join-room`은 에러 없이 idempotent하게 처리한다.
+- `leave-room`은 socket room leave만 수행하고 MongoDB participants를 제거하지 않는다.
+- invalid payload, missing auth context, room not found, access denied는 `socket-error` code로 응답한다.
+- Drawing, Chat, Upload, Timer feature는 구현하지 않았다.

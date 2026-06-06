@@ -728,3 +728,38 @@ Socket `join-room`은 room participant를 새로 생성하는 API가 아니다. 
 - Drawing, Chat, Upload, Timer feature는 이 단계와 다음 socket membership 구현의 범위가 아니다.
 - `send-message`, `draw-stroke`, `start-game`, `round-started`는 membership 검증 구현 이후 별도 단계에서 다룬다.
 - Redis adapter나 다중 instance presence는 MVP 범위 밖이다.
+
+## Socket Room Membership 구현 기록
+
+이 섹션은 `PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 server wiring
+
+- HTTP server에 Socket.IO server를 연결한다.
+- Socket.IO CORS origin은 `SOCKET_CORS_ORIGIN` env 값을 사용한다.
+- Socket auth middleware는 `handshake.auth.token`을 검증하고 `socket.data.auth`에 shared `AuthContext`를 저장한다.
+- Room membership handler는 `RoomRepository`를 통해 영속 participants를 확인한다.
+
+### 구현된 event
+
+| Event | 구현 결과 |
+|---|---|
+| `join-room` | `{ roomCode: string }` payload를 검증하고, repository membership 확인 후 `room:${roomCode}`에 join |
+| `leave-room` | `{ roomCode: string }` payload를 검증하고, socket room leave만 수행 |
+| `room-updated` | `{ room: RoomDetail }` payload로 Socket.IO room에 emit |
+| `socket-error` | `{ code: string; message: string }` payload로 현재 socket에 emit |
+
+### 구현된 error code
+
+| Code | 기준 |
+|---|---|
+| `AUTH_TOKEN_MISSING` | socket auth context가 없는 상태에서 room event 처리 시도 |
+| `ROOM_PAYLOAD_INVALID` | payload가 `{ roomCode: string }` 형식이 아니거나 빈 roomCode |
+| `ROOM_NOT_FOUND` | repository에서 room을 찾지 못함 |
+| `ROOM_ACCESS_DENIED` | socket auth user가 room participants에 없음 |
+
+### 제외 범위
+
+- `leave-room`은 MongoDB `rooms.participants`를 제거하지 않는다.
+- Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+- Redis adapter, 다중 instance presence, 영속 presence store는 구현하지 않았다.

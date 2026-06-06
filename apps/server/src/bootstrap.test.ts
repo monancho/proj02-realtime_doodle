@@ -67,6 +67,7 @@ describe("createServerDependencies", () => {
     });
     expect(verifier.verifyIdToken).toHaveBeenCalledWith("test-token");
     expect(dependencies.mongoConnection).toBe(mongoConnection);
+    expect(dependencies.tokenVerifier).toBe(verifier);
   });
 
   it("wires the RoomRepository into the app", async () => {
@@ -104,5 +105,6 @@ describe("createServerDependencies", () => {
       title: "Bootstrap Room",
       hostUid: "firebase-uid"
     });
+    expect(dependencies.roomRepository).toBe(roomRepository);
   });
 });
