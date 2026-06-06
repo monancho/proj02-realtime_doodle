@@ -111,6 +111,8 @@ interface UploadPreview {
   url: string;
 }
 
+type ResultSaveStatus = "idle" | "saving" | "saved";
+
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 const defaultSocketUrl = import.meta.env.VITE_SOCKET_URL ?? defaultApiBaseUrl;
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -157,6 +159,7 @@ export function App() {
   const [activeRoundImageUrl, setActiveRoundImageUrl] = useState<string | null>(null);
   const [roundEnded, setRoundEnded] = useState<RoundEndedPayload | null>(null);
   const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
+  const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>("idle");
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
@@ -232,6 +235,7 @@ export function App() {
       setActiveRound({ ...payload, endedAt: null });
       setRoundEnded(null);
       setGameFinishedAt(null);
+      setResultSaveStatus("idle");
       setDrawStrokes([]);
       setViewMode("play");
       setMessage(`Round ${payload.roundIndex + 1}이 시작되었습니다.`);
@@ -242,7 +246,8 @@ export function App() {
       setActiveRound((currentRound) =>
         currentRound && currentRound.roundId === payload.roundId ? { ...currentRound, endedAt: payload.endedAt } : currentRound
       );
-      setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다.`);
+      setResultSaveStatus("saving");
+      setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다. 결과를 저장하는 중입니다.`);
     });
 
     socket.on("result-saved", (payload: ResultSavedPayload) => {
@@ -252,6 +257,7 @@ export function App() {
       });
       setNextResultCursor(null);
       setResourceState((current) => ({ ...current, results: "ready" }));
+      setResultSaveStatus("saved");
       setViewMode("gallery");
       setMessage(`Round ${payload.roundIndex + 1} 결과가 저장되었습니다.`);
     });
@@ -259,6 +265,7 @@ export function App() {
     socket.on("game-finished", (payload: { roomCode: string; room: RoomDetail; finishedAt: string }) => {
       setRoom(payload.room);
       setGameFinishedAt(payload.finishedAt);
+      setResultSaveStatus("saved");
       setViewMode("gallery");
       void refreshResults(payload.roomCode);
       setMessage("게임이 종료되었습니다. 갤러리에서 결과를 확인하세요.");
@@ -760,6 +767,7 @@ export function App() {
     setActiveRoundImageUrl(null);
     setRoundEnded(null);
     setGameFinishedAt(null);
+    setResultSaveStatus("idle");
     setRemainingSec(null);
     setSocketError(null);
     setSocketStatus("idle");
@@ -880,6 +888,7 @@ export function App() {
           remainingSec={remainingSec}
           room={room}
           roundEnded={roundEnded}
+          resultSaveStatus={resultSaveStatus}
           socketError={socketError}
           socketStatus={socketStatus}
           onChatDraftChange={setChatDraft}
@@ -897,6 +906,7 @@ export function App() {
           error={resourceErrors.results}
           onDownload={(resultId) => void handleDownloadResult(resultId)}
           onLoadMore={() => void handleLoadResults(nextResultCursor)}
+          onRefresh={() => void handleLoadResults(null)}
         />
       ) : null}
 
@@ -1097,6 +1107,18 @@ function RoomView(props: RoomViewProps) {
     !props.canUseRoomActions ||
     !props.areAllParticipantsReady ||
     props.room?.status !== "waiting";
+  const readyFirebaseUids = new Set(props.images.map((image) => image.uploadedBy.firebaseUid));
+  const pendingParticipants =
+    props.room?.participants.filter((participant) => !readyFirebaseUids.has(participant.firebaseUid)) ?? [];
+  const pendingNames = pendingParticipants.map((participant) => participant.nickname ?? "익명 참가자").join(", ");
+  const startHelpText = getStartHelpText({
+    areAllParticipantsReady: props.areAllParticipantsReady,
+    canUseRoomActions: props.canUseRoomActions,
+    isBusy: props.isBusy,
+    isCurrentUserHost: props.isCurrentUserHost,
+    pendingNames,
+    roomStatus: props.room?.status ?? null
+  });
 
   return (
     <section className="room-layout">
@@ -1146,8 +1168,8 @@ function RoomView(props: RoomViewProps) {
             시작하기
           </button>
         ) : null}
-        {!props.areAllParticipantsReady ? (
-          <p className="notice-copy">참가자마다 이미지 1장을 업로드하면 시작할 수 있습니다.</p>
+        {props.room ? (
+          <p className={props.areAllParticipantsReady ? "state-copy" : "notice-copy"}>{startHelpText}</p>
         ) : null}
         <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
           <RefreshCw size={18} />
@@ -1211,6 +1233,44 @@ function RoomView(props: RoomViewProps) {
       />
     </section>
   );
+}
+
+function getStartHelpText({
+  areAllParticipantsReady,
+  canUseRoomActions,
+  isBusy,
+  isCurrentUserHost,
+  pendingNames,
+  roomStatus
+}: {
+  areAllParticipantsReady: boolean;
+  canUseRoomActions: boolean;
+  isBusy: boolean;
+  isCurrentUserHost: boolean;
+  pendingNames: string;
+  roomStatus: RoomDetail["status"] | null;
+}) {
+  if (!canUseRoomActions) {
+    return "방 정보를 불러오는 중입니다.";
+  }
+
+  if (isBusy) {
+    return "요청을 처리하는 중입니다. 잠시만 기다려 주세요.";
+  }
+
+  if (roomStatus !== "waiting") {
+    return "이미 게임이 시작되었거나 종료된 방입니다.";
+  }
+
+  if (!areAllParticipantsReady) {
+    return pendingNames
+      ? `아직 준비 안 된 참가자: ${pendingNames}`
+      : "참가자마다 이미지 1장을 업로드하면 시작할 수 있습니다.";
+  }
+
+  return isCurrentUserHost
+    ? "모든 참가자가 준비되었습니다. 시작하면 바로 그리기 화면으로 이동합니다."
+    : "모든 참가자가 준비되었습니다. 방장이 시작하면 자동으로 그리기 화면으로 이동합니다.";
 }
 
 function ImageList({ error, images, state }: { error: string | null; images: ImageMetadata[]; state: LoadState }) {
@@ -1297,6 +1357,7 @@ interface PlayViewProps {
   activeRound: ActiveRound | null;
   activeRoundImageUrl: string | null;
   roundEnded: RoundEndedPayload | null;
+  resultSaveStatus: ResultSaveStatus;
   gameFinishedAt: string | null;
   remainingSec: number | null;
   onChatDraftChange: (value: string) => void;
@@ -1326,6 +1387,7 @@ function PlayView(props: PlayViewProps) {
           gameFinishedAt={props.gameFinishedAt}
           remainingSec={props.remainingSec}
           roundEnded={props.roundEnded}
+          resultSaveStatus={props.resultSaveStatus}
         />
         <div className="card-heading">
           <MessageCircle size={20} />
@@ -1370,6 +1432,7 @@ function PlayView(props: PlayViewProps) {
 interface RoundStatusPanelProps {
   activeRound: ActiveRound | null;
   roundEnded: RoundEndedPayload | null;
+  resultSaveStatus: ResultSaveStatus;
   gameFinishedAt: string | null;
   remainingSec: number | null;
 }
@@ -1385,10 +1448,15 @@ function RoundStatusPanel(props: RoundStatusPanelProps) {
   }
 
   if (props.roundEnded) {
+    const statusText =
+      props.resultSaveStatus === "saved"
+        ? "결과 저장이 완료되었습니다. 갤러리로 이동합니다."
+        : "결과를 저장하는 중입니다. 잠시만 기다려 주세요.";
+
     return (
-      <section className="round-status ended">
+      <section className={`round-status ended ${props.resultSaveStatus}`}>
         <strong>Round {props.roundEnded.roundIndex + 1} 종료</strong>
-        <span>다음 라운드를 기다리는 중입니다.</span>
+        <span>{statusText}</span>
       </section>
     );
   }
@@ -1552,6 +1620,7 @@ interface GalleryViewProps {
   state: LoadState;
   error: string | null;
   onLoadMore: () => void;
+  onRefresh: () => void;
   onDownload: (resultId: string) => void;
 }
 
@@ -1572,6 +1641,10 @@ function GalleryView(props: GalleryViewProps) {
         <RoughDecoration className="rough-empty-frame" seed={47} variant="frame" />
         <Download size={28} />
         <h2>{props.error ?? "결과 목록을 불러오지 못했습니다."}</h2>
+        <button className="secondary-button" disabled={props.isBusy} onClick={props.onRefresh} type="button">
+          <RefreshCw size={18} />
+          다시 불러오기
+        </button>
       </section>
     );
   }
@@ -1582,6 +1655,10 @@ function GalleryView(props: GalleryViewProps) {
         <RoughDecoration className="rough-empty-frame" seed={53} variant="frame" />
         <Download size={28} />
         <h2>저장된 결과가 없습니다.</h2>
+        <button className="secondary-button" disabled={props.isBusy} onClick={props.onRefresh} type="button">
+          <RefreshCw size={18} />
+          결과 새로고침
+        </button>
       </section>
     );
   }

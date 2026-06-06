@@ -1126,3 +1126,32 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-07 PHASE-12.5-LOCAL-E2E-UX-QA-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 19 files, 90 tests.
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - `git status --short`: frontend/docs 변경 및 기존 미추적 `package-lock.json` 확인.
+- 자동 점검/수정:
+  - start-game 비활성 조건 안내를 host/guest/ready 상태별로 구분했다.
+  - 준비되지 않은 참가자 닉네임을 방 준비 화면에 표시한다.
+  - `round-ended` 이후 result save 상태를 `saving`으로 표시하고 `result-saved`/`game-finished` 이후 `saved`로 갱신한다.
+  - 결과 목록 empty/error 상태에서 사용자가 재시도할 수 있는 refresh 버튼을 추가했다.
+  - 좁은 화면에서 header profile, room code, 주요 버튼이 겹치지 않도록 responsive CSS를 보강했다.
+- 수동 QA 잔여 항목:
+  - [ ] Google 계정 2개 또는 브라우저 세션 2개로 로그인부터 결과 다운로드까지 실제 사용자 조작으로 확인한다.
+  - [ ] 장시간 drawing 시 stroke가 사라지지 않는지 확인한다.
+  - [ ] 모바일/좁은 화면에서 canvas와 주요 버튼이 겹치지 않는지 브라우저에서 확인한다.
+  - [ ] 다운로드한 result PNG가 캔버스 4:3 프레임 기준으로 열리는지 확인한다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

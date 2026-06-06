@@ -1511,3 +1511,23 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 PHASE-12.5-LOCAL-E2E-UX-QA-POLISH
+
+- Agent: `qa-frontend`
+- 목표: Phase 13 전 사용자 관점 전체 플레이 플로우 완성도 점검 및 치명 UX 마찰 최소 수정.
+- 수행 내용:
+  - `docs/DEVELOPMENT_PLAN_CHECKLIST.md`에 Phase 12.5 로컬 E2E UX QA polish 단계를 추가했다.
+  - 방 준비 화면의 시작 조건 안내를 강화했다.
+  - 준비 안 된 참가자 목록, host 시작 가능 상태, guest 대기 상태를 구분해 표시한다.
+  - `round-ended` 이후 결과 저장 중/저장 완료 상태를 play 화면 상태 패널과 전역 메시지에 반영했다.
+  - 갤러리 empty/error 상태에서 결과를 다시 불러올 수 있는 버튼을 추가했다.
+  - 모바일/좁은 화면에서 profile, room code, 주요 버튼이 줄바꿈되어 겹치지 않도록 CSS를 보강했다.
+- 의도적으로 제외:
+  - 새로운 게임 기능 추가.
+  - 백엔드 API/Socket 계약 변경.
+  - 실제 Google 계정 기반 2인 브라우저 조작 자동화.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

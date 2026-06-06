@@ -17,6 +17,7 @@
 | 10 | Timer/round end | 타이머 종료, 드로잉 차단, `round-ended` |
 | 11 | Result save | 합성 이미지 저장과 `results` 생성 |
 | 12 | Gallery/download | 결과 조회와 다운로드 |
+| 12.5 | Local E2E UX QA Polish | 2인 로컬 플레이 기준 ready/start/result/download UX 마찰 점검과 최소 수정 |
 | 13 | CI/CD and deploy | Render 및 프론트 배포 URL에서 동작 확인 |
 | 14 | Final QA | 수동 E2E 점검, `TEST_REPORT.md` 작성 |
 

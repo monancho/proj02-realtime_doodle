@@ -633,3 +633,14 @@
 - 실제 Google 로그인, 2계정/2브라우저 drawing sync, canvas 원본 이미지 표시 확인은 사용자 수동 QA 체크리스트로 분리했다.
 - Rough.js 실제 도입은 dependency/lockfile 변경이 필요하므로 이번 QA에서는 보류 판단을 유지했다.
 - 백엔드 기능 코드는 변경하지 않았다.
+
+### 2026-06-07 PHASE-12.5-LOCAL-E2E-UX-QA-POLISH
+
+- Phase 13 배포 전 로컬 E2E UX gate로 `docs/DEVELOPMENT_PLAN_CHECKLIST.md`에 Phase 12.5를 추가했다.
+- 방 준비 화면에서 start-game 비활성 이유를 더 명확히 표시하도록 개선했다.
+- 준비되지 않은 참가자가 있으면 해당 참가자 닉네임을 안내하고, 모든 참가자가 ready이면 host/guest별 다음 행동을 설명한다.
+- `round-ended` 수신 후 result save 진행 상태를 `saving`으로 표시하고, `result-saved`/`game-finished` 수신 시 `saved` 상태로 갱신한다.
+- 갤러리 결과 조회 실패 또는 결과 없음 상태에서 사용자가 직접 다시 불러올 수 있는 버튼을 추가했다.
+- 좁은 화면에서 header profile, room code, copy/start/preview/gallery 버튼이 겹치지 않도록 responsive style을 보강했다.
+- Drawing 장시간 입력 보존은 기존 10,000 stroke batch retention 정책을 유지하고 추가 기능 변경은 하지 않았다.
+- 서버 API/Socket 계약, Upload, Timer, Result save backend flow는 변경하지 않았다.
