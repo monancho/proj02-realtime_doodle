@@ -203,3 +203,14 @@
 - `leave-room`은 socket room leave만 수행하고 MongoDB participants를 제거하지 않는다.
 - invalid payload, missing auth context, room not found, access denied는 `socket-error` code로 응답한다.
 - Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-06-CHAT-PLAN
+
+- Chat 구현 전에 `send-message`/`receive-message` payload, message validation, 저장 범위를 문서화했다.
+- Chat 구현 코드는 추가하지 않았다.
+- `send-message` payload는 `{ roomCode: string; message: string }`로 정리했다.
+- `receive-message` payload는 `{ roomCode, type: "chat", firebaseUid, nickname, avatarUrl, message, createdAt }`로 정리했다.
+- message는 trim 후 빈 문자열 차단, 200자 이하로 제한한다.
+- Chat broadcast는 같은 Socket.IO room `room:${roomCode}` 사용자에게만 전달한다.
+- 영구 채팅 아카이브는 MVP 제외로 유지하고, 초기 Chat 구현의 최근 메시지는 roomCode별 in-memory 최근 50개 정책 초안으로 정리했다.
+- Drawing, Upload, Timer, Round feature는 구현하지 않았다.

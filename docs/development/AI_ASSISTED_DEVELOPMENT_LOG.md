@@ -498,3 +498,30 @@
 - 다음 추천 작업:
   - `PHASE-06-CHAT-PLAN`
   - Chat 구현 전에 `send-message`/`receive-message` payload, message validation, 최근 메시지 저장 여부를 문서화.
+
+### 2026-06-06 PHASE-06-CHAT-PLAN
+
+- Agent: `backend`
+- 목표: Chat 구현 전에 `send-message`/`receive-message` payload, message validation, 저장 범위 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Chat 구현 계획 추가.
+  - `send-message` payload 기준 정리.
+  - `receive-message` payload 기준 정리.
+  - message trim, 빈 문자열 차단, 200자 제한 기준 정리.
+  - 같은 Socket.IO room broadcast 경계 정리.
+  - 영구 채팅 아카이브 제외와 in-memory 최근 50개 저장 정책 초안 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Chat 구현 코드.
+  - Drawing, Upload, Timer, Round feature.
+  - MongoDB chat repository와 영구 채팅 아카이브.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-06-CHAT-IMPLEMENTATION`
+  - Socket.IO `send-message`/`receive-message`와 in-memory recent messages를 membership 검증 기반으로 구현.

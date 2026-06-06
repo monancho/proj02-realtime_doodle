@@ -226,8 +226,8 @@ Socket.IO 연결은 다음 auth payload를 사용한다.
 | `join-room` | client -> server | `{ roomCode }` | HTTP join 이후 repository membership 확인 및 socket room join |
 | `leave-room` | client -> server | `{ roomCode }` | socket room 퇴장. MVP에서는 영속 participants 제거 없음 |
 | `room-updated` | server -> client | `{ room }` | shared `RoomDetail` 기준 참가자 목록/방 상태 갱신 |
-| `send-message` | client -> server | `{ roomCode, message }` | 채팅 전송 |
-| `receive-message` | server -> client | `{ type, nickname, message, createdAt }` | 채팅 수신 |
+| `send-message` | client -> server | `{ roomCode, message }` | 같은 room participant의 채팅 전송 |
+| `receive-message` | server -> client | `{ roomCode, type, firebaseUid, nickname, avatarUrl, message, createdAt }` | 같은 Socket.IO room 사용자에게 채팅 수신 |
 | `system-message` | server -> client | `{ type, message, createdAt }` | 입장/퇴장/라운드 알림 |
 | `start-game` | client -> server | `{ roomCode }` | 방장 게임 시작 요청 |
 | `round-started` | server -> client | `{ roundId, imageId, durationSec, startedAt }` | 라운드 시작 |
@@ -763,3 +763,86 @@ Socket `join-room`은 room participant를 새로 생성하는 API가 아니다. 
 - `leave-room`은 MongoDB `rooms.participants`를 제거하지 않는다.
 - Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
 - Redis adapter, 다중 instance presence, 영속 presence store는 구현하지 않았다.
+
+## Chat 구현 계획
+
+이 섹션은 `PHASE-06-CHAT-PLAN`의 기준이다. 아직 Chat event handler 코드를 구현하지 않으며, 다음 Chat 구현 단계에서 이 경계를 따른다.
+
+### 목표 경계
+
+Chat은 Socket.IO room membership 검증 이후 동작한다. `send-message`는 socket auth context와 repository membership을 기준으로 검증하며, 같은 Socket.IO room `room:${roomCode}`에 참가한 사용자에게만 `receive-message`를 broadcast한다.
+
+영구 채팅 아카이브는 MVP 제외 범위로 유지한다. 다만 라운드 중 UX를 위해 최근 메시지 저장은 MVP 정책 초안으로 별도 저장소에 제한적으로 둘 수 있다.
+
+### Event Payload 기준
+
+```ts
+export interface SendMessagePayload {
+  roomCode: string;
+  message: string;
+}
+
+export interface ReceiveMessagePayload {
+  roomCode: string;
+  type: "chat";
+  firebaseUid: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  message: string;
+  createdAt: string;
+}
+```
+
+System message는 별도 event `system-message`로 유지한다. Chat MVP에서 `receive-message.type`은 `"chat"`만 사용한다.
+
+### `send-message` 검증 순서
+
+1. Socket auth middleware가 `socket.data.auth`에 shared `AuthContext`를 저장했는지 확인한다.
+2. payload가 `{ roomCode: string; message: string }` 형식인지 확인한다.
+3. `roomCode`는 trim + uppercase normalize한다.
+4. `message`는 trim한다.
+5. trim 결과가 빈 문자열이면 `socket-error` `{ code: "CHAT_MESSAGE_EMPTY", message }`를 보낸다.
+6. trim 결과가 200자를 초과하면 `socket-error` `{ code: "CHAT_MESSAGE_TOO_LONG", message }`를 보낸다.
+7. `RoomRepository.findRoomByCode(roomCode)`로 room을 조회한다.
+8. room이 없으면 `socket-error` `{ code: "ROOM_NOT_FOUND", message }`를 보낸다.
+9. socket auth user가 `room.participants`에 없으면 `socket-error` `{ code: "ROOM_ACCESS_DENIED", message }`를 보낸다.
+10. 검증 성공 시 `receive-message` payload를 생성해 Socket.IO room `room:${room.roomCode}`에 broadcast한다.
+
+### Broadcast 기준
+
+- server는 `io.to("room:${roomCode}")`에만 `receive-message`를 emit한다.
+- 다른 room에는 message를 전달하지 않는다.
+- client가 보낸 raw message가 아니라 trim된 message를 broadcast한다.
+- sender도 같은 Socket.IO room에 있으면 동일하게 `receive-message`를 받는다.
+- payload에는 token, credential, URI, private key 값을 포함하지 않는다.
+
+### 최근 메시지 저장 정책 초안
+
+MVP에서 영구 채팅 아카이브는 구현하지 않는다. 다음 Chat 구현 단계의 기본값은 in-memory recent messages로 제한한다.
+
+| 항목 | 정책 |
+|---|---|
+| 저장 위치 | server memory |
+| 저장 범위 | roomCode별 최근 50개 chat message |
+| 재시작 시 유지 | 유지하지 않음 |
+| MongoDB 저장 | 후속 단계에서 필요 시 검토 |
+| 조회 API | 이번 Chat MVP에서는 추가하지 않음 |
+
+`chatMessages` MongoDB collection은 명세에 남겨두되, MVP 초기 Chat 구현에서는 바로 쓰지 않는다. 영구 저장이 필요해지는 경우 별도 task에서 repository와 retention 정책을 정한다.
+
+### Chat Error Code 기준
+
+| Code | 의미 |
+|---|---|
+| `AUTH_TOKEN_MISSING` | socket auth context가 없음 |
+| `ROOM_NOT_FOUND` | `roomCode`에 해당하는 room 없음 |
+| `ROOM_ACCESS_DENIED` | room participant가 아닌 사용자가 메시지 전송 시도 |
+| `CHAT_PAYLOAD_INVALID` | payload가 `{ roomCode: string; message: string }` 형식이 아님 |
+| `CHAT_MESSAGE_EMPTY` | trim 후 빈 문자열 |
+| `CHAT_MESSAGE_TOO_LONG` | trim 후 200자 초과 |
+
+### 구현 제외 범위
+
+- Drawing, Upload, Timer, Round feature는 Chat 구현 범위가 아니다.
+- 영구 채팅 아카이브와 MongoDB chat repository는 이번 MVP Chat 구현 기본 범위가 아니다.
+- profanity filter, markdown rendering, mention, read receipt, typing indicator는 MVP 범위 밖이다.
