@@ -311,3 +311,33 @@
 - 다음 추천 작업:
   - `PHASE-04-ROOM-REPOSITORY-IMPLEMENTATION`
   - Room route 없이 repository interface, roomCode generator, InMemoryRoomRepository, MongoRoomRepository skeleton과 테스트를 구현.
+
+### 2026-06-06 PHASE-04-ROOM-REPOSITORY-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Room route 구현 전에 RoomRepository interface, roomCode generator, InMemoryRoomRepository, MongoRoomRepository skeleton과 repository 테스트 구현.
+- 수행 내용:
+  - `apps/server/src/rooms/repository.ts` 추가.
+  - `apps/server/src/rooms/errors.ts` 추가.
+  - `apps/server/src/rooms/room-code.ts` 추가.
+  - `apps/server/src/rooms/in-memory-room-repository.ts` 추가.
+  - `apps/server/src/rooms/mongodb-room-repository.ts` 추가.
+  - InMemoryRoomRepository 테스트와 MongoRoomRepository mock collection 테스트 추가.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Room create/join HTTP route.
+  - Drawing, Chat, Upload, Timer feature.
+  - 실제 MongoDB 연결 기반 repository 테스트.
+- 검증 결과:
+  - 최초 `corepack pnpm --filter @doodle/server typecheck`: 실패. `node_modules`가 없어 `tsc` 실행 불가.
+  - `corepack pnpm install`: 성공.
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 11 files, 29 tests.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+  - MongoRoomRepository는 실제 MongoDB 연결 없이 collection mock 기준으로 검증한 skeleton 수준이다.
+- 다음 추천 작업:
+  - `PHASE-04-ROOM-ROUTE-IMPLEMENTATION`
+  - 인증 middleware와 RoomRepository를 연결해 `POST /api/rooms`, `GET /api/rooms/:roomCode`, `POST /api/rooms/:roomCode/join` route와 route 테스트를 구현.

@@ -140,3 +140,17 @@
   - shared room contract 일치 확인
 - MongoDB join 처리는 `status: "waiting"`, participant 중복 방지, 최대 인원 제한을 조건부 update로 묶는 방향을 채택했다.
 - Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-04-ROOM-REPOSITORY-IMPLEMENTATION
+
+- Room create/join route 구현 전에 repository 계층을 추가했다.
+- `apps/server/src/rooms/repository.ts`에 `RoomRepository`, `CreateRoomInput`, `JoinRoomInput` 계약을 추가했다.
+- `apps/server/src/rooms/errors.ts`에 `RoomDomainError`, `RoomErrorCode`, HTTP status mapping helper를 추가했다.
+- `apps/server/src/rooms/room-code.ts`에 6자리 대문자/숫자 roomCode 생성기와 normalize helper를 추가했다.
+- `InMemoryRoomRepository`는 deterministic generator 주입, 최대 5회 roomCode 충돌 재시도, waiting room join, idempotent 중복 join, full/started 에러를 구현했다.
+- `MongoRoomRepository`는 실제 MongoDB 연결 없이 검증 가능한 skeleton으로 추가했다.
+  - `roomCode` unique index, `hostUid/createdAt`, `status/updatedAt` index helper를 제공한다.
+  - `insertOne()` duplicate key error는 최대 5회 재시도 후 `ROOM_CODE_COLLISION`으로 변환한다.
+  - `joinRoom()`은 사전 상태 확인 후 조건부 `findOneAndUpdate()` skeleton으로 구현했다.
+- MongoDB `_id`는 shared `RoomDetail` 응답에 노출하지 않는다.
+- Room create/join HTTP route, Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
