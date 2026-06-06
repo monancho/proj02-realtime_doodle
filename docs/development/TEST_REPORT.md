@@ -4,6 +4,30 @@
 
 ## 검증 결과
 
+### 2026-06-07 PHASE-STROKE-RETENTION-RESULT-COMPOSITE
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과
+  - `web typecheck`: 통과
+  - `server test`: 통과. 19 files, 90 tests
+  - `web build`: 통과. Vite production build 완료
+  - `git status --short`: 변경 파일 확인 완료. `package-lock.json`은 미추적 상태로 유지
+- 변경 확인:
+  - server/client stroke batch 보존 한도를 10,000개로 늘렸다.
+  - result composer는 `sharp` 기반으로 원본 이미지 위에 stroke SVG overlay를 합성한 PNG를 생성한다.
+  - recent stroke batch limit 테스트를 새 한도 기준으로 갱신했다.
+- 설치 경고:
+  - `sharp` 추가 중 기존 deprecated subdependency warning과 MongoDB peer dependency warning이 출력되었으나 설치/검증은 완료되었다.
+- 미실행:
+  - 실제 긴 drawing session과 다운로드 결과 이미지 육안 확인은 사용자 로컬 조작이 필요해 미실행.
+- 보안:
+  - `.env`, URI, private key, token 값은 열람/출력하지 않았다.
+
 ### 2026-06-07 PHASE-CANVAS-RESULT-STABILITY-FIX
 
 - 실행 명령: `corepack pnpm --filter @doodle/web typecheck`

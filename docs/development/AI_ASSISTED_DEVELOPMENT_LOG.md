@@ -8,6 +8,26 @@
 
 ## 작업 로그
 
+### 2026-06-07 PHASE-STROKE-RETENTION-RESULT-COMPOSITE
+
+- Agent: `frontend/backend`
+- 목표: move segment 전송 이후 stroke 200개 제한으로 선이 사라지는 문제를 완화하고, result PNG를 원본+stroke 합성으로 개선.
+- 수행 내용:
+  - `RecentStrokeBatchStore` 보존 한도를 200에서 10,000으로 상향했다.
+  - 프론트 canvas stroke render state 보존 한도를 10,000으로 상향했다.
+  - `sharp`를 `@doodle/server` dependency로 추가했다.
+  - result composer가 원본 이미지 위에 stroke SVG overlay를 composite한 PNG를 생성하도록 변경했다.
+  - recent stroke batch limit 테스트를 새 정책에 맞게 갱신했다.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/server typecheck`
+  - 실행: `corepack pnpm --filter @doodle/web typecheck`
+  - 실행: `corepack pnpm --filter @doodle/server test`
+  - 실행: `corepack pnpm --filter @doodle/web build`
+  - 결과: 모두 통과
+- 남은 확인:
+  - in-memory 보존 한도이므로 프로세스 재시작/다중 instance durability는 아직 없다.
+  - 매우 긴 drawing session은 추가 최적화나 durable stroke store phase에서 다룬다.
+
 ### 2026-06-07 PHASE-CANVAS-RESULT-STABILITY-FIX
 
 - Agent: `frontend/backend`

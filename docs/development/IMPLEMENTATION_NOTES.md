@@ -6,6 +6,14 @@
 
 ## 구현 메모
 
+### 2026-06-07 PHASE-STROKE-RETENTION-RESULT-COMPOSITE
+
+- move segment 방식으로 drawing을 실시간 전송하면서 기존 200개 recent stroke batch 제한이 너무 빨리 차 선이 사라지는 문제가 확인되었다.
+- 서버 `RecentStrokeBatchStore`와 프론트 canvas render state의 stroke batch 보존 한도를 10,000개로 늘렸다.
+- 결과 저장 composer에 `sharp`를 도입해 원본 이미지 위에 stroke SVG overlay를 합성한 실제 PNG를 생성하도록 변경했다.
+- stroke point는 normalized 좌표를 결과 이미지 width/height 기준 pixel 좌표로 변환하고, pen/eraser 도구를 SVG path로 overlay한다.
+- Redis/durable stroke store는 아직 구현하지 않았으며, MVP는 프로세스 내 in-memory 보존 한도 확대로 대응한다.
+
 ### 2026-06-07 PHASE-CANVAS-RESULT-STABILITY-FIX
 
 - 로컬 수동 점검 중 drawing 중 이전 선이 사라지고 사진이 깜빡이는 문제가 보고되었다.

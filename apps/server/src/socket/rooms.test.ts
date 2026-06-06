@@ -540,10 +540,10 @@ describe("room membership socket handlers", () => {
     );
   });
 
-  it("keeps only the latest 200 recent stroke batches per room and round", () => {
+  it("keeps only the latest 10000 recent stroke batches per room and round", () => {
     const recentStrokeBatches = new RecentStrokeBatchStore();
 
-    for (let index = 0; index < 201; index += 1) {
+    for (let index = 0; index < 10001; index += 1) {
       recentStrokeBatches.append({
         roomCode: "ABC123",
         roundId: "round-1",
@@ -558,9 +558,9 @@ describe("room membership socket handlers", () => {
 
     const strokeBatches = recentStrokeBatches.list("abc123", " round-1 ");
 
-    expect(strokeBatches).toHaveLength(200);
+    expect(strokeBatches).toHaveLength(10000);
     expect(strokeBatches[0]?.stroke.strokeId).toBe("stroke-1");
-    expect(strokeBatches[199]?.stroke.strokeId).toBe("stroke-200");
+    expect(strokeBatches[9999]?.stroke.strokeId).toBe("stroke-10000");
   });
 
   it("starts a game by selecting an unused image and emitting round-started", async () => {

@@ -117,6 +117,7 @@ const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]
 const maxImageSizeBytes = 10 * 1024 * 1024;
 const maxChatMessageLength = 200;
 const maxStrokePointsPerPayload = 128;
+const maxRenderedStrokeBatches = 10000;
 const initialResourceState: ResourceState = {
   room: "idle",
   participants: "idle",
@@ -221,7 +222,10 @@ export function App() {
     });
 
     socket.on("draw-stroke", (payload: DrawStrokePayload) => {
-      setDrawStrokes((currentStrokes) => [...currentStrokes.slice(-399), payload.stroke]);
+      setDrawStrokes((currentStrokes) => [
+        ...currentStrokes.slice(-(maxRenderedStrokeBatches - 1)),
+        payload.stroke
+      ]);
     });
 
     socket.on("round-started", (payload: RoundStartedPayload) => {

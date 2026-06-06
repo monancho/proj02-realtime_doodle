@@ -20,7 +20,7 @@ const SOCKET_ROOM_PREFIX = "room:";
 const MAX_CHAT_MESSAGE_LENGTH = 200;
 const MAX_RECENT_CHAT_MESSAGES = 50;
 const MAX_DRAW_POINTS_PER_PAYLOAD = 128;
-const MAX_RECENT_STROKE_BATCHES = 200;
+const MAX_RECENT_STROKE_BATCHES = 10000;
 const DRAW_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 export interface SocketErrorPayload {

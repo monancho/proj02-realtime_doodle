@@ -1,7 +1,5 @@
-import { createHash } from "node:crypto";
-import { deflateSync } from "node:zlib";
-
 import type { ImageMetadata } from "@doodle/shared";
+import sharp from "sharp";
 
 import type { DrawStrokeBroadcastPayload } from "../socket/rooms";
 
@@ -33,17 +31,18 @@ export class DeterministicPngResultImageComposer
       throw new Error("Source image buffer is empty.");
     }
 
-    const width = input.sourceImage.width ?? 1;
-    const height = input.sourceImage.height ?? 1;
-    const digest = createHash("sha256")
-      .update(input.sourceImageBuffer)
-      .update(JSON.stringify(input.strokes))
-      .digest("hex");
-
-    const color = digestToColor(digest);
+    const source = sharp(input.sourceImageBuffer, { failOn: "none" });
+    const metadata = await source.metadata();
+    const width = metadata.width ?? input.sourceImage.width ?? 1;
+    const height = metadata.height ?? input.sourceImage.height ?? 1;
+    const overlay = createStrokeOverlaySvg(width, height, input.strokes);
 
     return {
-      buffer: createSolidPng(width, height, color),
+      buffer: await sharp(input.sourceImageBuffer, { failOn: "none" })
+        .rotate()
+        .composite([{ input: Buffer.from(overlay), blend: "over" }])
+        .png()
+        .toBuffer(),
       mimeType: "image/png",
       width,
       height,
@@ -52,85 +51,40 @@ export class DeterministicPngResultImageComposer
   }
 }
 
-const PNG_SIGNATURE = Buffer.from([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
-]);
-
-function createSolidPng(
+function createStrokeOverlaySvg(
   width: number,
   height: number,
-  color: { red: number; green: number; blue: number; alpha: number }
-): Buffer {
-  const safeWidth = Math.max(1, Math.min(width, 4096));
-  const safeHeight = Math.max(1, Math.min(height, 4096));
-  const scanlineLength = 1 + safeWidth * 4;
-  const raw = Buffer.alloc(scanlineLength * safeHeight);
+  strokes: DrawStrokeBroadcastPayload[]
+): string {
+  const paths = strokes
+    .map(({ stroke }) => {
+      if (stroke.points.length === 0) {
+        return "";
+      }
 
-  for (let y = 0; y < safeHeight; y += 1) {
-    const rowOffset = y * scanlineLength;
-    raw[rowOffset] = 0;
+      const path = stroke.points
+        .map((point, index) => {
+          const command = index === 0 ? "M" : "L";
+          return `${command}${formatSvgNumber(point.x * width)} ${formatSvgNumber(point.y * height)}`;
+        })
+        .join(" ");
+      const strokeColor = stroke.tool === "eraser" ? "#fffefa" : stroke.color;
 
-    for (let x = 0; x < safeWidth; x += 1) {
-      const pixelOffset = rowOffset + 1 + x * 4;
-      raw[pixelOffset] = color.red;
-      raw[pixelOffset + 1] = color.green;
-      raw[pixelOffset + 2] = color.blue;
-      raw[pixelOffset + 3] = color.alpha;
-    }
-  }
+      return `<path d="${path}" fill="none" stroke="${escapeSvgAttribute(strokeColor)}" stroke-width="${formatSvgNumber(stroke.width)}" stroke-linecap="round" stroke-linejoin="round" />`;
+    })
+    .join("");
 
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(safeWidth, 0);
-  ihdr.writeUInt32BE(safeHeight, 4);
-  ihdr[8] = 8;
-  ihdr[9] = 6;
-  ihdr[10] = 0;
-  ihdr[11] = 0;
-  ihdr[12] = 0;
-
-  return Buffer.concat([
-    PNG_SIGNATURE,
-    createPngChunk("IHDR", ihdr),
-    createPngChunk("IDAT", deflateSync(raw)),
-    createPngChunk("IEND", Buffer.alloc(0))
-  ]);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${paths}</svg>`;
 }
 
-function createPngChunk(type: string, data: Buffer): Buffer {
-  const typeBuffer = Buffer.from(type, "ascii");
-  const length = Buffer.alloc(4);
-  const crc = Buffer.alloc(4);
-
-  length.writeUInt32BE(data.byteLength, 0);
-  crc.writeUInt32BE(crc32(Buffer.concat([typeBuffer, data])), 0);
-
-  return Buffer.concat([length, typeBuffer, data, crc]);
+function formatSvgNumber(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(3).replace(/\.?0+$/, "") : "0";
 }
 
-function crc32(buffer: Buffer): number {
-  let crc = 0xffffffff;
-
-  for (const byte of buffer) {
-    crc ^= byte;
-
-    for (let bit = 0; bit < 8; bit += 1) {
-      crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
-    }
-  }
-
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function digestToColor(digest: string): {
-  red: number;
-  green: number;
-  blue: number;
-  alpha: number;
-} {
-  return {
-    red: Number.parseInt(digest.slice(0, 2), 16),
-    green: Number.parseInt(digest.slice(2, 4), 16),
-    blue: Number.parseInt(digest.slice(4, 6), 16),
-    alpha: 255
-  };
+function escapeSvgAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
