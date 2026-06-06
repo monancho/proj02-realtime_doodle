@@ -2,6 +2,7 @@ import type { AuthErrorResponse } from "@doodle/shared";
 import express, { type Express, type RequestHandler } from "express";
 
 import { handleHealthRequest } from "./health";
+import { createHttpCorsMiddleware } from "./http-cors";
 import { InMemoryImageRepository } from "./images/in-memory-image-repository";
 import { InMemoryImageStorage } from "./images/in-memory-image-storage";
 import type { ImageRepository } from "./images/repository";
@@ -27,6 +28,7 @@ import { createUserRouter } from "./users/routes";
 
 export interface AppDependencies {
   authMiddleware?: RequestHandler;
+  corsOrigin?: string;
   imageRepository?: ImageRepository;
   imageStorage?: ImageStorage;
   resultRepository?: ResultRepository;
@@ -39,6 +41,9 @@ export function createApp(dependencies: AppDependencies = {}): Express {
   const app = express();
 
   app.disable("x-powered-by");
+  if (dependencies.corsOrigin) {
+    app.use(createHttpCorsMiddleware({ origin: dependencies.corsOrigin }));
+  }
   app.use(express.json());
 
   app.get("/health", (_request, response) => {

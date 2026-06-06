@@ -543,6 +543,38 @@
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 
+### 2026-06-06 LOCAL-BACKEND-FRONTEND-INTEGRATION-SMOKE
+
+- 실행 명령: `corepack pnpm --filter @doodle/server smoke:bootstrap`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `corepack pnpm --filter @doodle/server dev`
+- 실행 명령: `curl.exe -i -X OPTIONS http://localhost:4000/api/users/me -H "Origin: http://localhost:5173" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: authorization,content-type"`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server smoke:bootstrap`: 통과. 서버 bootstrap과 MongoDB 연결 smoke 성공.
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 18 files, 79 tests.
+  - `web typecheck`: 통과.
+  - `web build`: 통과.
+  - `server dev`: 최초 실행 시 workspace root `.env` 탐색 문제를 확인했고, env loader 보강 후 정상 실행.
+  - `GET http://localhost:4000/health`: 200 응답 확인.
+  - `GET http://localhost:5173`: 200 응답 확인.
+  - HTTP API CORS preflight: 204 응답과 허용 CORS header 확인.
+- 테스트 범위:
+  - 서버 bootstrap wiring, MongoDB users/rooms/images/results index 준비 경로 smoke.
+  - Express HTTP CORS middleware unit test.
+  - 로컬 웹 dev 서버와 서버 API origin 간 preflight 확인.
+  - 웹 production build 생성 확인.
+- 미실행:
+  - 실제 Firebase 로그인, 이미지 업로드, Socket multi-client E2E는 사용자 계정/브라우저 세션이 필요한 수동 QA 범위로 남겼다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
 ### 2026-06-06 FRONTEND-PHASE-CHECKLIST
 
 - 실행 명령: `corepack pnpm --filter @doodle/web typecheck`

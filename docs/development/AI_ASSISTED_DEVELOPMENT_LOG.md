@@ -1151,3 +1151,27 @@
 - 다음 추천 작업:
   - `PHASE-13-CICD-DEPLOY-PLAN`
   - Render/server 배포와 프론트 배포 URL 기준의 CI/CD, env, smoke 검증 범위를 문서화한다.
+
+### 2026-06-06 LOCAL-BACKEND-FRONTEND-INTEGRATION-SMOKE
+
+- Agent: `backend/frontend-integration`
+- 목표: Phase 13 진행 전 로컬 기준으로 백엔드와 프론트엔드가 함께 실행 가능한지 점검.
+- 수행 내용:
+  - 서버 bootstrap smoke, 서버 typecheck/test, 웹 typecheck/build를 실행했다.
+  - `@doodle/server dev`가 workspace root `.env`를 찾지 못하는 문제를 확인하고 상위 디렉터리 탐색 기반 env loader로 보강했다.
+  - Express HTTP API용 CORS middleware를 추가하고 `CLIENT_URL` 기준으로 preflight를 허용하도록 wiring했다.
+  - `GET /health`, 웹 dev server 200 응답, API preflight 204 응답을 로컬에서 확인했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server smoke:bootstrap`: 통과.
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과.
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 작업 변경과 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 실제 Firebase 로그인, 이미지 업로드, Socket multi-client E2E는 사용자 계정/브라우저 세션 기반 수동 QA 범위로 남겼다.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 추천 작업:
+  - `PHASE-13-CICD-DEPLOY-PLAN`
+  - 배포 전에 수동 로컬 E2E 체크리스트를 한 번 수행하면 더 안전하다.

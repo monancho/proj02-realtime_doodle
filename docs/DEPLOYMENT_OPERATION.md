@@ -78,3 +78,12 @@ AI는 실제 `MONGODB_URI` 값을 만들거나 문서/로그에 출력하지 않
 | 파일 업로드 | Render 로컬 디스크에 결과를 저장하지 않음 |
 | 이미지 용량 | 업로드 제한과 이미지 리사이징이 없으면 DB 용량이 빠르게 증가 |
 | 보안 | Firebase Admin private key와 MongoDB URI를 GitHub에 커밋하지 않음 |
+
+## 로컬 결합 점검 메모
+
+- 로컬 웹 dev 서버는 기본적으로 `http://localhost:5173`에서 실행한다.
+- 로컬 API 서버는 `.env`의 `PORT` 기준으로 실행하며, 현재 기본 점검 포트는 `http://localhost:4000`이다.
+- HTTP API CORS 허용 origin은 `CLIENT_URL`을 사용한다.
+- Socket.IO CORS 허용 origin은 `SOCKET_CORS_ORIGIN`을 사용한다.
+- Phase 13 배포 전에는 배포 URL 기준으로 `CLIENT_URL`과 `SOCKET_CORS_ORIGIN`을 각각 실제 프론트엔드 origin에 맞춰 등록해야 한다.
+- `.env`, MongoDB URI, Firebase private key, token 값은 문서와 로그에 남기지 않는다.

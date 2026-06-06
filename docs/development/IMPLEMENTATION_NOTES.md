@@ -470,3 +470,13 @@
 - Vite build chunk size warning은 Firebase/Socket client bundle 규모를 고려해 `chunkSizeWarningLimit`를 700KB로 조정해 정리했다.
 - 주요 수동 점검 흐름을 문서화했다: 로그인 -> 방 생성 -> 업로드 -> room 상태, 로그인 -> 방 입장 -> socket join -> chat, round -> drawing -> round end -> gallery.
 - backend 구현과 배포는 변경하지 않았다.
+
+### 2026-06-06 LOCAL-BACKEND-FRONTEND-INTEGRATION-SMOKE
+
+- Phase 13 배포 준비 전에 로컬 기준 백엔드와 프론트엔드 결합 상태를 점검했다.
+- `@doodle/server dev`가 workspace root `.env`를 찾지 못하는 문제를 발견해 `loadLocalEnvFile()`이 현재 작업 디렉터리의 상위 디렉터리까지 `.env`를 탐색하도록 보강했다.
+- 브라우저에서 `http://localhost:5173` 웹 앱이 `http://localhost:4000` HTTP API를 호출할 때 필요한 HTTP CORS middleware를 추가했다.
+- HTTP CORS origin은 기존 서버 env 계약의 `CLIENT_URL`을 사용하며, Socket.IO CORS는 기존 `SOCKET_CORS_ORIGIN` 계약을 유지한다.
+- `OPTIONS` preflight는 허용 origin에서 204와 `Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Methods`를 반환한다.
+- 서버 health, 웹 dev 서버 응답, HTTP API preflight를 로컬에서 확인했다.
+- 실제 Firebase 로그인, 업로드, Socket multi-client E2E는 사용자 계정/브라우저 세션이 필요한 수동 QA 범위로 남겼다.

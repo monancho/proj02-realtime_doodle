@@ -105,6 +105,7 @@ export async function createServerDependencies(
     tokenVerifier,
     app: createApp({
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
+      corsOrigin: env.CLIENT_URL,
       imageRepository,
       imageStorage,
       resultRepository,
