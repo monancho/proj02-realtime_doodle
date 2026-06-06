@@ -6,6 +6,15 @@
 
 ## 구현 메모
 
+### 2026-06-07 PHASE-LOCAL-PLAY-FLOW-FIXES
+
+- 사용자가 로컬 수동 점검 중 라운드 사진 미표시와 drawing 실시간 반영 지연을 보고했다.
+- 프론트 drawing은 기존 pointer up 시점 emit에서 pointer move 중 segment emit으로 변경했다.
+- sender 로컬 state에 즉시 stroke를 중복 추가하지 않고 server echo를 기준으로 반영해 같은 room 동기화 기준을 유지했다.
+- 이미지 다운로드 실패 시 `IMAGE_NOT_FOUND`, file type/size 관련 code가 일반 fallback으로 숨지 않도록 frontend error mapping을 보강했다.
+- 백엔드 개발 중 파일 수정이 바로 반영되도록 `@doodle/server`에 `nodemon` devDependency를 추가하고 `dev` script를 watch 재시작 방식으로 변경했다.
+- 원본 이미지 stream route, GridFS storage, Socket drawing validation 계약 자체는 변경하지 않았다.
+
 ### 2026-06-06 PHASE-FE-WIREFRAME-REFERENCE-POLISH
 
 - 사용자가 제공한 손그림 와이어프레임 이미지를 기준으로 프론트 UI를 기능 변경 없이 정리했다.

@@ -4,6 +4,30 @@
 
 ## 검증 결과
 
+### 2026-06-07 PHASE-LOCAL-PLAY-FLOW-FIXES
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과
+  - `server typecheck`: 통과
+  - `server test`: 통과. 18 files, 88 tests
+  - `web build`: 통과. Vite production build 완료
+  - `git status --short`: 변경 파일 확인 완료. `package-lock.json`은 미추적 상태로 유지
+- 변경 확인:
+  - drawing stroke는 pointer move 중 segment 단위로 socket emit하도록 변경했다.
+  - 이미지 다운로드 실패 code가 화면에서 더 구체적으로 보이도록 frontend error mapping을 보강했다.
+  - `@doodle/server dev`는 `nodemon` watch 기반으로 변경했다.
+- 설치 경고:
+  - `nodemon` 추가 중 일부 deprecated subdependency warning과 기존 MongoDB peer dependency warning이 출력되었으나 설치/검증은 완료되었다.
+- 미실행:
+  - 실제 Google 로그인, 라운드 이미지 다운로드, 두 브라우저 drawing 동기화 수동 확인은 사용자 로컬 조작이 필요해 미실행.
+- 보안:
+  - `.env`, URI, private key, token 값은 열람/출력하지 않았다.
+
 ### 2026-06-06 PHASE-FE-WIREFRAME-REFERENCE-POLISH
 
 - 실행 명령: `corepack pnpm --filter @doodle/web typecheck`

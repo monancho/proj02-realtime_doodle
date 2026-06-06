@@ -618,8 +618,6 @@ export function App() {
     const roundId = activeRound?.roundId ?? createClientRoundId(room);
     const batches = chunkStroke(stroke, maxStrokePointsPerPayload);
 
-    setDrawStrokes((currentStrokes) => [...currentStrokes.slice(-399), ...batches]);
-
     for (const batch of batches) {
       socketRef.current.emit("draw-stroke", {
         roomCode,
@@ -1418,6 +1416,7 @@ interface CanvasPanelProps {
 function CanvasPanel(props: CanvasPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const draftPointsRef = useRef<DrawPoint[]>([]);
+  const lastSentPointRef = useRef<DrawPoint | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1462,7 +1461,9 @@ function CanvasPanel(props: CanvasPanelProps) {
     }
 
     event.currentTarget.setPointerCapture(event.pointerId);
-    draftPointsRef.current = [createPoint(event)];
+    const point = createPoint(event);
+    draftPointsRef.current = [point];
+    lastSentPointRef.current = point;
   }
 
   function handlePointerMove(event: PointerEvent<HTMLCanvasElement>) {
@@ -1470,8 +1471,17 @@ function CanvasPanel(props: CanvasPanelProps) {
       return;
     }
 
-    draftPointsRef.current = [...draftPointsRef.current, createPoint(event)];
+    const point = createPoint(event);
+    const previousPoint = lastSentPointRef.current;
+
+    draftPointsRef.current = [...draftPointsRef.current, point];
     previewDraftStroke(event.currentTarget, draftPointsRef.current);
+
+    if (previousPoint) {
+      props.onDrawStroke(createDrawStroke([previousPoint, point]));
+    }
+
+    lastSentPointRef.current = point;
   }
 
   function handlePointerUp(event: PointerEvent<HTMLCanvasElement>) {
@@ -1479,20 +1489,21 @@ function CanvasPanel(props: CanvasPanelProps) {
       return;
     }
 
-    const points = [...draftPointsRef.current, createPoint(event)].slice(0, maxStrokePointsPerPayload * 2);
+    const point = createPoint(event);
+    const previousPoint = lastSentPointRef.current;
+    const points = [...draftPointsRef.current, point].slice(0, maxStrokePointsPerPayload * 2);
     draftPointsRef.current = [];
+    lastSentPointRef.current = null;
 
     if (points.length < 1) {
       return;
     }
 
-    props.onDrawStroke({
-      strokeId: createStrokeId(),
-      tool: "pen",
-      color: "#222222",
-      width: 4,
-      points
-    });
+    if (previousPoint) {
+      props.onDrawStroke(createDrawStroke([previousPoint, point]));
+    } else {
+      props.onDrawStroke(createDrawStroke(points));
+    }
   }
 
   return (
@@ -1511,6 +1522,7 @@ function CanvasPanel(props: CanvasPanelProps) {
         onPointerUp={handlePointerUp}
         onPointerCancel={() => {
           draftPointsRef.current = [];
+          lastSentPointRef.current = null;
         }}
       />
       {props.disabled ? <p className="canvas-lock">Socket 연결과 playing 상태가 준비되면 그림을 그릴 수 있습니다.</p> : null}
@@ -1633,6 +1645,10 @@ function formatApiError(error: ApiClientError): string {
     ROOM_ACCESS_DENIED: "이 방에 접근할 권한이 없습니다.",
     ROOM_PAYLOAD_INVALID: "방 요청 형식이 올바르지 않습니다.",
     IMAGE_UPLOAD_LIMIT_EXCEEDED: "이미 이 방에 이미지를 업로드했습니다.",
+    IMAGE_NOT_FOUND: "라운드 이미지를 찾을 수 없습니다. 이미지를 다시 업로드하거나 방을 새로고침해 주세요.",
+    IMAGE_FILE_EMPTY: "빈 파일은 업로드할 수 없습니다.",
+    IMAGE_FILE_TOO_LARGE: "이미지는 10MB 이하만 업로드할 수 있습니다.",
+    IMAGE_FILE_TYPE_UNSUPPORTED: "JPEG, PNG, WebP 이미지만 업로드할 수 있습니다.",
     IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
     RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",
     RESULT_FILE_NOT_FOUND: "결과 이미지 파일을 찾을 수 없습니다.",
@@ -1724,6 +1740,16 @@ function previewDraftStroke(canvas: HTMLCanvasElement, points: DrawPoint[]) {
     canvas.width,
     canvas.height
   );
+}
+
+function createDrawStroke(points: DrawPoint[]): DrawStroke {
+  return {
+    strokeId: createStrokeId(),
+    tool: "pen",
+    color: "#222222",
+    width: 4,
+    points
+  };
 }
 
 function chunkStroke(stroke: DrawStroke, chunkSize: number): DrawStroke[] {

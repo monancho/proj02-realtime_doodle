@@ -8,6 +8,26 @@
 
 ## 작업 로그
 
+### 2026-06-07 PHASE-LOCAL-PLAY-FLOW-FIXES
+
+- Agent: `frontend/backend-devex`
+- 목표: 로컬 수동 점검 중 발견된 라운드 이미지 미표시 진단성 개선, drawing 실시간 반영, backend watch dev 개선.
+- 수행 내용:
+  - Canvas pointer move 중 두 점 segment를 `draw-stroke`로 emit하도록 변경했다.
+  - server echo 기반으로 stroke state를 반영해 같은 Socket.IO room 동기화 경계를 유지했다.
+  - `IMAGE_NOT_FOUND`, `IMAGE_FILE_*` 계열 error code frontend 표시를 보강했다.
+  - `@doodle/server`에 `nodemon`을 추가하고 `dev` script를 파일 변경 시 자동 재시작하도록 변경했다.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/web typecheck`
+  - 실행: `corepack pnpm --filter @doodle/server typecheck`
+  - 실행: `corepack pnpm --filter @doodle/server test`
+  - 실행: `corepack pnpm --filter @doodle/web build`
+  - 결과: 모두 통과
+- 남은 확인:
+  - 라운드 이미지 미표시는 실제 로컬 다운로드 응답 code 확인이 필요하다.
+  - 변경 후 화면에 `IMAGE_NOT_FOUND` 등 구체 메시지가 보이면 해당 code 기준으로 backend storage/metadata를 추가 점검한다.
+  - 두 브라우저 drawing segment 실시간 동기화는 사용자의 로컬 수동 확인이 필요하다.
+
 ### 2026-06-06 PHASE-FE-WIREFRAME-REFERENCE-POLISH
 
 - Agent: `frontend`
