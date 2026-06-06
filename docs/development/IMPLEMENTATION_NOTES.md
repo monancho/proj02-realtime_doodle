@@ -403,3 +403,11 @@
 - REST API client는 방 생성, 방 조회, 방 입장, 이미지 목록/업로드, 결과 목록, 결과 다운로드를 서버 계약에 맞춰 호출한다.
 - 결과 다운로드는 인증 헤더가 필요하므로 단순 링크가 아니라 fetch 후 Blob 다운로드로 구현했다.
 - Socket.IO client, 실시간 canvas drawing, 채팅 UI 연결, Firebase Client SDK 로그인은 다음 프론트 slice로 남겼다.
+
+### 2026-06-06 FRONTEND-PHASE-CHECKLIST
+
+- `docs/DEVELOPMENT_PLAN_CHECKLIST.md`에 프론트 전용 `PHASE-FE-*` 작업 흐름을 추가했다.
+- 기존 MVP Phase 0-14는 전체/백엔드 중심 구현 순서로 유지하고, 프론트 추천 프롬프트는 별도 FE 단계로 참조하도록 정리했다.
+- FE-01부터 FE-08까지 Web scaffold, Firebase auth client, lobby/room, upload/gallery, socket/chat, canvas drawing, round timer UX, frontend QA/polish 단계로 나누었다.
+- 현재 완료된 FE-01 Web scaffold 상태를 명시했다.
+- 프론트 작업 원칙으로 서버 API/Socket 계약 사용, `VITE_` 환경변수, secret 출력 금지, 백엔드 구현 분리 기준을 적었다.

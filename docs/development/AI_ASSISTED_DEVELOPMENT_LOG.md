@@ -972,3 +972,25 @@
 - 다음 추천 작업:
   - `PHASE-FE-02-FIREBASE-AUTH-CLIENT`
   - Firebase Client SDK 로그인과 ID Token 발급/갱신, `/api/users/me` 연동을 프론트에 구현한다.
+
+### 2026-06-06 FRONTEND-PHASE-CHECKLIST
+
+- Agent: `docs-maintainer`
+- 목표: 프론트 작업을 기존 MVP/backend Phase와 분리해 공식 체크리스트로 문서화.
+- 수행 내용:
+  - `docs/DEVELOPMENT_PLAN_CHECKLIST.md`에 `Frontend 개발 단계` 섹션 추가.
+  - `PHASE-FE-*` 흐름을 FE-01부터 FE-08까지 정리.
+  - FE-01 Web scaffold 완료 상태를 명시.
+  - 프론트 작업 원칙과 secret 처리 기준을 추가.
+- 의도적으로 제외:
+  - 앱 기능 코드 변경.
+  - Firebase Client SDK 로그인 구현.
+  - Socket.IO client 구현.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `git status --short`: 문서 변경과 기존 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 추천 작업:
+  - `PHASE-FE-02-FIREBASE-AUTH-CLIENT`
+  - Firebase Client SDK 로그인과 ID Token 발급/갱신, `/api/users/me` 연동을 프론트에 구현한다.

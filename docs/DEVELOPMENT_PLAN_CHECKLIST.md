@@ -30,3 +30,30 @@
 | P3 | Undo/Redo, 투표, 랭킹, 모바일 최적화, 이미지 리사이징 |
 
 P3 항목은 MVP 제외 또는 후순위이며 명시 요청 없이 구현하지 않는다.
+
+## Frontend 개발 단계
+
+백엔드 MVP Phase는 서버 기능의 구현 순서를 기준으로 유지한다. 프론트엔드는 백엔드 계약을 소비하는 별도 작업 흐름으로 관리하며, 추천 프롬프트는 아래 `PHASE-FE-*` 번호를 우선 참조한다.
+
+| Phase | 작업 | 완료 기준 |
+|---:|---|---|
+| FE-01 | Web scaffold | Vite, React, TypeScript 앱 entry, 기본 layout, REST API client shell |
+| FE-02 | Firebase Auth Client | Firebase Client SDK 로그인, ID Token 발급/갱신, `POST /api/users/me` 연동 |
+| FE-03 | Lobby and Room Flow | 방 생성/입장, room detail 조회, 참가자/업로드 상태 표시 |
+| FE-04 | Image Upload and Gallery | 이미지 업로드 UI, image metadata 목록, result gallery/download UI |
+| FE-05 | Socket Room and Chat | Socket auth, `join-room`/`leave-room`, `room-updated`, chat 송수신 UI |
+| FE-06 | Canvas Drawing | round image 표시, drawing tool, `draw-stroke` 송수신, local canvas 반영 |
+| FE-07 | Round Timer UX | `round-started`, timer 표시, `round-ended`, `game-finished` 상태 전환 |
+| FE-08 | Frontend QA and Polish | 주요 user flow 수동 점검, responsive layout, 접근성/오류 상태 정리 |
+
+현재 완료된 프론트 작업:
+
+- `FE-01 Web scaffold`: 완료. `apps/web`은 Vite + React + TypeScript 기반 앱으로 전환되었고 REST API client shell을 포함한다.
+
+프론트 작업 원칙:
+
+- Firebase Admin SDK, MongoDB, GridFS에 직접 접근하지 않고 서버 API와 Socket 계약만 사용한다.
+- `.env`, Firebase private key, token, MongoDB URI를 출력하거나 커밋하지 않는다.
+- 브라우저에 노출되는 환경변수는 `VITE_` prefix만 사용한다.
+- Socket event 이름과 payload는 `docs/DATABASE_API_SOCKET.md` 및 `packages/shared` 계약을 따른다.
+- 백엔드 기능을 새로 구현하지 않고 필요한 경우 별도 backend task로 분리한다.

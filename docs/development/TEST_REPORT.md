@@ -542,3 +542,19 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-06 FRONTEND-PHASE-CHECKLIST
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `git status --short`: 프론트 Phase 체크리스트 문서/로그 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - 문서 변경 후 기존 web TypeScript compile 영향 없음 확인.
+- 미실행:
+  - web build: 이번 작업은 문서 체계 정리이며 직전 FE-01 작업에서 build 통과를 확인했다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
