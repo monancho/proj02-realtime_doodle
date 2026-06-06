@@ -2,8 +2,9 @@ import { initializeApp, type FirebaseApp } from "firebase/app";
 import {
   browserLocalPersistence,
   getAuth,
+  GoogleAuthProvider,
   setPersistence,
-  signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type Auth,
   type User
@@ -11,7 +12,7 @@ import {
 
 export interface FirebaseClient {
   auth: Auth;
-  signInWithEmail(input: { email: string; password: string }): Promise<User>;
+  signInWithGoogle(): Promise<User>;
   signOutUser(): Promise<void>;
 }
 
@@ -45,9 +46,11 @@ export function createFirebaseClient(): FirebaseClient {
 
   firebaseClient = {
     auth,
-    async signInWithEmail(input) {
+    async signInWithGoogle() {
       await setPersistence(auth, browserLocalPersistence);
-      const credential = await signInWithEmailAndPassword(auth, input.email.trim(), input.password);
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const credential = await signInWithPopup(auth, provider);
       return credential.user;
     },
     async signOutUser() {

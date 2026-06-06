@@ -1002,7 +1002,7 @@
 - 수행 내용:
   - `@doodle/web`에 `firebase` 의존성 추가.
   - `src/auth/firebase.ts`를 추가해 Firebase client app/auth 초기화를 `VITE_` 환경변수 기반으로 분리.
-  - 이메일/비밀번호 로그인 UI와 로그인 상태 표시, 토큰 갱신, 로그아웃 동작을 추가.
+  - 초기 구현에서는 이메일/비밀번호 로그인 UI와 로그인 상태 표시, 토큰 갱신, 로그아웃 동작을 추가.
   - 로그인 성공 시 ID Token을 발급받고 `ApiClient.upsertMe()`로 `/api/users/me`를 호출한다.
   - 로그아웃 시 token, profile, room/images/results 상태를 정리한다.
   - 개발용 수동 token fallback은 접을 수 있는 패널로 유지했다.
@@ -1199,3 +1199,24 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 다음 추천 작업:
   - 수동 체크리스트를 실제 브라우저 2세션으로 확인한 뒤 `PHASE-13-CICD-DEPLOY-PLAN`을 진행한다.
+
+### 2026-06-06 FRONTEND-GOOGLE-AUTH-UX-CORRECTION
+
+- Agent: `frontend`
+- 목표: 실제 제품 방향에 맞게 이메일/비밀번호 로그인 대신 Google 로그인 중심 UX로 정리.
+- 수행 내용:
+  - Firebase client 로그인 방식을 `GoogleAuthProvider` + popup 로그인으로 변경했다.
+  - 이메일/비밀번호 입력 폼을 제거했다.
+  - 로그인 후 닉네임을 별도로 수정/저장할 수 있는 프로필 form을 추가했다.
+  - 개발용 token fallback은 일반 흐름이 아니라 숨겨진 개발용 보조 수단으로 유지했다.
+  - 방이 없는 상태에서 `대기실/플레이/갤러리` 버튼이 먼저 보이지 않도록 정리하고, 방 선택 후 `방 준비/그리기/결과` 이동만 보여주도록 변경했다.
+  - 로컬 기본 API URL fallback을 서버 기본 포트인 `http://localhost:4000`으로 맞췄다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 의도적으로 제외:
+  - 실제 Google 로그인 popup 수동 조작.
+  - 백엔드 API/Socket 기능 변경.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

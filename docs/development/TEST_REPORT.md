@@ -563,7 +563,8 @@
   - API health 확인: `http://localhost:4000/health`
   - HTTP API CORS는 `CLIENT_URL`, Socket.IO CORS는 `SOCKET_CORS_ORIGIN` 기준으로 확인한다.
 - 수동 E2E 체크리스트:
-  - [ ] Firebase 이메일/비밀번호 로그인 성공 후 `/api/users/me` upsert가 성공하는지 확인한다.
+  - [ ] Google 로그인 성공 후 `/api/users/me` upsert가 성공하는지 확인한다.
+  - [ ] 로그인 후 닉네임을 수정/저장하고 participants/chat 표시 이름에 반영되는지 확인한다.
   - [ ] 로그아웃 시 token, 현재 room, socket 상태가 정리되는지 확인한다.
   - [ ] 사용자 A가 방을 생성하고 room code, host, participants가 표시되는지 확인한다.
   - [ ] 사용자 B가 같은 room code로 입장하고 양쪽 화면에서 participants가 갱신되는지 확인한다.
@@ -575,13 +576,30 @@
   - [ ] round 종료 후 drawing이 차단되고 `round-ended`, 다음 round 또는 `game-finished` 흐름이 표시되는지 확인한다.
   - [ ] result 저장 후 gallery 목록과 result download가 동작하는지 확인한다.
 - 사용자 조작 필요:
-  - 실제 Firebase 계정 2개 또는 브라우저 세션 2개가 필요하다.
+  - Google 로그인이 가능한 실제 Firebase 계정 2개 또는 브라우저 세션 2개가 필요하다.
   - 테스트 이미지는 secret이 아닌 일반 샘플 이미지만 사용한다.
   - 브라우저 개발자 도구 Network 탭에서 Authorization header 값이나 token 값을 문서/채팅에 복사하지 않는다.
 - Phase 13 전 리스크:
   - 위 수동 체크리스트는 이번 자동 검증에서 실제 조작까지 완료하지 못했다.
   - Firebase Auth 설정, MongoDB Atlas 네트워크 접근, 로컬 `.env` 값이 사용자 환경에 의존한다.
   - Socket multi-client, 이미지 업로드/GridFS, result download는 배포 전 최소 1회 수동 확인이 필요하다.
+
+### 2026-06-06 FRONTEND-GOOGLE-AUTH-UX-CORRECTION
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과.
+- 테스트 범위:
+  - Firebase `GoogleAuthProvider` popup 로그인 compile 확인.
+  - 로그인 후 닉네임 저장 form compile 확인.
+  - 방 선택 후에만 방 화면 이동 tab이 표시되는 흐름 compile 확인.
+  - 로컬 기본 API URL fallback `http://localhost:4000` 반영 확인.
+- 미실행:
+  - 실제 Google popup 로그인은 사용자 브라우저 세션과 Firebase Console의 Google provider 활성화가 필요해 수동 QA 범위로 남겼다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - secret 출력 여부:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:

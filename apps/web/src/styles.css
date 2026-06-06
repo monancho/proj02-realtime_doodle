@@ -103,6 +103,17 @@ h2 {
   gap: 12px;
 }
 
+.google-button {
+  width: 100%;
+}
+
+.nickname-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
 .auth-summary {
   display: grid;
   gap: 14px;
@@ -644,9 +655,14 @@ button:disabled {
   }
 
   .gallery-toolbar,
-  .auth-actions {
+  .auth-actions,
+  .nickname-form {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .nickname-form {
+    grid-template-columns: 1fr;
   }
 
   .room-code {

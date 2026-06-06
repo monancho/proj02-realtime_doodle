@@ -9,6 +9,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Save,
   Upload,
   Users
 } from "lucide-react";
@@ -93,7 +94,7 @@ interface ActiveRound extends RoundStartedPayload {
   endedAt: string | null;
 }
 
-const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 const defaultSocketUrl = import.meta.env.VITE_SOCKET_URL ?? defaultApiBaseUrl;
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxImageSizeBytes = 10 * 1024 * 1024;
@@ -118,8 +119,6 @@ export function App() {
   const [firebaseToken, setFirebaseToken] = useState("");
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [roomTitle, setRoomTitle] = useState("우리 낙서방");
   const [joinCode, setJoinCode] = useState("");
@@ -128,7 +127,7 @@ export function App() {
   const [results, setResults] = useState<ResultMetadata[]>([]);
   const [nextResultCursor, setNextResultCursor] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("lobby");
-  const [message, setMessage] = useState("Firebase 로그인 또는 개발용 토큰으로 시작하세요.");
+  const [message, setMessage] = useState("Google로 로그인한 뒤 방을 만들거나 입장하세요.");
   const [isBusy, setIsBusy] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [socketStatus, setSocketStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
@@ -268,18 +267,17 @@ export function App() {
     }
   }
 
-  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSignInWithGoogle() {
     await runAction(async () => {
       const firebase = createFirebaseClient();
-      const signedInUser = await firebase.signInWithEmail({ email, password });
+      const signedInUser = await firebase.signInWithGoogle();
       const idToken = await signedInUser.getIdToken();
       const authenticatedApi = createApiClient({
         baseUrl: apiBaseUrl,
         getToken: () => idToken
       });
       const upsertedProfile = await authenticatedApi.upsertMe({
-        nickname: nickname.trim() || signedInUser.displayName || null,
+        nickname: signedInUser.displayName || null,
         avatarUrl: signedInUser.photoURL || null
       });
 
@@ -287,7 +285,27 @@ export function App() {
       setFirebaseToken(idToken);
       setManualToken("");
       setProfile(upsertedProfile);
+      setNickname(upsertedProfile.nickname ?? signedInUser.displayName ?? "");
       setMessage(`${upsertedProfile.nickname ?? upsertedProfile.email ?? "사용자"}님, 로그인되었습니다.`);
+    });
+  }
+
+  async function handleSaveNickname(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!authUser || !firebaseToken) {
+      setMessage("Google 로그인 후 닉네임을 설정할 수 있습니다.");
+      return;
+    }
+
+    await runAction(async () => {
+      const updatedProfile = await api.upsertMe({
+        nickname: nickname.trim() || authUser.displayName || null,
+        avatarUrl: authUser.photoURL || null
+      });
+
+      setProfile(updatedProfile);
+      setMessage(`${updatedProfile.nickname ?? "사용자"} 닉네임을 저장했습니다.`);
     });
   }
 
@@ -314,6 +332,7 @@ export function App() {
       setProfile(null);
       setFirebaseToken("");
       setManualToken("");
+      setNickname("");
       resetRoomState();
       setViewMode("lobby");
       setMessage("로그아웃했습니다. 방 상태와 토큰을 정리했습니다.");
@@ -324,7 +343,7 @@ export function App() {
     event.preventDefault();
 
     if (!isAuthenticated) {
-      setMessage("로그인하거나 개발용 토큰을 입력한 뒤 방을 만들 수 있습니다.");
+      setMessage("Google 로그인 후 방을 만들 수 있습니다.");
       return;
     }
 
@@ -343,7 +362,7 @@ export function App() {
     event.preventDefault();
 
     if (!isAuthenticated) {
-      setMessage("로그인하거나 개발용 토큰을 입력한 뒤 방에 입장할 수 있습니다.");
+      setMessage("Google 로그인 후 방에 입장할 수 있습니다.");
       return;
     }
 
@@ -601,14 +620,11 @@ export function App() {
         <AuthPanel
           apiBaseUrl={apiBaseUrl}
           authUser={authUser}
-          email={email}
           isBusy={isBusy}
           manualToken={manualToken}
           nickname={nickname}
-          password={password}
           profile={profile}
           onApiBaseUrlChange={setApiBaseUrl}
-          onEmailChange={setEmail}
           onManualTokenChange={(value) => {
             setManualToken(value);
             if (value.trim()) {
@@ -618,27 +634,29 @@ export function App() {
             }
           }}
           onNicknameChange={setNickname}
-          onPasswordChange={setPassword}
           onRefreshToken={() => void handleRefreshToken()}
-          onSignIn={handleSignIn}
+          onSaveNickname={handleSaveNickname}
+          onSignInWithGoogle={() => void handleSignInWithGoogle()}
           onSignOut={() => void handleSignOut()}
         />
       </section>
 
-      <nav className="mode-tabs" aria-label="화면 전환">
-        <TabButton isActive={viewMode === "lobby"} onClick={() => setViewMode("lobby")} icon={<LogIn size={18} />}>
-          로비
-        </TabButton>
-        <TabButton isActive={viewMode === "room"} onClick={() => setViewMode("room")} icon={<Users size={18} />}>
-          대기실
-        </TabButton>
-        <TabButton isActive={viewMode === "play"} onClick={() => setViewMode("play")} icon={<Palette size={18} />}>
-          플레이
-        </TabButton>
-        <TabButton isActive={viewMode === "gallery"} onClick={() => void handleLoadResults()} icon={<Download size={18} />}>
-          갤러리
-        </TabButton>
-      </nav>
+      {room ? (
+        <nav className="mode-tabs" aria-label="방 화면 전환">
+          <TabButton isActive={viewMode === "lobby"} onClick={() => setViewMode("lobby")} icon={<LogIn size={18} />}>
+            로비
+          </TabButton>
+          <TabButton isActive={viewMode === "room"} onClick={() => setViewMode("room")} icon={<Users size={18} />}>
+            방 준비
+          </TabButton>
+          <TabButton isActive={viewMode === "play"} onClick={() => setViewMode("play")} icon={<Palette size={18} />}>
+            그리기
+          </TabButton>
+          <TabButton isActive={viewMode === "gallery"} onClick={() => void handleLoadResults()} icon={<Download size={18} />}>
+            결과
+          </TabButton>
+        </nav>
+      ) : null}
 
       <section className="status-strip" aria-live="polite">
         <span>{message}</span>
@@ -711,19 +729,16 @@ export function App() {
 interface AuthPanelProps {
   apiBaseUrl: string;
   authUser: User | null;
-  email: string;
   isBusy: boolean;
   manualToken: string;
   nickname: string;
-  password: string;
   profile: UserProfile | null;
   onApiBaseUrlChange: (value: string) => void;
-  onEmailChange: (value: string) => void;
   onManualTokenChange: (value: string) => void;
   onNicknameChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
   onRefreshToken: () => void;
-  onSignIn: (event: FormEvent<HTMLFormElement>) => void;
+  onSaveNickname: (event: FormEvent<HTMLFormElement>) => void;
+  onSignInWithGoogle: () => void;
   onSignOut: () => void;
 }
 
@@ -741,6 +756,16 @@ function AuthPanel(props: AuthPanelProps) {
             <strong>{props.profile?.nickname ?? props.authUser.email ?? "Firebase 사용자"}</strong>
             <span>{props.authUser.email}</span>
           </div>
+          <form className="nickname-form" onSubmit={props.onSaveNickname}>
+            <label>
+              닉네임
+              <input value={props.nickname} onChange={(event) => props.onNicknameChange(event.target.value)} />
+            </label>
+            <button className="primary-button" disabled={props.isBusy} type="submit">
+              <Save size={18} />
+              저장
+            </button>
+          </form>
           <div className="auth-actions">
             <button className="icon-button" disabled={props.isBusy} onClick={props.onRefreshToken} type="button">
               <KeyRound size={18} />
@@ -753,34 +778,10 @@ function AuthPanel(props: AuthPanelProps) {
           </div>
         </section>
       ) : (
-        <form className="auth-form" onSubmit={props.onSignIn}>
-          <label>
-            이메일
-            <input
-              autoComplete="email"
-              type="email"
-              value={props.email}
-              onChange={(event) => props.onEmailChange(event.target.value)}
-            />
-          </label>
-          <label>
-            비밀번호
-            <input
-              autoComplete="current-password"
-              type="password"
-              value={props.password}
-              onChange={(event) => props.onPasswordChange(event.target.value)}
-            />
-          </label>
-          <label>
-            닉네임
-            <input value={props.nickname} onChange={(event) => props.onNicknameChange(event.target.value)} />
-          </label>
-          <button className="primary-button" disabled={props.isBusy} type="submit">
-            <LogIn size={18} />
-            Firebase 로그인
-          </button>
-        </form>
+        <button className="primary-button google-button" disabled={props.isBusy} onClick={props.onSignInWithGoogle} type="button">
+          <LogIn size={18} />
+          Google로 계속하기
+        </button>
       )}
 
       <details className="dev-token-panel">

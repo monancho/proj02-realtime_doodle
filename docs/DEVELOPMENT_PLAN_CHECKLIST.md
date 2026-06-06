@@ -6,7 +6,7 @@
 |---:|---|---|
 | 0 | 프로젝트 초기 세팅 | pnpm workspace, web/server/shared, env example, CI 초안 |
 | 1 | Health check와 env validation | `/health`, 필수 환경변수 검증 |
-| 2 | Firebase Auth | 회원가입/로그인/로그아웃, API token 전달 |
+| 2 | Firebase Auth | Google 로그인/로그아웃, API token 전달 |
 | 3 | User upsert | `POST /api/users/me`, Firebase uid 기반 사용자 저장 |
 | 4 | Room create/join | roomCode 기반 방 생성/조회/입장 |
 | 5 | Socket auth/participant | Socket 인증, `join-room`, `room-updated` |

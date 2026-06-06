@@ -414,13 +414,23 @@
 
 ### 2026-06-06 PHASE-FE-02-FIREBASE-AUTH-CLIENT
 
-- `apps/web`에 Firebase Client SDK를 추가하고 이메일/비밀번호 로그인 UI를 구현했다.
+- `apps/web`에 Firebase Client SDK를 추가하고 초기에는 이메일/비밀번호 로그인 UI를 구현했다.
 - Firebase web config는 `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`만 읽도록 분리했다.
 - Firebase 로그인 성공 후 ID Token을 발급받아 API client에 연결하고 `POST /api/users/me`를 호출해 user upsert를 수행한다.
 - 로그인 사용자는 토큰 갱신 버튼으로 `getIdToken(true)`를 호출할 수 있다.
 - 로그아웃 시 Firebase session, token, user profile, 현재 room/images/results 상태를 정리한다.
 - 수동 Firebase ID Token 입력은 `details` 기반 개발용 fallback으로 유지했다.
 - Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.
+
+### 2026-06-06 FRONTEND-GOOGLE-AUTH-UX-CORRECTION
+
+- 프론트 인증 UX를 제품 방향에 맞춰 Google 로그인 중심으로 정리했다.
+- 이메일/비밀번호 로그인 폼은 제거하고 Firebase `GoogleAuthProvider` popup 로그인만 사용한다.
+- 로그인 성공 후 Google displayName/photoURL로 `/api/users/me` upsert를 수행한다.
+- 닉네임은 로그인 후 프로필 카드에서 수정/저장할 수 있도록 분리했다.
+- 개발용 token fallback은 숨겨진 `details` 영역으로 유지하되 일반 수동 QA 흐름에서는 사용하지 않는다.
+- 로컬 기본 API URL fallback을 `http://localhost:4000`으로 맞췄다.
+- 방이 없을 때 `대기실/플레이/갤러리` 탭이 먼저 보이지 않도록 하고, 방 선택 이후에 `방 준비/그리기/결과` 이동을 보여준다.
 ### 2026-06-06 PHASE-FE-03-LOBBY-ROOM-FLOW
 
 - 로그인 전 방 생성/입장 action을 비활성화하고 안내 문구를 추가했다.
