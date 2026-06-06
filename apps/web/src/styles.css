@@ -391,6 +391,14 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.image-list small {
+  display: block;
+  color: #6b6258;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
 .image-list strong,
 .participant-list strong {
   flex: 0 0 auto;
@@ -440,6 +448,20 @@ button:disabled {
   align-content: center;
   gap: 8px;
   text-align: center;
+}
+
+.gallery-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  border: 2px solid #222222;
+  border-radius: 8px;
+  background: #fffefa;
+  box-shadow: 3px 3px 0 rgba(34, 34, 34, 0.12);
+  padding: 10px 12px;
+  color: #4f463c;
+  font-weight: 800;
 }
 
 .result-preview {

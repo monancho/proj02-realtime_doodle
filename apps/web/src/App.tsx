@@ -37,6 +37,8 @@ interface ResourceErrors {
 }
 
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const maxImageSizeBytes = 10 * 1024 * 1024;
 const initialResourceState: ResourceState = {
   room: "idle",
   participants: "idle",
@@ -68,6 +70,7 @@ export function App() {
   const [viewMode, setViewMode] = useState<ViewMode>("lobby");
   const [message, setMessage] = useState("Firebase 로그인 또는 개발용 토큰으로 시작하세요.");
   const [isBusy, setIsBusy] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
 
@@ -209,9 +212,20 @@ export function App() {
       return;
     }
 
+    const validationError = validateImageFile(file);
+
+    if (validationError) {
+      setUploadError(validationError);
+      setMessage(validationError);
+      return;
+    }
+
     await runAction(async () => {
+      setUploadError(null);
+      setResourceState((current) => ({ ...current, images: "loading" }));
       const uploadedImage = await api.uploadImage(room.roomCode, file);
-      setImages((currentImages) => [uploadedImage, ...currentImages.filter((image) => image.id !== uploadedImage.id)]);
+      const freshImages = await api.listImages(room.roomCode);
+      setImages(freshImages);
       setResourceState((current) => ({ ...current, images: "ready" }));
       setResourceErrors((current) => ({ ...current, images: null }));
       setMessage(`${uploadedImage.originalName} 업로드가 완료되었습니다.`);
@@ -408,6 +422,7 @@ export function App() {
           resourceErrors={resourceErrors}
           resourceState={resourceState}
           room={room}
+          uploadError={uploadError}
           onRefreshRoom={() => void handleRefreshRoom()}
           onUpload={(file) => void handleUpload(file)}
         />
@@ -586,6 +601,7 @@ interface RoomViewProps {
   isBusy: boolean;
   resourceState: ResourceState;
   resourceErrors: ResourceErrors;
+  uploadError: string | null;
   onRefreshRoom: () => void;
   onUpload: (file: File | null) => void;
 }
@@ -626,7 +642,7 @@ function RoomView(props: RoomViewProps) {
         </div>
         <label className="upload-box">
           <Upload size={28} />
-          <span>JPEG, PNG, WebP 이미지를 선택하세요.</span>
+          <span>JPEG, PNG, WebP 이미지를 선택하세요. 최대 10MB까지 업로드할 수 있습니다.</span>
           <input
             accept="image/jpeg,image/png,image/webp"
             disabled={!props.canUseRoomActions || props.isBusy}
@@ -634,6 +650,7 @@ function RoomView(props: RoomViewProps) {
             onChange={(event) => props.onUpload(event.currentTarget.files?.item(0) ?? null)}
           />
         </label>
+        {props.uploadError ? <p className="error-copy">{props.uploadError}</p> : null}
         <ImageList error={props.resourceErrors.images} images={props.images} state={props.resourceState.images} />
       </div>
 
@@ -659,8 +676,11 @@ function ImageList({ error, images, state }: { error: string | null; images: Ima
     <ul className="image-list">
       {images.map((image) => (
         <li key={image.id}>
-          <span>{image.originalName}</span>
-          <strong>{image.used ? "사용됨" : "대기"}</strong>
+          <span>
+            {image.originalName}
+            <small>{formatBytes(image.size)}</small>
+          </span>
+          <strong>{image.used ? "사용됨" : "대기 중"}</strong>
         </li>
       ))}
     </ul>
@@ -756,32 +776,38 @@ function GalleryView(props: GalleryViewProps) {
   }
 
   return (
-    <section className="gallery-grid">
-      {props.results.map((result) => (
-        <article className="paper-card result-card" key={result.id}>
-          <div className="result-preview">Round {result.roundIndex + 1}</div>
-          <dl className="summary-list">
-            <div>
-              <dt>stroke</dt>
-              <dd>{result.strokeCount}</dd>
-            </div>
-            <div>
-              <dt>created</dt>
-              <dd>{formatDateTime(result.createdAt)}</dd>
-            </div>
-          </dl>
-          <button className="download-link" disabled={props.isBusy} onClick={() => props.onDownload(result.id)} type="button">
-            <Download size={18} />
-            다운로드
+    <>
+      <section className="gallery-toolbar" aria-label="결과 갤러리 상태">
+        <span>결과 {props.results.length}개</span>
+        <span>{props.nextCursor ? "더 불러올 결과가 있습니다." : "마지막 결과까지 불러왔습니다."}</span>
+      </section>
+      <section className="gallery-grid">
+        {props.results.map((result) => (
+          <article className="paper-card result-card" key={result.id}>
+            <div className="result-preview">Round {result.roundIndex + 1}</div>
+            <dl className="summary-list">
+              <div>
+                <dt>stroke</dt>
+                <dd>{result.strokeCount}</dd>
+              </div>
+              <div>
+                <dt>created</dt>
+                <dd>{formatDateTime(result.createdAt)}</dd>
+              </div>
+            </dl>
+            <button className="download-link" disabled={props.isBusy} onClick={() => props.onDownload(result.id)} type="button">
+              <Download size={18} />
+              PNG 다운로드
+            </button>
+          </article>
+        ))}
+        {props.nextCursor ? (
+          <button className="secondary-button gallery-more" disabled={props.isBusy} onClick={props.onLoadMore} type="button">
+            <RefreshCw size={18} />결과 더 보기
           </button>
-        </article>
-      ))}
-      {props.nextCursor ? (
-        <button className="secondary-button gallery-more" disabled={props.isBusy} onClick={props.onLoadMore} type="button">
-          <RefreshCw size={18} />더 보기
-        </button>
-      ) : null}
-    </section>
+        ) : null}
+      </section>
+    </>
   );
 }
 
@@ -833,4 +859,32 @@ function formatDateTime(value: string): string {
     dateStyle: "short",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function validateImageFile(file: File): string | null {
+  if (file.size === 0) {
+    return "빈 파일은 업로드할 수 없습니다.";
+  }
+
+  if (file.size > maxImageSizeBytes) {
+    return "이미지는 10MB 이하만 업로드할 수 있습니다.";
+  }
+
+  if (!acceptedImageMimeTypes.has(file.type)) {
+    return "JPEG, PNG, WebP 이미지만 업로드할 수 있습니다.";
+  }
+
+  return null;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

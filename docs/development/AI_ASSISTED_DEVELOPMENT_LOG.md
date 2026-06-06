@@ -1042,3 +1042,25 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 다음 자동 진행:
   - `PHASE-FE-04-IMAGE-UPLOAD-GALLERY`
+### 2026-06-06 PHASE-FE-04-IMAGE-UPLOAD-GALLERY
+
+- Agent: `frontend`
+- 목표: 이미지 업로드 UI와 결과 갤러리/download UX를 서버 API 계약에 맞춰 정리.
+- 수행 내용:
+  - JPEG/PNG/WebP MIME type, 0 byte, 10MB 초과 업로드 사전 검증 추가.
+  - 업로드 성공 후 image metadata 목록 refresh 적용.
+  - 이미지 목록에 파일 크기와 used 상태 표시 추가.
+  - Gallery toolbar, result count, pagination 상태, download 버튼 문구 개선.
+- 의도적으로 제외:
+  - Thumbnail API 구현.
+  - Socket.IO client 구현.
+  - Canvas drawing 구현.
+  - Chat 구현.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 작업 변경과 기존 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 자동 진행:
+  - `PHASE-FE-05-SOCKET-ROOM-AND-CHAT`

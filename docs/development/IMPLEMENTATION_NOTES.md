@@ -430,3 +430,10 @@
 - API error code를 사용자에게 안전한 한국어 문구로 매핑했다.
 - Firebase Client SDK 로그인 흐름과 개발용 token fallback은 유지했다.
 - Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.
+### 2026-06-06 PHASE-FE-04-IMAGE-UPLOAD-GALLERY
+
+- 이미지 업로드 전 프론트 검증을 추가했다: 0 byte 차단, 10MB 초과 차단, JPEG/PNG/WebP MIME type만 허용.
+- 업로드 성공 후 `GET /api/rooms/:roomCode/images`를 다시 호출해 image metadata 목록을 refresh한다.
+- 이미지 목록에 파일 크기와 used 상태 표시를 추가했다.
+- 결과 갤러리에 result count, pagination 상태, `PNG 다운로드` 버튼 문구를 추가해 download UX를 다듬었다.
+- Thumbnail API, Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.
