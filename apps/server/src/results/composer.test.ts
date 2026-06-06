@@ -30,6 +30,8 @@ describe("DeterministicPngResultImageComposer", () => {
     });
 
     expect(result.mimeType).toBe("image/png");
+    expect(result.width).toBe(960);
+    expect(result.height).toBe(720);
     expect(result.strokeCount).toBe(1);
     expect(result.buffer.subarray(0, 8)).toEqual(
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])

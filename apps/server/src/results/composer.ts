@@ -3,6 +3,9 @@ import sharp from "sharp";
 
 import type { DrawStrokeBroadcastPayload } from "../socket/rooms";
 
+const RESULT_FRAME_WIDTH = 960;
+const RESULT_FRAME_HEIGHT = 720;
+
 export interface ComposeResultImageInput {
   sourceImage: ImageMetadata;
   sourceImageBuffer: Buffer;
@@ -31,15 +34,14 @@ export class DeterministicPngResultImageComposer
       throw new Error("Source image buffer is empty.");
     }
 
-    const source = sharp(input.sourceImageBuffer, { failOn: "none" });
-    const metadata = await source.metadata();
-    const width = metadata.width ?? input.sourceImage.width ?? 1;
-    const height = metadata.height ?? input.sourceImage.height ?? 1;
+    const width = RESULT_FRAME_WIDTH;
+    const height = RESULT_FRAME_HEIGHT;
     const overlay = createStrokeOverlaySvg(width, height, input.strokes);
 
     return {
       buffer: await sharp(input.sourceImageBuffer, { failOn: "none" })
         .rotate()
+        .resize(width, height, { fit: "cover", position: "centre" })
         .composite([{ input: Buffer.from(overlay), blend: "over" }])
         .png()
         .toBuffer(),

@@ -4,6 +4,23 @@
 
 ## 검증 결과
 
+### 2026-06-07 PHASE-RESULT-CANVAS-FRAME-CROP
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과
+  - `server test`: 통과. 19 files, 90 tests
+  - `git status --short`: 변경 파일 확인 완료. `package-lock.json`은 미추적 상태로 유지
+- 변경 확인:
+  - result composer가 `960x720` canvas frame 기준 PNG를 생성한다.
+  - 원본 이미지는 cover crop 기준으로 frame에 맞춰지고 stroke overlay가 같은 좌표계에 합성된다.
+- 미실행:
+  - 실제 브라우저에서 다운로드한 결과 이미지의 구도 육안 확인은 사용자 로컬 조작이 필요해 미실행.
+- 보안:
+  - `.env`, URI, private key, token 값은 열람/출력하지 않았다.
+
 ### 2026-06-07 PHASE-STROKE-RETENTION-RESULT-COMPOSITE
 
 - 실행 명령: `corepack pnpm --filter @doodle/server typecheck`

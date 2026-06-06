@@ -8,6 +8,21 @@
 
 ## 작업 로그
 
+### 2026-06-07 PHASE-RESULT-CANVAS-FRAME-CROP
+
+- Agent: `backend`
+- 목표: 결과 다운로드 이미지가 원본 전체가 아니라 플레이 캔버스에서 보던 4:3 cover crop 구도와 맞도록 개선.
+- 수행 내용:
+  - result composer output frame을 `960x720`으로 고정했다.
+  - source image는 `sharp` cover crop으로 frame에 맞춘 뒤 stroke SVG overlay를 합성한다.
+  - composer test에 `960x720` metadata 기대값을 추가했다.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/server typecheck`
+  - 실행: `corepack pnpm --filter @doodle/server test`
+  - 결과: 모두 통과
+- 남은 확인:
+  - 실제 다운로드 이미지가 플레이 화면 구도와 시각적으로 일치하는지는 로컬 브라우저에서 재확인한다.
+
 ### 2026-06-07 PHASE-STROKE-RETENTION-RESULT-COMPOSITE
 
 - Agent: `frontend/backend`

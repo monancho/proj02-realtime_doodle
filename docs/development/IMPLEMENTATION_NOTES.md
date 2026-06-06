@@ -6,6 +6,13 @@
 
 ## 구현 메모
 
+### 2026-06-07 PHASE-RESULT-CANVAS-FRAME-CROP
+
+- 사용자가 결과 다운로드가 원본 사진 전체가 아니라 플레이 캔버스에서 보던 잘린 프레임 느낌과 맞아야 한다고 피드백했다.
+- result composer 출력 크기를 프론트 Canvas와 같은 4:3 `960x720` frame으로 고정했다.
+- 원본 이미지는 `sharp.resize(..., { fit: "cover", position: "centre" })`로 canvas cover crop과 같은 방향으로 맞춘 뒤 stroke overlay를 합성한다.
+- 결과 metadata width/height도 `960x720` 기준으로 저장된다.
+
 ### 2026-06-07 PHASE-STROKE-RETENTION-RESULT-COMPOSITE
 
 - move segment 방식으로 drawing을 실시간 전송하면서 기존 200개 recent stroke batch 제한이 너무 빨리 차 선이 사라지는 문제가 확인되었다.
