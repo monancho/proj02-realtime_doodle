@@ -543,6 +543,50 @@
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 
+### 2026-06-06 PHASE-LOCAL-MANUAL-E2E-SMOKE
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 18 files, 79 tests.
+  - `web typecheck`: 통과.
+  - `web build`: 통과.
+  - `git status --short`: 문서 변경과 기존 미추적 `package-lock.json` 확인.
+- 로컬 실행 기준:
+  - 백엔드: `corepack pnpm --filter @doodle/server dev`
+  - 프론트엔드: `corepack pnpm --filter @doodle/web dev`
+  - 브라우저 접속: `http://localhost:5173`
+  - API health 확인: `http://localhost:4000/health`
+  - HTTP API CORS는 `CLIENT_URL`, Socket.IO CORS는 `SOCKET_CORS_ORIGIN` 기준으로 확인한다.
+- 수동 E2E 체크리스트:
+  - [ ] Firebase 이메일/비밀번호 로그인 성공 후 `/api/users/me` upsert가 성공하는지 확인한다.
+  - [ ] 로그아웃 시 token, 현재 room, socket 상태가 정리되는지 확인한다.
+  - [ ] 사용자 A가 방을 생성하고 room code, host, participants가 표시되는지 확인한다.
+  - [ ] 사용자 B가 같은 room code로 입장하고 양쪽 화면에서 participants가 갱신되는지 확인한다.
+  - [ ] waiting 상태에서 JPEG/PNG/WebP 이미지를 업로드하고 image metadata 목록이 갱신되는지 확인한다.
+  - [ ] 0 byte, 10MB 초과, 허용되지 않은 MIME type 파일이 안전한 오류로 거절되는지 확인한다.
+  - [ ] 같은 room의 두 브라우저 세션에서 socket join 후 chat 메시지가 같은 room에만 표시되는지 확인한다.
+  - [ ] start-game 후 `round-started` 수신, timer countdown, drawing 활성화가 동작하는지 확인한다.
+  - [ ] drawing stroke가 같은 room의 다른 세션 canvas에 반영되는지 확인한다.
+  - [ ] round 종료 후 drawing이 차단되고 `round-ended`, 다음 round 또는 `game-finished` 흐름이 표시되는지 확인한다.
+  - [ ] result 저장 후 gallery 목록과 result download가 동작하는지 확인한다.
+- 사용자 조작 필요:
+  - 실제 Firebase 계정 2개 또는 브라우저 세션 2개가 필요하다.
+  - 테스트 이미지는 secret이 아닌 일반 샘플 이미지만 사용한다.
+  - 브라우저 개발자 도구 Network 탭에서 Authorization header 값이나 token 값을 문서/채팅에 복사하지 않는다.
+- Phase 13 전 리스크:
+  - 위 수동 체크리스트는 이번 자동 검증에서 실제 조작까지 완료하지 못했다.
+  - Firebase Auth 설정, MongoDB Atlas 네트워크 접근, 로컬 `.env` 값이 사용자 환경에 의존한다.
+  - Socket multi-client, 이미지 업로드/GridFS, result download는 배포 전 최소 1회 수동 확인이 필요하다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
 ### 2026-06-06 LOCAL-BACKEND-FRONTEND-INTEGRATION-SMOKE
 
 - 실행 명령: `corepack pnpm --filter @doodle/server smoke:bootstrap`

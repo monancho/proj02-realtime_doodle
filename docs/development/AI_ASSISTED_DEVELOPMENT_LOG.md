@@ -1175,3 +1175,27 @@
 - 다음 추천 작업:
   - `PHASE-13-CICD-DEPLOY-PLAN`
   - 배포 전에 수동 로컬 E2E 체크리스트를 한 번 수행하면 더 안전하다.
+
+### 2026-06-06 PHASE-LOCAL-MANUAL-E2E-SMOKE
+
+- Agent: `qa`
+- 목표: Phase 13 배포 전에 로컬 환경에서 프론트엔드와 백엔드의 실제 사용자 플로우 연결 상태를 점검하고 수동 QA 기준을 문서화.
+- 수행 내용:
+  - 서버 typecheck/test와 웹 typecheck/build를 실행했다.
+  - 로컬 실행 기준을 백엔드 dev server, 웹 dev server, 브라우저 URL, health URL 기준으로 정리했다.
+  - Firebase 로그인, user upsert, 방 생성/입장, 이미지 업로드/목록, socket join/chat/drawing, round timer/result/gallery 흐름을 수동 E2E 체크리스트로 기록했다.
+  - 실제 사용자 조작이 필요한 항목과 Phase 13 전 리스크를 `TEST_REPORT.md`에 남겼다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과.
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 문서 변경과 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 앱 기능 코드 변경.
+  - 실제 Firebase 계정/브라우저 세션을 이용한 수동 조작 대행.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 추천 작업:
+  - 수동 체크리스트를 실제 브라우저 2세션으로 확인한 뒤 `PHASE-13-CICD-DEPLOY-PLAN`을 진행한다.
