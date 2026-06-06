@@ -1155,3 +1155,24 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-07 WIREFRAME-MVP-LAYOUT-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+- 자동 점검/수정:
+  - 제공된 손그림 와이어프레임에서 MVP 범위에 해당하는 대기실, 드로잉 화면, 결과 갤러리 구조만 현재 UI에 반영했다.
+  - 대기실 room summary를 상단 전체 폭 영역으로 조정하고, 업로드 목록을 카드형 grid로 변경했다.
+  - 플레이 화면은 참가자 rail, canvas, chat 3영역 레이아웃으로 조정했다.
+  - canvas header에 현재 라운드와 현재 사진 업로드 사용자를 표시했다.
+  - 모바일에서는 기존 breakpoint를 유지하며 room summary와 play layout이 단일 column으로 내려가도록 했다.
+- 미실행:
+  - 실제 브라우저 시각 QA는 로컬 서버 실행 후 수동 확인이 필요하다.
+  - 2인 Google 로그인, 이미지 업로드, drawing sync, result download 실제 조작은 수동 QA 범위로 남았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

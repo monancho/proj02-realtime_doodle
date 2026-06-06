@@ -1531,3 +1531,26 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 WIREFRAME-MVP-LAYOUT-POLISH
+
+- Agent: `frontend`
+- 목표: 제공된 손그림 와이어프레임에서 MVP 범위에 해당하는 화면 구조만 선별해 현재 UI 레이아웃 완성도를 높임.
+- 수행 내용:
+  - 방 목록, 비공개방, 비밀번호, 최대 인원, 고급 도구, 전체 다운로드는 MVP 외 범위로 제외했다.
+  - 대기실 summary를 상단 전체 폭 카드로 조정하고 room code, 상태, 참가자, 이미지, ready 정보를 한눈에 보이게 했다.
+  - host start/refresh action을 같은 action row로 묶었다.
+  - 업로드 이미지 목록을 카드형 grid로 바꿔 와이어프레임의 사진 카드 흐름에 가깝게 조정했다.
+  - 플레이 화면에 참가자 rail을 추가해 참가자, canvas, chat 3영역 구조를 만들었다.
+  - canvas header에 현재 라운드와 현재 사진 업로드 사용자를 표시했다.
+  - gallery toolbar/result card의 시각 계층을 보강했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 의도적으로 제외:
+  - 기능 동작 변경.
+  - 백엔드/API/Socket 계약 변경.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

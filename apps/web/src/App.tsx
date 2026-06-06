@@ -1163,18 +1163,25 @@ function RoomView(props: RoomViewProps) {
           </div>
         </dl>
         {props.isCurrentUserHost ? (
-          <button className="primary-button start-button" disabled={startDisabled} onClick={props.onStartGame} type="button">
-            <Play size={18} />
-            시작하기
+          <div className="room-action-row">
+            <button className="primary-button start-button" disabled={startDisabled} onClick={props.onStartGame} type="button">
+              <Play size={18} />
+              시작하기
+            </button>
+            <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
+              <RefreshCw size={18} />
+              새로고침
+            </button>
+          </div>
+        ) : (
+          <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
+            <RefreshCw size={18} />
+            새로고침
           </button>
-        ) : null}
+        )}
         {props.room ? (
           <p className={props.areAllParticipantsReady ? "state-copy" : "notice-copy"}>{startHelpText}</p>
         ) : null}
-        <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
-          <RefreshCw size={18} />
-          새로고침
-        </button>
       </div>
 
       <div className="paper-card upload-card">
@@ -1368,6 +1375,7 @@ interface PlayViewProps {
 function PlayView(props: PlayViewProps) {
   return (
     <section className="play-layout">
+      <PlayParticipantsPanel room={props.room} />
       <CanvasPanel
         disabled={
           !props.room ||
@@ -1379,6 +1387,11 @@ function PlayView(props: PlayViewProps) {
         backgroundImageUrl={props.activeRoundImageUrl}
         strokes={props.drawStrokes}
         title={props.activeRound ? `Round ${props.activeRound.roundIndex + 1}` : "캔버스 준비 중"}
+        subtitle={
+          props.activeRound
+            ? `현재 사진: ${props.activeRound.image.uploadedBy.nickname ?? "익명 참가자"} 업로드`
+            : "라운드가 시작되면 사진이 표시됩니다."
+        }
         onDrawStroke={props.onDrawStroke}
       />
       <aside className="paper-card chat-card">
@@ -1426,6 +1439,30 @@ function PlayView(props: PlayViewProps) {
         </div>
       </aside>
     </section>
+  );
+}
+
+function PlayParticipantsPanel({ room }: { room: RoomDetail | null }) {
+  return (
+    <aside className="paper-card play-participants-card" aria-label="라운드 참가자">
+      <div className="card-heading">
+        <Users size={20} />
+        <h2>참가자</h2>
+      </div>
+      {room && room.participants.length > 0 ? (
+        <ul className="participant-list compact">
+          {room.participants.map((participant) => (
+            <li key={participant.firebaseUid}>
+              <i aria-hidden="true" />
+              <span>{participant.nickname ?? "익명 참가자"}</span>
+              {participant.isHost ? <em>Host</em> : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="empty-copy">참가자 정보를 기다리는 중입니다.</p>
+      )}
+    </aside>
   );
 }
 
@@ -1482,6 +1519,7 @@ interface CanvasPanelProps {
   backgroundImageUrl: string | null;
   strokes: DrawStroke[];
   title: string;
+  subtitle: string;
   onDrawStroke: (stroke: DrawStroke) => void;
 }
 
@@ -1592,8 +1630,11 @@ function CanvasPanel(props: CanvasPanelProps) {
   return (
     <div className={props.disabled ? "canvas-stage disabled" : "canvas-stage"}>
       <div className="canvas-header">
-        <Palette size={20} />
-        <span>{props.title}</span>
+        <div>
+          <Palette size={20} />
+          <span>{props.title}</span>
+        </div>
+        <small>{props.subtitle}</small>
       </div>
       <canvas
         ref={canvasRef}

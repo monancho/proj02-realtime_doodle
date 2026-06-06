@@ -436,12 +436,13 @@ button:disabled {
 }
 
 .room-layout {
-  grid-template-columns: 280px minmax(0, 1fr) 280px;
+  grid-template-columns: 280px minmax(0, 1fr);
   align-items: start;
 }
 
 .play-layout {
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: 220px minmax(0, 1fr) 320px;
+  align-items: start;
 }
 
 .gallery-grid {
@@ -460,7 +461,24 @@ button:disabled {
 
 .room-summary {
   display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(220px, 1.4fr) minmax(220px, 1fr);
   gap: 12px;
+  align-items: center;
+}
+
+.room-summary .card-heading {
+  margin-bottom: 0;
+}
+
+.room-summary .summary-list,
+.room-summary > .notice-copy,
+.room-summary > .state-copy {
+  grid-column: 1 / -1;
+}
+
+.room-summary > .icon-button:not(.copy-code-button) {
+  width: 100%;
 }
 
 .round-status {
@@ -584,14 +602,18 @@ button:disabled {
 
 .summary-list {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  margin: 0 0 16px;
+  margin: 0;
 }
 
 .summary-list div {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  gap: 4px;
+  border: 1px dashed rgba(34, 34, 34, 0.24);
+  border-radius: 7px 5px 8px 6px;
+  background: rgba(255, 255, 255, 0.42);
+  padding: 8px 10px;
 }
 
 .summary-list dt {
@@ -672,8 +694,18 @@ button:disabled {
 }
 
 .start-button {
+  flex: 1 1 170px;
   width: 100%;
-  margin-bottom: 10px;
+}
+
+.room-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.room-action-row .icon-button {
+  flex: 1 1 120px;
 }
 
 .empty-copy {
@@ -718,6 +750,10 @@ button:disabled {
   list-style: none;
 }
 
+.image-list {
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+}
+
 .image-list li,
 .participant-list li {
   display: flex;
@@ -726,6 +762,37 @@ button:disabled {
   gap: 12px;
   border-bottom: 1px dashed rgba(34, 34, 34, 0.26);
   padding-bottom: 8px;
+}
+
+.image-list li {
+  min-height: 118px;
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 2px solid var(--ink);
+  border-radius: 7px 5px 8px 6px;
+  background:
+    linear-gradient(135deg, rgba(110, 168, 216, 0.18), transparent 52%),
+    var(--paper-light);
+  box-shadow: 3px 3px 0 rgba(34, 34, 34, 0.1);
+  padding: 10px;
+}
+
+.image-list li::before {
+  content: "";
+  display: block;
+  min-height: 54px;
+  border: 2px dashed rgba(34, 34, 34, 0.35);
+  border-radius: 7px 5px 8px 6px;
+  background:
+    linear-gradient(135deg, rgba(232, 161, 179, 0.26), transparent 48%),
+    linear-gradient(45deg, rgba(255, 221, 117, 0.32), transparent 45%),
+    #fffefa;
+}
+
+.participant-list.compact li {
+  align-items: center;
+  border-bottom-style: dashed;
 }
 
 .participant-list li i {
@@ -818,10 +885,25 @@ button:disabled {
 
 .canvas-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 8px;
   color: #4f463c;
   font-weight: 900;
+}
+
+.canvas-header > div {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.canvas-header small {
+  color: #6b6258;
+  font-size: 0.8rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .canvas-placeholder {
@@ -878,6 +960,14 @@ button:disabled {
   border-radius: 7px 5px 8px 6px;
   background: var(--paper-light);
   padding: 10px;
+}
+
+.play-participants-card {
+  padding: 18px;
+}
+
+.play-participants-card .participant-list {
+  margin-top: 0;
 }
 
 .chat-message {
@@ -953,6 +1043,12 @@ button:disabled {
   font-weight: 800;
 }
 
+.gallery-toolbar span:first-child {
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
 .result-preview {
   position: relative;
   display: grid;
@@ -967,6 +1063,11 @@ button:disabled {
     linear-gradient(45deg, rgba(232, 161, 179, 0.44), transparent 46%),
     #fffefa;
   font-weight: 900;
+}
+
+.result-card {
+  display: grid;
+  align-content: start;
 }
 
 .result-preview span {
@@ -1026,6 +1127,14 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .room-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .canvas-stage {
     min-height: auto;
   }
@@ -1070,6 +1179,10 @@ button:disabled {
     align-items: flex-start;
     flex-direction: column;
     padding: 10px 0;
+  }
+
+  .summary-list {
+    grid-template-columns: 1fr;
   }
 
   .gallery-toolbar {
