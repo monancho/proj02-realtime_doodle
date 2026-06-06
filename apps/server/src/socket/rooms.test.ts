@@ -10,11 +10,13 @@ import { describe, expect, it, vi } from "vitest";
 import { InMemoryImageRepository } from "../images/in-memory-image-repository";
 import { ResultSaveService } from "../results/service";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
+import { InMemoryUserRepository } from "../users/in-memory-user-repository";
 import {
   createSocketRoomName,
   handleDrawStroke,
   handleJoinRoom,
   handleLeaveRoom,
+  handleProfileUpdated,
   handleRoundTimerExpired,
   handleSendMessage,
   handleStartGame,
@@ -170,6 +172,44 @@ describe("room membership socket handlers", () => {
 
   it("creates normalized socket room names", () => {
     expect(createSocketRoomName(" abc123 ")).toBe("room:ABC123");
+  });
+
+  it("updates participant profile from the user repository and emits room-updated", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123",
+      now: () => new Date("2026-06-06T00:00:00.000Z")
+    });
+    const userRepository = new InMemoryUserRepository();
+    await createRoom(repository);
+    await userRepository.upsertByFirebaseUid({
+      firebaseUid: "host-uid",
+      email: "host@example.com",
+      nickname: "Updated Host",
+      avatarUrl: "https://example.test/updated.png"
+    });
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleProfileUpdated(
+      { io, repository, socket, userRepository },
+      { roomCode: " abc123 " }
+    );
+
+    expect(socket.emit).not.toHaveBeenCalledWith(
+      "socket-error",
+      expect.anything()
+    );
+    expect(io.emitToRoom).toHaveBeenCalledWith("room-updated", {
+      room: expect.objectContaining({
+        participants: expect.arrayContaining([
+          expect.objectContaining({
+            firebaseUid: "host-uid",
+            nickname: "Updated Host",
+            avatarUrl: "https://example.test/updated.png"
+          })
+        ])
+      })
+    });
   });
 
   it("broadcasts trimmed chat messages to the matching socket room", async () => {
@@ -840,7 +880,7 @@ describe("room membership socket handlers", () => {
     );
   });
 
-  it("rejects start-game for non-hosts, invalid room state, and missing images", async () => {
+  it("rejects start-game for non-hosts, invalid room state, and unready participants", async () => {
     const waitingRepository = new InMemoryRoomRepository({
       initialRooms: [createRoomDetail({ status: "waiting" })]
     });
@@ -890,6 +930,41 @@ describe("room membership socket handlers", () => {
       expect.objectContaining({ code: "ROOM_STATE_INVALID" })
     );
     expect(hostSocket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_PARTICIPANTS_NOT_READY" })
+    );
+  });
+
+  it("rejects start-game when every participant is ready but no unused images remain", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "waiting" })]
+    });
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [
+        createImageMetadata({ id: "image-host", used: true }),
+        createImageMetadata({
+          id: "image-guest",
+          firebaseUid: "guest-uid",
+          nickname: "Guest",
+          used: true
+        })
+      ]
+    });
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleStartGame(
+      createRoundDependencies({
+        io,
+        repository,
+        imageRepository,
+        socket
+      }),
+      { roomCode: "ABC123" }
+    );
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
       "socket-error",
       expect.objectContaining({ code: "ROUND_IMAGE_NOT_FOUND" })
     );
@@ -1110,14 +1185,20 @@ function createValidStroke(): DrawStroke {
   };
 }
 
-function createImageMetadata(input: { id: string }): ImageMetadata {
+function createImageMetadata(input: {
+  id: string;
+  firebaseUid?: string;
+  nickname?: string | null;
+  avatarUrl?: string | null;
+  used?: boolean;
+}): ImageMetadata {
   return {
     id: input.id,
     roomCode: "ABC123",
     uploadedBy: {
-      firebaseUid: "host-uid",
-      nickname: "Host",
-      avatarUrl: null
+      firebaseUid: input.firebaseUid ?? "host-uid",
+      nickname: input.nickname ?? "Host",
+      avatarUrl: input.avatarUrl ?? null
     },
     originalName: `${input.id}.png`,
     mimeType: "image/png",
@@ -1126,7 +1207,7 @@ function createImageMetadata(input: { id: string }): ImageMetadata {
     fileId: `file-${input.id}`,
     width: null,
     height: null,
-    used: false,
+    used: input.used ?? false,
     createdAt: "2026-06-06T00:00:00.000Z"
   };
 }

@@ -1,7 +1,7 @@
 import type { AuthContext, RoomDetail, RoomSettings } from "@doodle/shared";
 import type { RequestHandler } from "express";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
 import type { AuthenticatedRequest } from "../auth/http";
@@ -35,7 +35,8 @@ const guestAuthContext: AuthContext = {
 
 describe("image routes", () => {
   it("uploads image metadata and stores the original file", async () => {
-    const { app } = await createImageRouteTestApp(hostAuthContext);
+    const { app, roomUpdatePublisher } =
+      await createImageRouteTestApp(hostAuthContext);
 
     const response = await request(app)
       .post("/api/rooms/abc123/images")
@@ -62,6 +63,9 @@ describe("image routes", () => {
       height: null,
       used: false
     });
+    expect(roomUpdatePublisher.publishRoomUpdated).toHaveBeenCalledWith(
+      expect.objectContaining({ roomCode: "ABC123" })
+    );
   });
 
   it("lists room image metadata for participants", async () => {
@@ -167,7 +171,7 @@ describe("image routes", () => {
 
     expect(unsupported.body.error.code).toBe("IMAGE_FILE_TYPE_UNSUPPORTED");
     expect(empty.body.error.code).toBe("IMAGE_FILE_EMPTY");
-    expect(limit.body.error.code).toBe("IMAGE_LIMIT_REACHED");
+    expect(limit.body.error.code).toBe("IMAGE_UPLOAD_LIMIT_EXCEEDED");
   });
 });
 
@@ -197,14 +201,24 @@ async function createImageRouteTestApp(
     now: () => new Date("2026-06-06T00:00:00.000Z")
   });
   const imageStorage = new InMemoryImageStorage();
+  const roomUpdatePublisher = {
+    publishRoomUpdated: vi.fn()
+  };
   const app = createApp({
     authMiddleware: createStubAuthMiddleware(authContext),
     imageRepository,
     imageStorage,
-    roomRepository
+    roomRepository,
+    roomUpdatePublisher
   });
 
-  return { app, imageRepository, imageStorage, roomRepository };
+  return {
+    app,
+    imageRepository,
+    imageStorage,
+    roomRepository,
+    roomUpdatePublisher
+  };
 }
 
 function createStubAuthMiddleware(context?: AuthContext): RequestHandler {

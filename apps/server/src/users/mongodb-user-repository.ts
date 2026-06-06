@@ -13,6 +13,7 @@ export interface UserDocument {
 }
 
 export interface UserCollection {
+  findOne(filter: Pick<UserDocument, "firebaseUid">): Promise<WithId<UserDocument> | null>;
   findOneAndUpdate(
     filter: Pick<UserDocument, "firebaseUid">,
     update: {
@@ -32,6 +33,12 @@ export interface UserCollection {
 
 export class MongoUserRepository implements UserRepository {
   public constructor(private readonly collection: UserCollection) {}
+
+  public async findByFirebaseUid(firebaseUid: string): Promise<UserProfile | null> {
+    const document = await this.collection.findOne({ firebaseUid });
+
+    return document ? mapUserDocumentToProfile(document) : null;
+  }
 
   public async upsertByFirebaseUid(
     input: UpsertUserInput

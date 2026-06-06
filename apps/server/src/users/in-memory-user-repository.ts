@@ -5,6 +5,12 @@ import type { UpsertUserInput, UserRepository } from "./repository";
 export class InMemoryUserRepository implements UserRepository {
   private readonly usersByFirebaseUid = new Map<string, UserProfile>();
 
+  public async findByFirebaseUid(firebaseUid: string): Promise<UserProfile | null> {
+    const user = this.usersByFirebaseUid.get(firebaseUid);
+
+    return user ? { ...user } : null;
+  }
+
   public async upsertByFirebaseUid(
     input: UpsertUserInput
   ): Promise<UserProfile> {
@@ -21,7 +27,7 @@ export class InMemoryUserRepository implements UserRepository {
 
     this.usersByFirebaseUid.set(input.firebaseUid, user);
 
-    return user;
+    return { ...user };
   }
 
   public getByFirebaseUid(firebaseUid: string): UserProfile | undefined {

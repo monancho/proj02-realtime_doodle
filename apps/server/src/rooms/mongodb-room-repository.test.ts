@@ -179,6 +179,51 @@ describe("MongoRoomRepository", () => {
     expect(room.participantCount).toBe(1);
   });
 
+  it("updates a participant profile with a positional update", async () => {
+    const updatedRoom = createDocument({
+      participants: [
+        {
+          firebaseUid: "host-uid",
+          nickname: "Updated Host",
+          avatarUrl: "https://example.test/host.png",
+          joinedAt: new Date("2026-06-06T00:00:00.000Z")
+        }
+      ],
+      updatedAt: new Date("2026-06-06T00:00:01.000Z")
+    });
+    const collection = {
+      findOneAndUpdate: vi.fn().mockResolvedValue(updatedRoom)
+    } as unknown as RoomCollection;
+    const repository = new MongoRoomRepository(collection);
+
+    const room = await repository.updateParticipantProfile({
+      roomCode: " abc123 ",
+      firebaseUid: "host-uid",
+      nickname: "Updated Host",
+      avatarUrl: "https://example.test/host.png"
+    });
+
+    expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        roomCode: "ABC123",
+        "participants.firebaseUid": "host-uid"
+      },
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          "participants.$.nickname": "Updated Host",
+          "participants.$.avatarUrl": "https://example.test/host.png",
+          updatedAt: expect.any(Date)
+        })
+      }),
+      { returnDocument: "after" }
+    );
+    expect(room?.participants[0]).toMatchObject({
+      firebaseUid: "host-uid",
+      nickname: "Updated Host",
+      avatarUrl: "https://example.test/host.png"
+    });
+  });
+
   it("rejects joins for a missing room", async () => {
     const collection = {
       findOne: vi.fn().mockResolvedValue(null)

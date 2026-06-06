@@ -16,7 +16,7 @@ const DEFAULT_ROOM_TITLE = "Untitled Room";
 const DEFAULT_ROOM_SETTINGS: RoomSettings = {
   roundDurationSec: 60,
   maxPlayers: 8,
-  maxImagesPerUser: 3
+  maxImagesPerUser: 1
 };
 
 export interface RoomRouterDependencies {

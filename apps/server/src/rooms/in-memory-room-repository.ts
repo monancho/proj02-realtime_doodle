@@ -12,7 +12,8 @@ import type {
   FinishGameInput,
   JoinRoomInput,
   RoomRepository,
-  StartGameInput
+  StartGameInput,
+  UpdateParticipantProfileInput
 } from "./repository";
 import { generateRoomCode, normalizeRoomCode, type RoomCodeGenerator } from "./room-code";
 
@@ -202,6 +203,43 @@ export class InMemoryRoomRepository implements RoomRepository {
     const nextRoom = createRoomDetail({
       ...room,
       status: "finished",
+      updatedAt: this.now().toISOString()
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async updateParticipantProfile(
+    input: UpdateParticipantProfileInput
+  ): Promise<RoomDetail | null> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room) {
+      return null;
+    }
+
+    const hasParticipant = room.participants.some(
+      (participant) => participant.firebaseUid === input.firebaseUid
+    );
+
+    if (!hasParticipant) {
+      return null;
+    }
+
+    const nextRoom = createRoomDetail({
+      ...room,
+      participants: room.participants.map((participant) =>
+        participant.firebaseUid === input.firebaseUid
+          ? {
+              ...participant,
+              nickname: input.nickname,
+              avatarUrl: input.avatarUrl
+            }
+          : participant
+      ),
       updatedAt: this.now().toISOString()
     });
 

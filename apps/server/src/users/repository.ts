@@ -8,5 +8,6 @@ export interface UpsertUserInput {
 }
 
 export interface UserRepository {
+  findByFirebaseUid(firebaseUid: string): Promise<UserProfile | null>;
   upsertByFirebaseUid(input: UpsertUserInput): Promise<UserProfile>;
 }

@@ -20,7 +20,8 @@ import type {
   FinishGameInput,
   JoinRoomInput,
   RoomRepository,
-  StartGameInput
+  StartGameInput,
+  UpdateParticipantProfileInput
 } from "./repository";
 import { generateRoomCode, normalizeRoomCode, type RoomCodeGenerator } from "./room-code";
 
@@ -267,6 +268,29 @@ export class MongoRoomRepository implements RoomRepository {
       "ROOM_STATE_INVALID",
       "Only playing rooms can be finished."
     );
+  }
+
+  public async updateParticipantProfile(
+    input: UpdateParticipantProfileInput
+  ): Promise<RoomDetail | null> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const now = new Date();
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      {
+        roomCode,
+        "participants.firebaseUid": input.firebaseUid
+      },
+      {
+        $set: {
+          "participants.$.nickname": input.nickname,
+          "participants.$.avatarUrl": input.avatarUrl,
+          updatedAt: now
+        }
+      } as UpdateFilter<RoomDocument>,
+      { returnDocument: "after" }
+    );
+
+    return updatedRoom ? mapRoomDocumentToDetail(updatedRoom) : null;
   }
 }
 

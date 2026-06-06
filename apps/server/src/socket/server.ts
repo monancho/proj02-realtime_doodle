@@ -12,6 +12,7 @@ import type { ResultRepository } from "../results/repository";
 import { ResultSaveService } from "../results/service";
 import type { ResultImageStorage } from "../results/storage";
 import type { RoomRepository } from "../rooms/repository";
+import type { UserRepository } from "../users/repository";
 import { registerRoomMembershipHandlers } from "./rooms";
 
 export interface SocketServerDependencies {
@@ -23,6 +24,7 @@ export interface SocketServerDependencies {
   resultStorage: ResultImageStorage;
   roomRepository: RoomRepository;
   tokenVerifier: TokenVerifier;
+  userRepository: UserRepository;
 }
 
 export function createSocketServer({
@@ -33,7 +35,8 @@ export function createSocketServer({
   resultRepository,
   resultStorage,
   roomRepository,
-  tokenVerifier
+  tokenVerifier,
+  userRepository
 }: SocketServerDependencies): SocketIoServer {
   const io = new SocketIoServer(httpServer, {
     cors: {
@@ -59,7 +62,8 @@ export function createSocketServer({
       now: () => new Date(),
       resultRepository,
       resultStorage
-    })
+    }),
+    userRepository
   );
 
   return io;

@@ -1284,3 +1284,29 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+### 2026-06-06 PHASE-BE-ROOM-READY-UPLOAD-PROFILE-BROADCAST
+
+- Agent: `backend`
+- 목표: 사용자당 이미지 1장 제한, room ready 검증, 이미지 업로드/profile 변경 후 `room-updated` broadcast 구현.
+- 수행 내용:
+  - 이미지 업로드 route에서 같은 room의 같은 Firebase 사용자가 이미 업로드한 경우 GridFS 저장 전에 `IMAGE_UPLOAD_LIMIT_EXCEEDED`로 거절하도록 변경했다.
+  - room 생성 기본 `maxImagesPerUser`를 1로 조정했다.
+  - `SocketRoomUpdatePublisher`를 추가하고 HTTP image route 성공 후 같은 Socket.IO room에 `room-updated { room }`을 emit하도록 wiring했다.
+  - `start-game`에 participants ready guard를 추가했다. 모든 participants가 이미지 1장을 업로드해야 시작할 수 있다.
+  - `ROOM_PARTICIPANTS_NOT_READY` socket error code를 추가했다.
+  - `profile-updated { roomCode }` socket event를 추가하고 socket auth, room membership, latest user profile 조회, room participant profile 갱신, `room-updated` emit 순서로 처리했다.
+  - `RoomRepository.updateParticipantProfile()`과 `UserRepository.findByFirebaseUid()` 계약 및 in-memory/MongoDB 구현을 추가했다.
+  - mock/in-memory 중심 테스트를 추가하고 기존 테스트 기대값을 MVP 정책에 맞췄다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과.
+  - `git status --short`: backend/docs 변경 및 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 프론트엔드 코드 변경.
+  - Drawing, Chat, Timer, Result save 동작 변경.
+  - 실제 MongoDB/GridFS 연결 검증.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 작업 후보:
+  - 프론트엔드에서 이미지 업로드 미리보기, 사용자당 1장 UI 제한, socket 연결 상태 숨김, `room-updated` 기반 준비 상태 갱신, 자동 play/result 화면 전환 UX를 반영한다.

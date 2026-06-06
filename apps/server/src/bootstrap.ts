@@ -26,6 +26,7 @@ import {
 } from "./results/mongodb-result-repository";
 import type { ResultRepository } from "./results/repository";
 import type { ResultImageStorage } from "./results/storage";
+import { SocketRoomUpdatePublisher } from "./rooms/broadcast";
 import {
   createMongoRoomRepository,
   ensureRoomIndexes,
@@ -47,7 +48,9 @@ export interface ServerDependencies {
   resultRepository: ResultRepository;
   resultStorage: ResultImageStorage;
   roomRepository: RoomRepository;
+  roomUpdatePublisher: SocketRoomUpdatePublisher;
   tokenVerifier: TokenVerifier;
+  userRepository: UserRepository;
 }
 
 export interface BootstrapAdapters {
@@ -94,6 +97,7 @@ export async function createServerDependencies(
   const resultStorage =
     adapters.createResultStorage?.(mongoConnection) ??
     createDefaultResultStorage(mongoConnection);
+  const roomUpdatePublisher = new SocketRoomUpdatePublisher();
 
   return {
     imageRepository,
@@ -102,7 +106,9 @@ export async function createServerDependencies(
     resultRepository,
     resultStorage,
     roomRepository,
+    roomUpdatePublisher,
     tokenVerifier,
+    userRepository,
     app: createApp({
       allowLocalhostDevOrigins: env.NODE_ENV !== "production",
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
@@ -112,6 +118,7 @@ export async function createServerDependencies(
       resultRepository,
       resultStorage,
       roomRepository,
+      roomUpdatePublisher,
       userRepository
     })
   };

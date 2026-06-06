@@ -3,6 +3,7 @@ export type ImageErrorCode =
   | "IMAGE_FILE_TOO_LARGE"
   | "IMAGE_FILE_TYPE_UNSUPPORTED"
   | "IMAGE_LIMIT_REACHED"
+  | "IMAGE_UPLOAD_LIMIT_EXCEEDED"
   | "IMAGE_NOT_FOUND"
   | "IMAGE_PAYLOAD_INVALID"
   | "ROOM_ACCESS_DENIED"
@@ -32,6 +33,7 @@ export function getImageErrorHttpStatus(code: ImageErrorCode): number {
     case "ROOM_NOT_FOUND":
       return 404;
     case "IMAGE_LIMIT_REACHED":
+    case "IMAGE_UPLOAD_LIMIT_EXCEEDED":
     case "ROOM_STATE_INVALID":
       return 409;
   }

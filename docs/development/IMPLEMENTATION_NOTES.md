@@ -519,3 +519,16 @@
 - `OPTIONS` preflight는 허용 origin에서 204와 `Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials`, `Access-Control-Allow-Headers`, `Access-Control-Allow-Methods`를 반환한다.
 - 서버 health, 웹 dev 서버 응답, HTTP API preflight를 로컬에서 확인했다.
 - 실제 Firebase 로그인, 업로드, Socket multi-client E2E는 사용자 계정/브라우저 세션이 필요한 수동 QA 범위로 남겼다.
+### 2026-06-06 PHASE-BE-ROOM-READY-UPLOAD-PROFILE-BROADCAST
+
+- 같은 room에서 같은 사용자가 이미지 1장만 업로드할 수 있도록 서버 업로드 제한을 강화했다.
+- `POST /api/rooms/:roomCode/images`는 GridFS 저장 전에 `roomCode + uploadedBy.firebaseUid` 기준 기존 업로드를 확인하고 중복 업로드를 `IMAGE_UPLOAD_LIMIT_EXCEEDED`로 거절한다.
+- room 생성 기본 `maxImagesPerUser`를 MVP ready 정책에 맞춰 1로 조정했다.
+- 이미지 업로드 성공 후 같은 Socket.IO room에 `room-updated { room }`을 emit할 수 있도록 `SocketRoomUpdatePublisher`를 추가하고 HTTP app/bootstrap/server wiring에 연결했다.
+- `start-game`은 host 권한과 waiting 상태 검증 이후 모든 participants가 이미지 1장을 업로드했는지 확인한다.
+- 준비되지 않은 참가자가 있으면 `ROOM_PARTICIPANTS_NOT_READY` socket error로 거절한다.
+- `profile-updated { roomCode }` socket event를 추가했다.
+- `profile-updated`는 socket auth context와 room membership을 검증한 뒤 `UserRepository.findByFirebaseUid()`의 최신 nickname/avatarUrl을 room participant에 반영하고 `room-updated { room }`을 emit한다.
+- `RoomRepository.updateParticipantProfile()`과 `UserRepository.findByFirebaseUid()` 계약 및 in-memory/MongoDB 구현을 추가했다.
+- 프론트엔드 코드, Drawing, Chat, Timer, Result save 기존 동작은 변경하지 않았다.
+- 실제 MongoDB/GridFS 연결 검증은 수행하지 않았고 mock/in-memory 테스트 중심으로 검증했다.

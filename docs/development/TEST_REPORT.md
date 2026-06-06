@@ -858,3 +858,29 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-BE-ROOM-READY-UPLOAD-PROFILE-BROADCAST
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - 최초 `typecheck`: 실패. 사용하지 않는 `RoomUpdatePublisher` type import를 제거한 뒤 통과.
+  - `server typecheck`: 통과.
+  - 최초 `server test`: 실패. room 생성 기본 `maxImagesPerUser` 기대값이 기존 3으로 남아 있어 1로 갱신한 뒤 통과.
+  - `server test`: 통과. 18 files, 88 tests.
+  - `git status --short`: backend/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - 이미지 업로드가 사용자당 1장 제한을 `IMAGE_UPLOAD_LIMIT_EXCEEDED`로 거절하는지 검증.
+  - 이미지 업로드 성공 후 room update publisher가 호출되는지 검증.
+  - `start-game`이 준비되지 않은 participants를 `ROOM_PARTICIPANTS_NOT_READY`로 거절하는지 검증.
+  - 모든 participants가 ready이지만 unused image가 없을 때 `ROUND_IMAGE_NOT_FOUND`를 유지하는지 검증.
+  - `profile-updated`가 최신 user profile을 room participant에 반영하고 `room-updated`를 emit하는지 검증.
+  - in-memory/Mongo room repository의 participant profile update 계약을 검증.
+  - Mongo user repository의 `findByFirebaseUid()` 계약을 검증.
+- 미실행:
+  - 실제 MongoDB/GridFS 연결 검증은 이번 요구사항 범위가 아니므로 수행하지 않았다.
+  - 프론트엔드 typecheck/build는 프론트엔드 코드 변경이 없어 수행하지 않았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

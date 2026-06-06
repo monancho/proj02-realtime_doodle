@@ -94,7 +94,7 @@ describe("Room routes", () => {
       settings: {
         roundDurationSec: 60,
         maxPlayers: 8,
-        maxImagesPerUser: 3
+        maxImagesPerUser: 1
       }
     });
   });

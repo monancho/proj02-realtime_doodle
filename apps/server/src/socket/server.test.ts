@@ -7,6 +7,7 @@ import { InMemoryImageStorage } from "../images/in-memory-image-storage";
 import { InMemoryResultRepository } from "../results/in-memory-result-repository";
 import { InMemoryResultImageStorage } from "../results/in-memory-result-storage";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
+import { InMemoryUserRepository } from "../users/in-memory-user-repository";
 import { createSocketServer } from "./server";
 
 const env: ServerEnv = {
@@ -36,7 +37,8 @@ describe("createSocketServer", () => {
       resultRepository: new InMemoryResultRepository(),
       resultStorage: new InMemoryResultImageStorage(),
       roomRepository: new InMemoryRoomRepository(),
-      tokenVerifier
+      tokenVerifier,
+      userRepository: new InMemoryUserRepository()
     });
 
     expect(io._nsps.get("/")?.listeners("connection")).toHaveLength(1);

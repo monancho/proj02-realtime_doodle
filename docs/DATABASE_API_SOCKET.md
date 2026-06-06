@@ -1832,3 +1832,37 @@ export interface ListRoomResultsResponse {
 - Result save flow는 변경하지 않았다.
 - Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
 - 실제 MongoDB/GridFS 연결 검증은 수행하지 않았다.
+## Room Ready / Upload Limit / Profile Broadcast 구현 기록
+
+이 섹션은 `PHASE-BE-ROOM-READY-UPLOAD-PROFILE-BROADCAST`의 구현 기준이다.
+
+### 이미지 업로드 제한
+
+- 같은 room에서 같은 Firebase 사용자는 이미지 1장만 업로드할 수 있다.
+- 서버는 GridFS 저장 전에 `roomCode + uploadedByFirebaseUid` 기준 기존 업로드 수를 확인한다.
+- 이미 업로드한 사용자의 추가 업로드는 `IMAGE_UPLOAD_LIMIT_EXCEEDED`로 거절한다.
+- room 생성 기본 설정의 `maxImagesPerUser`는 MVP 정책에 맞춰 1로 유지한다.
+- Render local filesystem에 원본 이미지를 영구 저장하지 않고 기존 GridFS storage 계약을 유지한다.
+
+### Room Ready 기준
+
+- MVP ready 기준은 participant별 이미지 1장 업로드 완료이다.
+- 별도 ready 버튼은 서버 계약에 추가하지 않는다.
+- `start-game`은 host 권한, `waiting` 상태, room membership 검증 이후 모든 participants가 ready인지 확인한다.
+- 준비되지 않은 participant가 있으면 `ROOM_PARTICIPANTS_NOT_READY` socket error를 보낸다.
+- 모든 participants가 ready이지만 unused image가 없으면 기존 `ROUND_IMAGE_NOT_FOUND`를 유지한다.
+
+### Broadcast 기준
+
+- 이미지 업로드 성공 후 같은 Socket.IO room `room:${roomCode}`에 `room-updated { room }`을 emit한다.
+- `profile-updated { roomCode }` socket event를 추가한다.
+- `profile-updated`는 socket auth context와 room membership을 검증한다.
+- 서버는 `UserRepository.findByFirebaseUid(firebaseUid)`로 최신 user profile을 조회한다.
+- 조회한 nickname/avatarUrl을 room participant에 반영한 뒤 `room-updated { room }`을 같은 Socket.IO room에 emit한다.
+- profile 조회 실패 시 `USER_PROFILE_NOT_FOUND`, room 없음은 `ROOM_NOT_FOUND`, participant가 아니면 `ROOM_ACCESS_DENIED`를 사용한다.
+
+### 구현 제외
+
+- 프론트엔드 UI 변경은 이번 backend 작업 범위에서 제외했다.
+- Drawing, Chat, Timer, Result save 기존 동작은 변경하지 않았다.
+- 실제 MongoDB/GridFS 연결 검증, Redis adapter, durable presence, multi-instance coordination은 수행하지 않았다.

@@ -141,6 +141,47 @@ describe("InMemoryRoomRepository", () => {
     expect(joinedAgainRoom.participantCount).toBe(2);
   });
 
+  it("updates participant profile without changing membership", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123",
+      now: createClock([
+        "2026-06-06T00:00:00.000Z",
+        "2026-06-06T00:00:01.000Z",
+        "2026-06-06T00:00:02.000Z"
+      ])
+    });
+    await repository.createRoom({ host, title: "Profile Room", settings: roomSettings });
+    await repository.joinRoom({
+      roomCode: "ABC123",
+      participant: createActor("guest-uid")
+    });
+
+    const updatedRoom = await repository.updateParticipantProfile({
+      roomCode: " abc123 ",
+      firebaseUid: "guest-uid",
+      nickname: "Updated Guest",
+      avatarUrl: "https://example.test/guest.png"
+    });
+
+    expect(updatedRoom?.participantCount).toBe(2);
+    expect(updatedRoom?.updatedAt).toBe("2026-06-06T00:00:02.000Z");
+    expect(updatedRoom?.participants).toContainEqual({
+      firebaseUid: "guest-uid",
+      nickname: "Updated Guest",
+      avatarUrl: "https://example.test/guest.png",
+      isHost: false,
+      joinedAt: "2026-06-06T00:00:01.000Z"
+    });
+    await expect(
+      repository.updateParticipantProfile({
+        roomCode: "ABC123",
+        firebaseUid: "missing-uid",
+        nickname: "Nobody",
+        avatarUrl: null
+      })
+    ).resolves.toBeNull();
+  });
+
   it("rejects joins for missing, full, and already-started rooms", async () => {
     const fullRoom = createRoomFixture({
       roomCode: "FULL01",

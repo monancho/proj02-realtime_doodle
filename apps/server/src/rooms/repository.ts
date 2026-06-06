@@ -29,6 +29,13 @@ export interface FinishGameInput {
   roomCode: string;
 }
 
+export interface UpdateParticipantProfileInput {
+  roomCode: string;
+  firebaseUid: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+}
+
 export interface RoomRepository {
   createRoom(input: CreateRoomInput): Promise<RoomDetail>;
   findRoomByCode(roomCode: string): Promise<RoomDetail | null>;
@@ -36,4 +43,7 @@ export interface RoomRepository {
   startGame(input: StartGameInput): Promise<RoomDetail>;
   advanceRound(input: AdvanceRoundInput): Promise<RoomDetail>;
   finishGame(input: FinishGameInput): Promise<RoomDetail>;
+  updateParticipantProfile(
+    input: UpdateParticipantProfileInput
+  ): Promise<RoomDetail | null>;
 }

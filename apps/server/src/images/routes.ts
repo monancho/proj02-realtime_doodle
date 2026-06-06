@@ -7,6 +7,7 @@ import type {
 import { Router, type RequestHandler } from "express";
 
 import type { AuthenticatedRequest } from "../auth/http";
+import type { RoomUpdatePublisher } from "../rooms/broadcast";
 import type { RoomRepository } from "../rooms/repository";
 import { normalizeRoomCode } from "../rooms/room-code";
 import { getImageErrorHttpStatus, ImageDomainError } from "./errors";
@@ -25,6 +26,7 @@ export interface ImageRouterDependencies {
   authMiddleware: RequestHandler;
   imageRepository: ImageRepository;
   imageStorage: ImageStorage;
+  roomUpdatePublisher?: RoomUpdatePublisher;
   roomRepository: RoomRepository;
 }
 
@@ -32,6 +34,7 @@ export function createRoomImageRouter({
   authMiddleware,
   imageRepository,
   imageStorage,
+  roomUpdatePublisher,
   roomRepository
 }: ImageRouterDependencies): Router {
   const router = Router({ mergeParams: true });
@@ -54,10 +57,10 @@ export function createRoomImageRouter({
           firebaseUid: auth.user.firebaseUid
         });
 
-      if (existingUploadCount >= room.settings.maxImagesPerUser) {
+      if (existingUploadCount >= 1) {
         throw new ImageDomainError(
-          "IMAGE_LIMIT_REACHED",
-          "User has reached the image upload limit for this room."
+          "IMAGE_UPLOAD_LIMIT_EXCEEDED",
+          "Only one image can be uploaded by each participant."
         );
       }
 
@@ -116,6 +119,7 @@ export function createRoomImageRouter({
         });
         const payload: UploadImageResponse = { image };
 
+        roomUpdatePublisher?.publishRoomUpdated(room);
         response.status(201).json(payload);
       } catch (error) {
         await imageStorage.deleteFile(storedFile.fileId);

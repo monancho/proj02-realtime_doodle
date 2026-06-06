@@ -14,6 +14,7 @@ import {
 } from "../results/service";
 import type { RoomRepository } from "../rooms/repository";
 import { normalizeRoomCode } from "../rooms/room-code";
+import type { UserRepository } from "../users/repository";
 
 const SOCKET_ROOM_PREFIX = "room:";
 const MAX_CHAT_MESSAGE_LENGTH = 200;
@@ -34,9 +35,11 @@ export interface SocketErrorPayload {
     | "ROOM_ACCESS_DENIED"
     | "ROOM_NOT_FOUND"
     | "ROOM_PAYLOAD_INVALID"
+    | "ROOM_PARTICIPANTS_NOT_READY"
     | "ROOM_STATE_INVALID"
     | "ROUND_IMAGE_NOT_FOUND"
-    | "ROUND_STATE_INVALID";
+    | "ROUND_STATE_INVALID"
+    | "USER_PROFILE_NOT_FOUND";
   message: string;
 }
 
@@ -86,6 +89,10 @@ export interface DrawStrokeBroadcastPayload extends DrawStrokePayload {
 }
 
 export interface StartGamePayload {
+  roomCode: string;
+}
+
+export interface ProfileUpdatedPayload {
   roomCode: string;
 }
 
@@ -145,6 +152,10 @@ interface RoundEventDependencies extends RoomEventDependencies {
   selectImage: (images: ImageMetadata[]) => ImageMetadata;
   roundState: RoundRuntimeStateStore;
   timerScheduler: RoundTimerScheduler;
+}
+
+interface ProfileEventDependencies extends RoomEventDependencies {
+  userRepository: UserRepository;
 }
 
 interface RoundTimerDependencies {
@@ -296,7 +307,8 @@ export function registerRoomMembershipHandlers(
   repository: RoomRepository,
   imageRepository: ImageRepository,
   imageStorage?: ImageStorage,
-  resultSaveService?: ResultSaveService
+  resultSaveService?: ResultSaveService,
+  userRepository?: UserRepository
 ): void {
   const recentMessages = new RecentChatMessageStore();
   const recentStrokeBatches = new RecentStrokeBatchStore();
@@ -364,6 +376,26 @@ export function registerRoomMembershipHandlers(
           selectImage: selectRandomImage,
           roundState,
           timerScheduler
+        },
+        payload
+      );
+    });
+
+    socket.on("profile-updated", (payload: unknown) => {
+      if (!userRepository) {
+        socket.emit("socket-error", {
+          code: "USER_PROFILE_NOT_FOUND",
+          message: "User profile repository is not configured."
+        } satisfies SocketErrorPayload);
+        return;
+      }
+
+      void handleProfileUpdated(
+        {
+          io,
+          repository,
+          socket,
+          userRepository
         },
         payload
       );
@@ -660,6 +692,17 @@ export async function handleStartGame(
     return;
   }
 
+  const roomImages = await dependencies.imageRepository.listImagesByRoomCode(
+    room.roomCode
+  );
+  if (!areAllParticipantsReady(room, roomImages)) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_PARTICIPANTS_NOT_READY",
+      message: "Every participant must upload one image before starting."
+    });
+    return;
+  }
+
   const unusedImages =
     await dependencies.imageRepository.listUnusedImagesByRoomCode(room.roomCode);
   if (unusedImages.length === 0) {
@@ -700,6 +743,76 @@ export async function handleStartGame(
     .emit("round-started", payloadToEmit);
   emitRoomUpdated(dependencies.io, startedRoom);
   scheduleRoundTimer(dependencies, payloadToEmit);
+}
+
+export async function handleProfileUpdated(
+  dependencies: ProfileEventDependencies,
+  payload: unknown
+): Promise<void> {
+  const auth = getSocketAuth(dependencies.socket);
+  if (!auth) {
+    emitSocketError(dependencies.socket, {
+      code: "AUTH_TOKEN_MISSING",
+      message: "Authentication is required."
+    });
+    return;
+  }
+
+  const roomCode = parseRoomCode(payload);
+  if (!roomCode) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_PAYLOAD_INVALID",
+      message: "roomCode must be a non-empty string."
+    });
+    return;
+  }
+
+  const room = await dependencies.repository.findRoomByCode(roomCode);
+  if (!room) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_NOT_FOUND",
+      message: "Room was not found."
+    });
+    return;
+  }
+
+  const isParticipant = room.participants.some(
+    (participant) => participant.firebaseUid === auth.user.firebaseUid
+  );
+  if (!isParticipant) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_ACCESS_DENIED",
+      message: "Join the room before updating participant profile."
+    });
+    return;
+  }
+
+  const profile = await dependencies.userRepository.findByFirebaseUid(
+    auth.user.firebaseUid
+  );
+  if (!profile) {
+    emitSocketError(dependencies.socket, {
+      code: "USER_PROFILE_NOT_FOUND",
+      message: "User profile was not found."
+    });
+    return;
+  }
+
+  const updatedRoom = await dependencies.repository.updateParticipantProfile({
+    roomCode: room.roomCode,
+    firebaseUid: auth.user.firebaseUid,
+    nickname: profile.nickname,
+    avatarUrl: profile.avatarUrl
+  });
+  if (!updatedRoom) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_ACCESS_DENIED",
+      message: "Join the room before updating participant profile."
+    });
+    return;
+  }
+
+  emitRoomUpdated(dependencies.io, updatedRoom);
 }
 
 export async function handleRoundTimerExpired(
@@ -813,6 +926,19 @@ function emitResultSaved(
   payload: ResultSavedPayload
 ): void {
   io.to(createSocketRoomName(payload.roomCode)).emit("result-saved", payload);
+}
+
+function areAllParticipantsReady(
+  room: RoomDetail,
+  images: ImageMetadata[]
+): boolean {
+  const uploaders = new Set(
+    images.map((image) => image.uploadedBy.firebaseUid)
+  );
+
+  return room.participants.every((participant) =>
+    uploaders.has(participant.firebaseUid)
+  );
 }
 
 function createDisabledResultSaveService(): Pick<

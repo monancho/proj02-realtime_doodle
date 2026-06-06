@@ -24,7 +24,9 @@ try {
     resultRepository,
     resultStorage,
     roomRepository,
-    tokenVerifier
+    roomUpdatePublisher,
+    tokenVerifier,
+    userRepository
   } = await createServerDependencies(validation.env);
   const server = await startHttpServer(app, port);
   const io = createSocketServer({
@@ -35,8 +37,10 @@ try {
     resultRepository,
     resultStorage,
     roomRepository,
-    tokenVerifier
+    tokenVerifier,
+    userRepository
   });
+  roomUpdatePublisher.attach(io);
 
   console.log(`Realtime Doodle Relay server listening on port ${port}`);
 

@@ -23,6 +23,7 @@ import {
 } from "./results/routes";
 import type { ResultImageStorage } from "./results/storage";
 import { InMemoryRoomRepository } from "./rooms/in-memory-room-repository";
+import type { RoomUpdatePublisher } from "./rooms/broadcast";
 import type { RoomRepository } from "./rooms/repository";
 import { createRoomRouter } from "./rooms/routes";
 import { InMemoryUserRepository } from "./users/in-memory-user-repository";
@@ -38,6 +39,7 @@ export interface AppDependencies {
   resultRepository?: ResultRepository;
   resultStorage?: ResultImageStorage;
   roomRepository?: RoomRepository;
+  roomUpdatePublisher?: RoomUpdatePublisher;
   userRepository?: UserRepository;
 }
 
@@ -94,6 +96,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
       authMiddleware,
       imageRepository,
       imageStorage,
+      roomUpdatePublisher: dependencies.roomUpdatePublisher,
       roomRepository
     })
   );
