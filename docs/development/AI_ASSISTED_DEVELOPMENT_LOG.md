@@ -882,3 +882,34 @@
   - `PHASE-12-GALLERY-DOWNLOAD-PLAN`
   - 저장된 `results` metadata 조회와 result image download API 범위를 문서화.
 
+
+### 2026-06-06 PHASE-12-GALLERY-DOWNLOAD-PLAN
+
+- Agent: `backend`
+- 목표: Gallery/download 구현 전에 저장된 `results` metadata 조회와 result image download API 범위 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Gallery/Download 구현 계획 섹션 추가.
+  - `GET /api/rooms/:roomCode/results` API 기준 정리.
+  - `GET /api/results/:resultId/download` API 기준 정리.
+  - Firebase auth와 room membership 검증 기준 정리.
+  - pagination/sort/cursor 기준 정리.
+  - GridFS bucket `resultImages` stream 응답과 download headers 기준 정리.
+  - result/room/access/file missing error code 기준 정리.
+  - Thumbnail API MVP 선택 범위를 문서화하되 구현 제외로 명시.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Gallery/download 구현 코드.
+  - Result save 변경.
+  - Redis scheduler, durable job queue, multi-instance processing.
+  - Thumbnail API 구현.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 문서 4개와 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-12-GALLERY-DOWNLOAD-IMPLEMENTATION`
+  - `results` metadata list API와 result image GridFS download API를 인증 및 room membership 검증 기반으로 구현.
+

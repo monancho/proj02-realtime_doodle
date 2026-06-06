@@ -1690,3 +1690,96 @@ export interface ResultSavedPayload {
 - Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
 - 실제 MongoDB/GridFS 연결 검증은 수행하지 않았다.
 - 고급 이미지 합성 라이브러리 기반 pixel-perfect rendering은 구현하지 않았다.
+
+## Gallery/Download 구현 계획
+
+이 섹션은 `PHASE-12-GALLERY-DOWNLOAD-PLAN`의 기준 계약이다. Gallery/download 구현 코드는 아직 작성하지 않으며, 다음 구현 단계에서 `results` metadata 조회 API와 result image stream API가 이 내용을 따른다.
+
+### 목표 경계
+
+Gallery/download는 Result save 이후 저장된 `results` metadata를 room participant가 조회하고, 개별 result image 바이너리를 MongoDB GridFS bucket `resultImages`에서 stream으로 내려받는 HTTP 기능이다.
+
+MVP에서는 result metadata 목록 조회와 원본 result image download만 다룬다. Thumbnail API, result 재생성, Result save worker, Redis scheduler, durable job queue, multi-instance processing은 이 단계의 범위가 아니다.
+
+### HTTP API 기준
+
+| Method | Endpoint | Auth | 역할 |
+|---|---|---|---|
+| `GET` | `/api/rooms/:roomCode/results` | 필요 | room의 result metadata 목록 조회 |
+| `GET` | `/api/results/:resultId/download` | 필요 | result image stream 다운로드 |
+
+#### `GET /api/rooms/:roomCode/results`
+
+- `roomCode`는 trim 후 uppercase normalize한다.
+- Firebase HTTP auth middleware의 auth context를 사용한다.
+- `RoomRepository.findRoomByCode(roomCode)`로 room을 조회한다.
+- 요청자가 room participants에 포함되어야 한다.
+- 성공 응답은 `{ results, page }` shape를 사용한다.
+
+```ts
+export interface ListRoomResultsResponse {
+  results: ResultMetadata[];
+  page: {
+    limit: number;
+    cursor: string | null;
+    nextCursor: string | null;
+  };
+}
+```
+
+#### `GET /api/results/:resultId/download`
+
+- Firebase HTTP auth middleware의 auth context를 사용한다.
+- `ResultRepository.findResultById(resultId)`로 result metadata를 조회한다.
+- result의 `roomCode`로 room을 조회하고 요청자가 participants에 포함되어야 한다.
+- `result.resultFileId`로 GridFS bucket `resultImages`에서 file을 stream한다.
+- JSON payload가 아니라 binary stream 응답을 반환한다.
+
+### Pagination/Sort 기준
+
+| 항목 | 기준 |
+|---|---|
+| 기본 정렬 | `createdAt` descending, 같은 값이면 `id` descending |
+| 기본 limit | 20 |
+| 최대 limit | 50 |
+| cursor | opaque string. MVP 구현은 `createdAt:id`를 base64url encode한 값 사용 가능 |
+| nextCursor | 다음 page가 없으면 `null` |
+| 필터 | `roomCode` 기준만 MVP에 포함 |
+
+### Result Stream 응답 Header 기준
+
+| Header | 기준 |
+|---|---|
+| `Content-Type` | `result.mimeType`, MVP 기본 `image/png` |
+| `Content-Length` | GridFS file length를 알 수 있으면 설정 |
+| `Content-Disposition` | `attachment; filename="doodle-${roomCode}-${roundIndex}.png"` |
+| `Cache-Control` | MVP 기본 `private, max-age=0, no-cache` |
+
+- 파일명에는 token, uid, URI, private key, credential 값을 넣지 않는다.
+- 다운로드 응답 전 권한 검증을 먼저 완료한다.
+
+### Error Code 기준
+
+| Code | HTTP | 기준 |
+|---|---:|---|
+| `ROOM_NOT_FOUND` | 404 | `roomCode`에 해당하는 room 없음 |
+| `ROOM_ACCESS_DENIED` | 403 | 요청자가 room participant가 아님 |
+| `RESULT_NOT_FOUND` | 404 | `resultId`에 해당하는 metadata 없음 |
+| `RESULT_FILE_NOT_FOUND` | 404 | metadata는 있으나 GridFS `resultImages` file 없음 |
+| `RESULT_QUERY_INVALID` | 400 | pagination limit/cursor가 유효하지 않음 |
+| `AUTH_TOKEN_MISSING` | 401 | HTTP auth middleware에서 인증 없음 |
+| `AUTH_TOKEN_INVALID` | 401 | HTTP auth middleware에서 token 검증 실패 |
+
+### Thumbnail API MVP 정책
+
+- Thumbnail metadata field인 `thumbnailFileId`는 유지한다.
+- `GET /api/results/:resultId/thumbnail`은 MVP 선택 범위로 문서화만 하고 이번 계획의 구현 대상에서 제외한다.
+- thumbnail이 없는 result는 gallery에서 result download URL 또는 placeholder를 사용한다.
+- thumbnail 생성/저장 실패는 result download 가능 여부에 영향을 주지 않는다.
+
+### 구현 제외 범위
+
+- Gallery/download 구현 코드는 이 단계에서 작성하지 않는다.
+- Result save flow는 이 단계에서 변경하지 않는다.
+- Redis scheduler, durable job queue, multi-instance processing은 구현하지 않는다.
+- Thumbnail API와 thumbnail 생성은 구현하지 않는다.

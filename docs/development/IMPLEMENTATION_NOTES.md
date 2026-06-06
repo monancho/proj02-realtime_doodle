@@ -368,3 +368,15 @@
 - `handleRoundTimerExpired`에서 `round-ended` 이후 result save를 best-effort로 trigger하고 성공 시 `result-saved`를 같은 Socket.IO room에 emit한다.
 - result save 실패는 다음 round 시작 또는 room `finished` 전이를 rollback하지 않는다.
 - Gallery/download API, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
+
+### 2026-06-06 PHASE-12-GALLERY-DOWNLOAD-PLAN
+
+- Gallery/download 구현 전에 저장된 `results` metadata 조회와 result image download API 범위를 문서화했다.
+- Gallery/download 구현 코드는 추가하지 않았다.
+- `GET /api/rooms/:roomCode/results` API 기준과 Firebase auth, room membership 검증 기준을 정리했다.
+- `GET /api/results/:resultId/download` API 기준과 result metadata 조회, room participant 권한 검증, GridFS stream 응답 기준을 정리했다.
+- `results` metadata 조회 pagination은 `createdAt` desc, 기본 limit 20, 최대 limit 50, cursor 기반으로 정리했다.
+- result image download header는 `Content-Type`, `Content-Length`, `Content-Disposition`, `Cache-Control` 기준으로 정리했다.
+- `ROOM_NOT_FOUND`, `ROOM_ACCESS_DENIED`, `RESULT_NOT_FOUND`, `RESULT_FILE_NOT_FOUND`, `RESULT_QUERY_INVALID` error code 기준을 정리했다.
+- Thumbnail API는 MVP 선택 범위로 문서화만 하고 구현 제외로 유지했다.
+- Result save, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
