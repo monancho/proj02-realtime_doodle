@@ -15,7 +15,9 @@ import type {
 
 import { RoomDomainError } from "./errors";
 import type {
+  AdvanceRoundInput,
   CreateRoomInput,
+  FinishGameInput,
   JoinRoomInput,
   RoomRepository,
   StartGameInput
@@ -208,6 +210,62 @@ export class MongoRoomRepository implements RoomRepository {
     throw new RoomDomainError(
       "ROOM_STATE_INVALID",
       "Only waiting rooms can be started."
+    );
+  }
+
+  public async advanceRound(input: AdvanceRoundInput): Promise<RoomDetail> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const now = new Date();
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      { roomCode, status: "playing" },
+      {
+        $inc: { currentRoundIndex: 1 },
+        $set: { updatedAt: now }
+      },
+      { returnDocument: "after" }
+    );
+
+    if (updatedRoom) {
+      return mapRoomDocumentToDetail(updatedRoom);
+    }
+
+    const latestRoom = await this.collection.findOne({ roomCode });
+    if (!latestRoom) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    throw new RoomDomainError(
+      "ROOM_STATE_INVALID",
+      "Only playing rooms can advance rounds."
+    );
+  }
+
+  public async finishGame(input: FinishGameInput): Promise<RoomDetail> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const now = new Date();
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      { roomCode, status: "playing" },
+      {
+        $set: {
+          status: "finished",
+          updatedAt: now
+        }
+      },
+      { returnDocument: "after" }
+    );
+
+    if (updatedRoom) {
+      return mapRoomDocumentToDetail(updatedRoom);
+    }
+
+    const latestRoom = await this.collection.findOne({ roomCode });
+    if (!latestRoom) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    throw new RoomDomainError(
+      "ROOM_STATE_INVALID",
+      "Only playing rooms can be finished."
     );
   }
 }

@@ -7,7 +7,9 @@ import type {
 
 import { RoomDomainError } from "./errors";
 import type {
+  AdvanceRoundInput,
   CreateRoomInput,
+  FinishGameInput,
   JoinRoomInput,
   RoomRepository,
   StartGameInput
@@ -148,6 +150,58 @@ export class InMemoryRoomRepository implements RoomRepository {
       ...room,
       status: "playing",
       currentRoundIndex: 0,
+      updatedAt: this.now().toISOString()
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async advanceRound(input: AdvanceRoundInput): Promise<RoomDetail> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    if (room.status !== "playing") {
+      throw new RoomDomainError(
+        "ROOM_STATE_INVALID",
+        "Only playing rooms can advance rounds."
+      );
+    }
+
+    const nextRoom = createRoomDetail({
+      ...room,
+      currentRoundIndex: room.currentRoundIndex + 1,
+      updatedAt: this.now().toISOString()
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async finishGame(input: FinishGameInput): Promise<RoomDetail> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    if (room.status !== "playing") {
+      throw new RoomDomainError(
+        "ROOM_STATE_INVALID",
+        "Only playing rooms can be finished."
+      );
+    }
+
+    const nextRoom = createRoomDetail({
+      ...room,
+      status: "finished",
       updatedAt: this.now().toISOString()
     });
 

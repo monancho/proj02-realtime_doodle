@@ -427,3 +427,24 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.
+
+### 2026-06-06 PHASE-10-TIMER-ROUND-END-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `test`: 통과. 15 files, 68 tests.
+  - `git status --short`: 코드/문서 변경 파일과 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - `start-game` 성공 시 timer schedule 검증.
+  - timer 만료 시 `round-ended` emit과 unused image 없음에 따른 `game-finished`/`finished` 전이 검증.
+  - timer 만료 시 unused image가 있으면 다음 image used 처리, `currentRoundIndex + 1`, 다음 `round-started` emit 검증.
+  - ended round와 non-playing room의 `draw-stroke` 거절 검증.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase/GridFS 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.
+

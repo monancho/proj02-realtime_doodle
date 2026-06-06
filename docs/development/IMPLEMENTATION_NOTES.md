@@ -331,3 +331,15 @@
 - 다음 unused image가 있으면 `used: true` 처리 후 `currentRoundIndex + 1`로 다음 `round-started`를 emit하는 기준으로 정리했다.
 - unused image가 없으면 room status를 `finished`로 전이하고 `game-finished`와 `room-updated`를 emit하는 기준으로 정리했다.
 - Result save, durable timer recovery, Redis scheduler, multi-instance coordination은 MVP 제외 범위로 유지했다.
+
+### 2026-06-06 PHASE-10-TIMER-ROUND-END-IMPLEMENTATION
+
+- In-memory round timer, `round-ended`, drawing block, next round 또는 finished 전이를 구현했다.
+- `RoundRuntimeStateStore`를 추가해 room별 active round와 closed round를 in-memory로 관리한다.
+- `InMemoryRoundTimerScheduler`를 추가해 `start-game` 및 다음 round 시작 성공 시 round timer를 schedule한다.
+- timer 만료 시 `round-ended` `{ roomCode, roundId, roundIndex, image, endedAt }`를 같은 Socket.IO room에 emit한다.
+- unused image가 있으면 선택된 image를 `used: true`로 처리하고 `RoomRepository.advanceRound()`로 `currentRoundIndex`를 증가시킨 뒤 다음 `round-started`를 emit한다.
+- unused image가 없으면 `RoomRepository.finishGame()`으로 room status를 `finished`로 전이하고 `game-finished`와 `room-updated`를 emit한다.
+- `draw-stroke`는 room status가 `playing`이고 active round id가 일치할 때만 허용하도록 차단 기준을 구현했다.
+- `DRAW_ROUND_CLOSED`, `ROUND_STATE_INVALID` socket error code를 추가했다.
+- Result save, Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않았다.

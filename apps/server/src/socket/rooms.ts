@@ -20,13 +20,15 @@ export interface SocketErrorPayload {
     | "CHAT_MESSAGE_EMPTY"
     | "CHAT_MESSAGE_TOO_LONG"
     | "CHAT_PAYLOAD_INVALID"
+    | "DRAW_ROUND_CLOSED"
     | "DRAW_PAYLOAD_INVALID"
     | "ROOM_HOST_REQUIRED"
     | "ROOM_ACCESS_DENIED"
     | "ROOM_NOT_FOUND"
     | "ROOM_PAYLOAD_INVALID"
     | "ROOM_STATE_INVALID"
-    | "ROUND_IMAGE_NOT_FOUND";
+    | "ROUND_IMAGE_NOT_FOUND"
+    | "ROUND_STATE_INVALID";
   message: string;
 }
 
@@ -88,6 +90,27 @@ export interface RoundStartedPayload {
   startedAt: string;
 }
 
+export interface RoundEndedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+  endedAt: string;
+}
+
+export interface GameFinishedPayload {
+  roomCode: string;
+  room: RoomDetail;
+  finishedAt: string;
+}
+
+export interface ActiveRoundState {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+}
+
 interface RoomEventDependencies {
   io: Pick<Server, "to">;
   repository: RoomRepository;
@@ -102,6 +125,7 @@ interface ChatEventDependencies extends RoomEventDependencies {
 interface DrawingEventDependencies extends RoomEventDependencies {
   now: () => Date;
   recentStrokeBatches: RecentStrokeBatchStore;
+  roundState: RoundRuntimeStateStore;
 }
 
 interface RoundEventDependencies extends RoomEventDependencies {
@@ -109,6 +133,29 @@ interface RoundEventDependencies extends RoomEventDependencies {
   now: () => Date;
   roundIdGenerator: () => string;
   selectImage: (images: ImageMetadata[]) => ImageMetadata;
+  roundState: RoundRuntimeStateStore;
+  timerScheduler: RoundTimerScheduler;
+}
+
+interface RoundTimerDependencies {
+  io: Pick<Server, "to">;
+  repository: RoomRepository;
+  imageRepository: ImageRepository;
+  now: () => Date;
+  roundIdGenerator: () => string;
+  selectImage: (images: ImageMetadata[]) => ImageMetadata;
+  roundState: RoundRuntimeStateStore;
+  timerScheduler: RoundTimerScheduler;
+}
+
+export interface RoundTimerScheduler {
+  schedule(input: {
+    roomCode: string;
+    roundId: string;
+    durationSec: number;
+    onExpire: () => void;
+  }): void;
+  clear(roomCode: string): void;
 }
 
 export class RecentChatMessageStore {
@@ -152,6 +199,86 @@ export class RecentStrokeBatchStore {
   }
 }
 
+export class RoundRuntimeStateStore {
+  private readonly activeRoundsByRoomCode = new Map<string, ActiveRoundState>();
+  private readonly closedRoundKeys = new Set<string>();
+
+  public startRound(round: ActiveRoundState): void {
+    const roomCode = normalizeRoomCode(round.roomCode);
+    this.activeRoundsByRoomCode.set(roomCode, {
+      ...round,
+      roomCode,
+      image: { ...round.image, uploadedBy: { ...round.image.uploadedBy } }
+    });
+  }
+
+  public getActiveRound(roomCode: string): ActiveRoundState | null {
+    const activeRound = this.activeRoundsByRoomCode.get(
+      normalizeRoomCode(roomCode)
+    );
+
+    return activeRound
+      ? {
+          ...activeRound,
+          image: {
+            ...activeRound.image,
+            uploadedBy: { ...activeRound.image.uploadedBy }
+          }
+        }
+      : null;
+  }
+
+  public closeRound(roomCode: string, roundId: string): void {
+    const normalizedRoomCode = normalizeRoomCode(roomCode);
+    const activeRound = this.activeRoundsByRoomCode.get(normalizedRoomCode);
+
+    if (activeRound?.roundId === roundId) {
+      this.activeRoundsByRoomCode.delete(normalizedRoomCode);
+    }
+
+    this.closedRoundKeys.add(createStrokeBatchKey(normalizedRoomCode, roundId));
+  }
+
+  public clearRoom(roomCode: string): void {
+    this.activeRoundsByRoomCode.delete(normalizeRoomCode(roomCode));
+  }
+
+  public isRoundClosed(roomCode: string, roundId: string): boolean {
+    return this.closedRoundKeys.has(createStrokeBatchKey(roomCode, roundId));
+  }
+}
+
+export class InMemoryRoundTimerScheduler implements RoundTimerScheduler {
+  private readonly timersByRoomCode = new Map<string, ReturnType<typeof setTimeout>>();
+
+  public schedule(input: {
+    roomCode: string;
+    roundId: string;
+    durationSec: number;
+    onExpire: () => void;
+  }): void {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    this.clear(roomCode);
+
+    const timer = setTimeout(() => {
+      this.timersByRoomCode.delete(roomCode);
+      input.onExpire();
+    }, input.durationSec * 1000);
+
+    this.timersByRoomCode.set(roomCode, timer);
+  }
+
+  public clear(roomCode: string): void {
+    const normalizedRoomCode = normalizeRoomCode(roomCode);
+    const timer = this.timersByRoomCode.get(normalizedRoomCode);
+
+    if (timer) {
+      clearTimeout(timer);
+      this.timersByRoomCode.delete(normalizedRoomCode);
+    }
+  }
+}
+
 export function registerRoomMembershipHandlers(
   io: Server,
   repository: RoomRepository,
@@ -159,6 +286,8 @@ export function registerRoomMembershipHandlers(
 ): void {
   const recentMessages = new RecentChatMessageStore();
   const recentStrokeBatches = new RecentStrokeBatchStore();
+  const roundState = new RoundRuntimeStateStore();
+  const timerScheduler = new InMemoryRoundTimerScheduler();
 
   io.on("connection", (socket) => {
     socket.on("join-room", (payload: unknown) => {
@@ -189,6 +318,7 @@ export function registerRoomMembershipHandlers(
           repository,
           socket,
           recentStrokeBatches,
+          roundState,
           now: () => new Date()
         },
         payload
@@ -204,7 +334,9 @@ export function registerRoomMembershipHandlers(
           imageRepository,
           now: () => new Date(),
           roundIdGenerator: createRoundId,
-          selectImage: selectRandomImage
+          selectImage: selectRandomImage,
+          roundState,
+          timerScheduler
         },
         payload
       );
@@ -408,6 +540,28 @@ export async function handleDrawStroke(
     return;
   }
 
+  if (room.status !== "playing") {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_STATE_INVALID",
+      message: "Drawing is only available while the room is playing."
+    });
+    return;
+  }
+
+  const activeRound = dependencies.roundState.getActiveRound(room.roomCode);
+  if (activeRound?.roundId !== parsedPayload.roundId) {
+    emitSocketError(dependencies.socket, {
+      code: dependencies.roundState.isRoundClosed(
+        room.roomCode,
+        parsedPayload.roundId
+      )
+        ? "DRAW_ROUND_CLOSED"
+        : "ROUND_STATE_INVALID",
+      message: "The drawing round is not active."
+    });
+    return;
+  }
+
   const strokeBatch: DrawStrokeBroadcastPayload = {
     ...parsedPayload,
     roomCode: room.roomCode,
@@ -512,11 +666,106 @@ export async function handleStartGame(
     durationSec: startedRoom.settings.roundDurationSec,
     startedAt
   };
+  dependencies.roundState.startRound(payloadToEmit);
 
   dependencies.io
     .to(createSocketRoomName(startedRoom.roomCode))
     .emit("round-started", payloadToEmit);
   emitRoomUpdated(dependencies.io, startedRoom);
+  scheduleRoundTimer(dependencies, payloadToEmit);
+}
+
+export async function handleRoundTimerExpired(
+  dependencies: RoundTimerDependencies,
+  expiredRound: ActiveRoundState
+): Promise<void> {
+  const room = await dependencies.repository.findRoomByCode(
+    expiredRound.roomCode
+  );
+  if (!room || room.status !== "playing") {
+    return;
+  }
+
+  const activeRound = dependencies.roundState.getActiveRound(room.roomCode);
+  if (activeRound?.roundId !== expiredRound.roundId) {
+    return;
+  }
+
+  dependencies.roundState.closeRound(room.roomCode, expiredRound.roundId);
+
+  const endedPayload: RoundEndedPayload = {
+    roomCode: room.roomCode,
+    roundId: expiredRound.roundId,
+    roundIndex: expiredRound.roundIndex,
+    image: expiredRound.image,
+    endedAt: dependencies.now().toISOString()
+  };
+
+  dependencies.io
+    .to(createSocketRoomName(room.roomCode))
+    .emit("round-ended", endedPayload);
+
+  const unusedImages =
+    await dependencies.imageRepository.listUnusedImagesByRoomCode(room.roomCode);
+
+  if (unusedImages.length > 0) {
+    const selectedCandidate = dependencies.selectImage(unusedImages);
+    const selectedImage =
+      await dependencies.imageRepository.markImageUsed(selectedCandidate.id);
+
+    if (selectedImage) {
+      const advancedRoom = await dependencies.repository.advanceRound({
+        roomCode: room.roomCode
+      });
+      const startedPayload: RoundStartedPayload = {
+        roomCode: advancedRoom.roomCode,
+        roundId: dependencies.roundIdGenerator(),
+        roundIndex: advancedRoom.currentRoundIndex,
+        image: selectedImage,
+        durationSec: advancedRoom.settings.roundDurationSec,
+        startedAt: dependencies.now().toISOString()
+      };
+
+      dependencies.roundState.startRound(startedPayload);
+      dependencies.io
+        .to(createSocketRoomName(advancedRoom.roomCode))
+        .emit("round-started", startedPayload);
+      emitRoomUpdated(dependencies.io, advancedRoom);
+      scheduleRoundTimer(dependencies, startedPayload);
+      return;
+    }
+  }
+
+  const finishedRoom = await dependencies.repository.finishGame({
+    roomCode: room.roomCode
+  });
+  dependencies.roundState.clearRoom(finishedRoom.roomCode);
+  dependencies.timerScheduler.clear(finishedRoom.roomCode);
+
+  const finishedPayload: GameFinishedPayload = {
+    roomCode: finishedRoom.roomCode,
+    room: finishedRoom,
+    finishedAt: dependencies.now().toISOString()
+  };
+
+  dependencies.io
+    .to(createSocketRoomName(finishedRoom.roomCode))
+    .emit("game-finished", finishedPayload);
+  emitRoomUpdated(dependencies.io, finishedRoom);
+}
+
+function scheduleRoundTimer(
+  dependencies: RoundTimerDependencies,
+  round: ActiveRoundState & { durationSec: number }
+): void {
+  dependencies.timerScheduler.schedule({
+    roomCode: round.roomCode,
+    roundId: round.roundId,
+    durationSec: round.durationSec,
+    onExpire: () => {
+      void handleRoundTimerExpired(dependencies, round);
+    }
+  });
 }
 
 export function createSocketRoomName(roomCode: string): string {

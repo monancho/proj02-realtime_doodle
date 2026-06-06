@@ -14,11 +14,13 @@ import {
   handleDrawStroke,
   handleJoinRoom,
   handleLeaveRoom,
+  handleRoundTimerExpired,
   handleSendMessage,
   handleStartGame,
   type DrawStroke,
   RecentChatMessageStore,
-  RecentStrokeBatchStore
+  RecentStrokeBatchStore,
+  RoundRuntimeStateStore
 } from "./rooms";
 
 const roomSettings: RoomSettings = {
@@ -302,19 +304,26 @@ describe("room membership socket handlers", () => {
 
   it("broadcasts valid drawing strokes to the matching socket room", async () => {
     const repository = new InMemoryRoomRepository({
-      roomCodeGenerator: () => "ABC123"
+      initialRooms: [createRoomDetail({ status: "playing" })]
     });
-    await createRoom(repository);
     const socket = createMockSocket(hostAuth);
     const io = createMockIo();
     const recentStrokeBatches = new RecentStrokeBatchStore();
+    const roundState = new RoundRuntimeStateStore();
+    roundState.startRound({
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: createImageMetadata({ id: "image-current" })
+    });
 
     await handleDrawStroke(
       createDrawingDependencies({
         io,
         repository,
         socket,
-        recentStrokeBatches
+        recentStrokeBatches,
+        roundState
       }),
       {
         roomCode: " abc123 ",
@@ -357,6 +366,52 @@ describe("room membership socket handlers", () => {
     expect(recentStrokeBatches.list("abc123", " round-1 ")).toEqual([
       expectedStrokeBatch
     ]);
+  });
+
+  it("rejects draw-stroke for ended rounds", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })]
+    });
+    const roundState = new RoundRuntimeStateStore();
+    roundState.closeRound("ABC123", "round-1");
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleDrawStroke(
+      createDrawingDependencies({ io, repository, socket, roundState }),
+      {
+        roomCode: "ABC123",
+        roundId: "round-1",
+        stroke: createValidStroke()
+      }
+    );
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "DRAW_ROUND_CLOSED" })
+    );
+  });
+
+  it("rejects draw-stroke when the room is not playing", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123"
+    });
+    await createRoom(repository);
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: createValidStroke()
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_STATE_INVALID" })
+    );
   });
 
   it("rejects draw-stroke without authenticated socket context", async () => {
@@ -484,6 +539,7 @@ describe("room membership socket handlers", () => {
     });
     const socket = createMockSocket(hostAuth);
     const io = createMockIo();
+    const timerScheduler = createMockTimerScheduler();
 
     await handleStartGame(
       createRoundDependencies({
@@ -491,7 +547,8 @@ describe("room membership socket handlers", () => {
         repository,
         imageRepository,
         socket,
-        selectImage: (images) => images[1] ?? images[0]
+        selectImage: (images) => images[1] ?? images[0],
+        timerScheduler
       }),
       { roomCode: " abc123 " }
     );
@@ -520,6 +577,132 @@ describe("room membership socket handlers", () => {
           status: "playing",
           currentRoundIndex: 0
         })
+      })
+    );
+    expect(timerScheduler.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-test",
+        durationSec: 60
+      })
+    );
+  });
+
+  it("ends a round and finishes the game when no unused images remain", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })],
+      now: () => new Date("2026-06-06T00:01:02.000Z")
+    });
+    const imageRepository = new InMemoryImageRepository();
+    const io = createMockIo();
+    const roundState = new RoundRuntimeStateStore();
+    const activeRound = {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: createImageMetadata({ id: "image-used" })
+    };
+    roundState.startRound(activeRound);
+
+    await handleRoundTimerExpired(
+      createTimerDependencies({
+        io,
+        repository,
+        imageRepository,
+        roundState,
+        now: createClock([
+          "2026-06-06T00:01:00.000Z",
+          "2026-06-06T00:01:01.000Z"
+        ])
+      }),
+      activeRound
+    );
+
+    const room = await repository.findRoomByCode("ABC123");
+
+    expect(room?.status).toBe("finished");
+    expect(io.emitToRoom).toHaveBeenCalledWith("round-ended", {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: activeRound.image,
+      endedAt: "2026-06-06T00:01:00.000Z"
+    });
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "game-finished",
+      expect.objectContaining({
+        roomCode: "ABC123",
+        finishedAt: "2026-06-06T00:01:01.000Z",
+        room: expect.objectContaining({ status: "finished" })
+      })
+    );
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "room-updated",
+      expect.objectContaining({
+        room: expect.objectContaining({ status: "finished" })
+      })
+    );
+  });
+
+  it("ends a round and starts the next round when an unused image remains", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })],
+      now: () => new Date("2026-06-06T00:01:02.000Z")
+    });
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [createImageMetadata({ id: "image-next" })]
+    });
+    const io = createMockIo();
+    const roundState = new RoundRuntimeStateStore();
+    const timerScheduler = createMockTimerScheduler();
+    const activeRound = {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: createImageMetadata({ id: "image-used" })
+    };
+    roundState.startRound(activeRound);
+
+    await handleRoundTimerExpired(
+      createTimerDependencies({
+        io,
+        repository,
+        imageRepository,
+        roundState,
+        timerScheduler,
+        roundIdGenerator: () => "round-2",
+        now: createClock([
+          "2026-06-06T00:01:00.000Z",
+          "2026-06-06T00:01:01.000Z"
+        ])
+      }),
+      activeRound
+    );
+
+    const room = await repository.findRoomByCode("ABC123");
+    const usedImage = await imageRepository.findImageById("image-next");
+
+    expect(room).toMatchObject({
+      status: "playing",
+      currentRoundIndex: 1
+    });
+    expect(usedImage?.used).toBe(true);
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "round-started",
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-2",
+        roundIndex: 1,
+        image: usedImage,
+        durationSec: 60,
+        startedAt: "2026-06-06T00:01:01.000Z"
+      })
+    );
+    expect(timerScheduler.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-2",
+        durationSec: 60
       })
     );
   });
@@ -677,18 +860,21 @@ function createDrawingDependencies({
   io,
   repository,
   socket,
-  recentStrokeBatches = new RecentStrokeBatchStore()
+  recentStrokeBatches = new RecentStrokeBatchStore(),
+  roundState = new RoundRuntimeStateStore()
 }: {
   io: Pick<Server, "to">;
   repository: InMemoryRoomRepository;
   socket: Pick<Socket, "data" | "emit" | "join" | "leave">;
   recentStrokeBatches?: RecentStrokeBatchStore;
+  roundState?: RoundRuntimeStateStore;
 }) {
   return {
     io,
     repository,
     socket,
     recentStrokeBatches,
+    roundState,
     now: () => new Date("2026-06-06T00:00:00.000Z")
   };
 }
@@ -698,13 +884,21 @@ function createRoundDependencies({
   repository,
   imageRepository,
   socket,
-  selectImage = (images: ImageMetadata[]) => images[0]
+  selectImage = (images: ImageMetadata[]) => images[0],
+  roundState = new RoundRuntimeStateStore(),
+  timerScheduler = createMockTimerScheduler(),
+  roundIdGenerator = () => "round-test",
+  now = createClock(["2026-06-06T00:00:02.000Z"])
 }: {
   io: Pick<Server, "to">;
   repository: InMemoryRoomRepository;
   imageRepository: InMemoryImageRepository;
   socket: Pick<Socket, "data" | "emit" | "join" | "leave">;
   selectImage?: (images: ImageMetadata[]) => ImageMetadata;
+  roundState?: RoundRuntimeStateStore;
+  timerScheduler?: ReturnType<typeof createMockTimerScheduler>;
+  roundIdGenerator?: () => string;
+  now?: () => Date;
 }) {
   return {
     io,
@@ -712,8 +906,48 @@ function createRoundDependencies({
     imageRepository,
     socket,
     selectImage,
-    roundIdGenerator: () => "round-test",
-    now: createClock(["2026-06-06T00:00:02.000Z"])
+    roundState,
+    timerScheduler,
+    roundIdGenerator,
+    now
+  };
+}
+
+function createTimerDependencies({
+  io,
+  repository,
+  imageRepository,
+  roundState = new RoundRuntimeStateStore(),
+  timerScheduler = createMockTimerScheduler(),
+  selectImage = (images: ImageMetadata[]) => images[0],
+  roundIdGenerator = () => "round-test",
+  now = createClock(["2026-06-06T00:00:00.000Z"])
+}: {
+  io: Pick<Server, "to">;
+  repository: InMemoryRoomRepository;
+  imageRepository: InMemoryImageRepository;
+  roundState?: RoundRuntimeStateStore;
+  timerScheduler?: ReturnType<typeof createMockTimerScheduler>;
+  selectImage?: (images: ImageMetadata[]) => ImageMetadata;
+  roundIdGenerator?: () => string;
+  now?: () => Date;
+}) {
+  return {
+    io,
+    repository,
+    imageRepository,
+    roundState,
+    timerScheduler,
+    selectImage,
+    roundIdGenerator,
+    now
+  };
+}
+
+function createMockTimerScheduler() {
+  return {
+    schedule: vi.fn(),
+    clear: vi.fn()
   };
 }
 

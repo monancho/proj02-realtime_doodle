@@ -791,3 +791,34 @@
 - 다음 추천 작업:
   - `PHASE-10-TIMER-ROUND-END-IMPLEMENTATION`
   - In-memory round timer, `round-ended`, drawing block, next round 또는 finished 전이를 구현.
+
+### 2026-06-06 PHASE-10-TIMER-ROUND-END-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: In-memory round timer, `round-ended`, drawing block, next round 또는 finished 전이 구현.
+- 수행 내용:
+  - `RoundRuntimeStateStore`와 `InMemoryRoundTimerScheduler` 추가.
+  - `start-game` 성공 후 active round 등록과 in-memory timer schedule 추가.
+  - timer 만료 시 `round-ended` emit 구현.
+  - unused image가 있으면 다음 image used 처리, `currentRoundIndex` 증가, 다음 `round-started` emit 구현.
+  - unused image가 없으면 room status `finished` 전이, `game-finished`, `room-updated` emit 구현.
+  - `draw-stroke`를 active playing round에서만 허용하도록 차단 구현.
+  - `RoomRepository.advanceRound()`, `RoomRepository.finishGame()` 계약과 in-memory/MongoDB 구현 추가.
+  - socket handler 테스트 추가 및 기존 drawing/start-game 테스트 갱신.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Result save와 합성 이미지 생성.
+  - Redis scheduler, durable timer recovery, multi-instance coordination.
+  - 실제 MongoDB 연결 검증.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 15 files, 68 tests.
+  - `git status --short`: 코드/문서 변경 파일과 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-11-RESULT-SAVE-PLAN`
+  - round 종료 후 합성 이미지 생성/저장과 `results` metadata 저장 범위를 문서화.
+

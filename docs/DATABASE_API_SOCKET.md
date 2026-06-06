@@ -1490,3 +1490,49 @@ export interface GameFinishedPayload {
 - Result save와 합성 이미지 생성은 구현하지 않는다.
 - Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않는다.
 - Drawing, Chat, Upload 기존 동작을 변경하지 않는다.
+
+## Timer/Round End 구현 기록
+
+이 섹션은 `PHASE-10-TIMER-ROUND-END-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 Event
+
+| Event | 구현 결과 |
+|---|---|
+| `start-game` | 성공 시 selected image를 used 처리하고 active round를 runtime state에 등록한 뒤 in-memory timer schedule |
+| `round-ended` | timer 만료 시 `{ roomCode, roundId, roundIndex, image, endedAt }` payload를 같은 Socket.IO room에 emit |
+| `round-started` | 다음 unused image가 있으면 `currentRoundIndex + 1` 후 새 `{ roomCode, roundId, roundIndex, image, durationSec, startedAt }` payload emit |
+| `game-finished` | unused image가 없으면 room status를 `finished`로 전이하고 `{ roomCode, room, finishedAt }` payload emit |
+| `room-updated` | round start, next round, finished 상태 변경 후 `{ room: RoomDetail }` payload emit |
+
+### Runtime State와 Timer
+
+- `RoundRuntimeStateStore`가 room별 active round `{ roomCode, roundId, roundIndex, image }`를 in-memory로 관리한다.
+- `InMemoryRoundTimerScheduler`가 room별 active timer를 `setTimeout` 기반으로 관리한다.
+- 새 round timer를 schedule하면 같은 room의 기존 timer는 clear한다.
+- timer callback은 최신 room을 repository에서 다시 조회하고, room이 없거나 `playing`이 아니면 no-op 처리한다.
+- timer callback의 `roundId`가 현재 active round와 다르면 stale timer로 보고 no-op 처리한다.
+- Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않았다.
+
+### Drawing 차단 구현
+
+- `draw-stroke`는 room status가 `playing`일 때만 허용한다.
+- `draw-stroke.roundId`는 `RoundRuntimeStateStore`의 active round id와 일치해야 한다.
+- 이미 종료된 round는 `DRAW_ROUND_CLOSED`로 거절한다.
+- 현재 active round와 맞지 않는 round는 `ROUND_STATE_INVALID`로 거절한다.
+- 종료된 round에는 recent stroke batch를 새로 append하지 않는다.
+
+### Repository 변경
+
+- `RoomRepository.advanceRound()` 계약을 추가했다.
+- `RoomRepository.finishGame()` 계약을 추가했다.
+- `InMemoryRoomRepository.advanceRound()`는 `playing` room의 `currentRoundIndex`를 1 증가시킨다.
+- `InMemoryRoomRepository.finishGame()`은 `playing` room status를 `finished`로 전이한다.
+- `MongoRoomRepository.advanceRound()`는 `status: "playing"` 조건부 update와 `$inc`로 currentRoundIndex를 증가시킨다.
+- `MongoRoomRepository.finishGame()`은 `status: "playing"` 조건부 update로 room status를 `finished`로 전이한다.
+
+### 구현 제외 범위
+
+- Result save와 합성 이미지 생성은 구현하지 않았다.
+- Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않았다.
+- 실제 MongoDB 연결 검증은 수행하지 않았다.
