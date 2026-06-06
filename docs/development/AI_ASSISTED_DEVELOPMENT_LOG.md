@@ -705,3 +705,31 @@
 - 다음 추천 작업:
   - `PHASE-08-RANDOM-ROUND-START-PLAN`
   - 미사용 이미지 랜덤 선택과 `round-started` payload를 Image metadata 기반으로 문서화.
+
+### 2026-06-06 PHASE-08-RANDOM-ROUND-START-PLAN
+
+- Agent: `backend`
+- 목표: Random round start 구현 전에 미사용 이미지 선택, `round-started` payload, image used 처리, room 상태 전이 기준 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Random Round Start 구현 계획 추가.
+  - 미사용 이미지 랜덤 선택 기준 정리.
+  - `round-started` payload를 Image metadata 기반으로 정리.
+  - selected image의 `used: true` 처리 기준 정리.
+  - host 권한과 room membership 검증 기준 정리.
+  - `waiting -> playing` 상태 전이 기준 정리.
+  - 업로드 이미지 부족 시 `ROUND_IMAGE_NOT_FOUND` error code 기준 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Random round start 구현 코드.
+  - Timer scheduling과 `round-ended` 자동 emit.
+  - Result save.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-08-RANDOM-ROUND-START-IMPLEMENTATION`
+  - Image metadata repository 기반 미사용 이미지 선택, used 처리, `round-started` emit을 host 권한 검증 기반으로 구현.

@@ -293,3 +293,15 @@
 - MongoDB `images` metadata index와 GridFS bucket `originalImages` wiring을 bootstrap에 추가했다.
 - Render local filesystem에 이미지를 영구 저장하는 코드는 추가하지 않았다.
 - Random round start, Timer, Result save는 구현하지 않았다.
+
+### 2026-06-06 PHASE-08-RANDOM-ROUND-START-PLAN
+
+- Random round start 구현 전에 미사용 이미지 선택, `round-started` payload, image used 처리, room 상태 전이 기준을 문서화했다.
+- Random round start 구현 코드는 추가하지 않았다.
+- 미사용 이미지는 `ImageRepository`에서 `roomCode` 기준으로 조회한 `used === false` image metadata 중 선택하는 기준으로 정리했다.
+- 후보 이미지가 없으면 `ROUND_IMAGE_NOT_FOUND`로 거절하는 기준을 정리했다.
+- 선택된 image는 round 생성과 함께 `used: true`로 전환하는 기준을 정리했다.
+- `round-started` payload는 `{ roomCode, roundId, roundIndex, image, durationSec, startedAt }`로 정리했다.
+- `start-game`은 room participant이면서 host인 사용자만 요청할 수 있는 기준으로 정리했다.
+- 성공 시 room status는 `waiting -> playing`, `currentRoundIndex`는 `0` 기준으로 정리했다.
+- Timer, Result save는 구현하지 않았다.

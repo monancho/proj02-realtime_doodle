@@ -1272,3 +1272,88 @@ export interface ListRoomImagesResponse {
 - Random round start, Timer, Result save는 구현하지 않았다.
 - 이미지 리사이징, 썸네일 생성, 바이러스 스캔, 고급 이미지 편집은 구현하지 않았다.
 - 실제 MongoDB/GridFS 연결 검증은 이번 테스트 범위에서 제외했다.
+
+## Random Round Start 구현 계획
+
+이 섹션은 `PHASE-08-RANDOM-ROUND-START-PLAN`의 기준이다. 아직 Random round start 구현 코드를 작성하지 않으며, 다음 Random round start 구현 단계에서 이 경계를 따른다.
+
+### 목표 경계
+
+Random round start는 host가 `start-game`을 요청하면 room의 미사용 업로드 이미지 중 하나를 선택하고, 선택된 이미지를 round 대상 이미지로 확정한 뒤 같은 Socket.IO room에 `round-started`를 broadcast하는 기능이다.
+
+Timer scheduling과 `round-ended` 자동 emit은 다음 Timer 구현 단계에서 다룬다. 이번 Random round start 구현 범위는 첫 round 시작과 image selection/used 처리까지로 제한한다.
+
+### 미사용 이미지 선택 기준
+
+1. `ImageRepository`에서 `roomCode` 기준 image metadata를 조회한다.
+2. `used === false`인 이미지만 후보로 사용한다.
+3. 후보가 없으면 `ROUND_IMAGE_NOT_FOUND`로 거절한다.
+4. 후보가 있으면 서버 random source로 하나를 선택한다.
+5. 선택 결과는 테스트에서 deterministic random 또는 selector를 주입할 수 있어야 한다.
+6. 선택된 image는 round 생성과 함께 `used: true`로 전환한다.
+
+동시 `start-game` 요청에서 같은 image가 중복 선택되지 않도록 MongoDB 구현은 가능한 경우 conditional update 또는 transaction을 사용한다. MVP skeleton에서는 repository 계약에 atomic selection 의도를 명시한다.
+
+### Event Payload 기준
+
+```ts
+export interface StartGamePayload {
+  roomCode: string;
+}
+
+export interface RoundStartedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+  durationSec: number;
+  startedAt: string;
+}
+```
+
+Upload 구현 이후 `round-started`는 `imageId` 단일 필드보다 `image: ImageMetadata`를 우선 사용한다. 클라이언트는 `image.id`로 `GET /api/images/:imageId`를 호출해 원본 이미지를 stream으로 가져온다.
+
+### Host 권한과 Membership 검증 기준
+
+1. Socket auth middleware가 `socket.data.auth`에 shared `AuthContext`를 저장했는지 확인한다.
+2. payload가 `{ roomCode: string }` 형식인지 확인한다.
+3. `roomCode`는 trim + uppercase normalize한다.
+4. `RoomRepository.findRoomByCode(roomCode)`로 room을 조회한다.
+5. room이 없으면 `ROOM_NOT_FOUND`로 응답한다.
+6. socket auth user가 room participants에 없으면 `ROOM_ACCESS_DENIED`로 응답한다.
+7. socket auth user의 `firebaseUid`가 `room.hostUid`와 다르면 `ROOM_HOST_REQUIRED`로 응답한다.
+8. room status가 `waiting`이 아니면 `ROOM_STATE_INVALID`로 응답한다.
+9. 검증 성공 후 image selection과 room 상태 전이를 수행한다.
+
+### 상태 전이와 Round 생성 기준
+
+| 단계 | 기준 |
+|---|---|
+| 시작 전 room status | `waiting` |
+| 성공 후 room status | `playing` |
+| 첫 round index | `0` |
+| `currentRoundIndex` | `0`으로 설정 또는 유지 |
+| round id | server-generated id |
+| selected image | `used: false` image 중 하나 |
+| selected image 처리 | round 생성과 함께 `used: true` |
+
+`room-updated`는 room status/currentRoundIndex 변경 후 `{ room: RoomDetail }` shape로 함께 emit하는 것을 권장한다.
+
+### Error Code 기준
+
+| Code | 의미 |
+|---|---|
+| `AUTH_TOKEN_MISSING` | socket auth context가 없음 |
+| `ROOM_PAYLOAD_INVALID` | payload가 `{ roomCode: string }` 형식이 아님 |
+| `ROOM_NOT_FOUND` | room 없음 |
+| `ROOM_ACCESS_DENIED` | room participant가 아닌 사용자가 요청 |
+| `ROOM_HOST_REQUIRED` | host가 아닌 participant가 요청 |
+| `ROOM_STATE_INVALID` | room status가 `waiting`이 아님 |
+| `ROUND_IMAGE_NOT_FOUND` | 사용할 수 있는 `used: false` image가 없음 |
+
+### 구현 제외 범위
+
+- Random round start 구현 코드는 이 단계에서 작성하지 않는다.
+- Timer scheduling과 `round-ended` 자동 emit은 구현하지 않는다.
+- Result save는 구현하지 않는다.
+- multi-instance random coordination과 durable round recovery는 MVP 범위 밖이다.
