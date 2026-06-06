@@ -253,3 +253,16 @@
 - `RecentStrokeBatchStore`를 추가해 server memory에 `roomCode + roundId`별 최근 200개 stroke batch만 보관한다.
 - stroke 영구 저장, MongoDB stroke repository, stroke 조회 API는 구현하지 않았다.
 - Chat, Upload, Timer, Round feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-08-ROUND-TIMER-PLAN
+
+- Round/Timer 구현 전에 `start-game`, `round-started`, `round-ended` payload와 권한/상태/timer 기준을 문서화했다.
+- Round/Timer 구현 코드는 추가하지 않았다.
+- `start-game` payload는 `{ roomCode: string }`로 정리했다.
+- `round-started` payload는 `{ roomCode, roundId, roundIndex, durationSec, startedAt, endsAt, imageId }`로 정리했다.
+- `round-ended` payload는 `{ roomCode, roundId, roundIndex, endedAt }`로 정리했다.
+- `start-game`은 room participant이면서 `room.hostUid`와 socket auth user `firebaseUid`가 일치하는 host만 허용한다.
+- room status는 `waiting -> playing -> finished` 전이를 기준으로 정리했다.
+- `currentRoundIndex`는 첫 라운드에서 `0`을 사용하고 다음 라운드가 있으면 1씩 증가하는 기준으로 정리했다.
+- MVP timer는 `roundDurationSec` 기반 server memory `setTimeout` scheduling으로 정리했다.
+- Drawing, Chat, Upload feature는 구현하지 않았다.

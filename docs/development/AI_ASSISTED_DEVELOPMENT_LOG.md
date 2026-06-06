@@ -614,3 +614,31 @@
 - 다음 추천 작업:
   - `PHASE-08-ROUND-TIMER-PLAN`
   - Round/Timer 구현 전에 `start-game`, `round-started`, `round-ended` payload와 host 권한, 상태 전이, duration 기준을 문서화.
+
+### 2026-06-06 PHASE-08-ROUND-TIMER-PLAN
+
+- Agent: `backend`
+- 목표: Round/Timer 구현 전에 `start-game`, `round-started`, `round-ended` payload와 host 권한, 상태 전이, duration 기준 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Round/Timer 구현 계획 추가.
+  - `start-game` payload `{ roomCode: string }` 기준 정리.
+  - `round-started` payload 기준 정리.
+  - `round-ended` payload 기준 정리.
+  - host만 `start-game`을 요청할 수 있는 권한 기준 정리.
+  - room status와 `currentRoundIndex` 상태 전이 기준 정리.
+  - round duration과 server memory timer scheduling MVP 정책 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Round/Timer 구현 코드.
+  - Drawing, Chat, Upload feature.
+  - Redis scheduler, durable job queue, multi-instance timer coordination.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-08-ROUND-TIMER-IMPLEMENTATION`
+  - Socket.IO `start-game`과 in-memory round timer를 host 권한 및 room 상태 전이 검증 기반으로 구현.
