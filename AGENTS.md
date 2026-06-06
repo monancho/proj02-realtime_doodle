@@ -57,14 +57,16 @@
 ## Frontend Auto-Continuation
 
 - 이 규칙은 `docs/DEVELOPMENT_PLAN_CHECKLIST.md`의 `PHASE-FE-*` 프론트엔드 작업에만 적용한다.
-- 사용자가 프론트엔드 자동 진행을 요청한 뒤에는, 하나의 `PHASE-FE-*` 작업을 완료할 때마다 다음 FE Phase 추천 프롬프트를 생성한다.
-- 사용자가 `진행`, `다음 진행`, `계속`, `프론트 계속`이라고 답하면 직전에 생성한 다음 FE Phase 프롬프트 기준으로 바로 이어서 구현한다.
-- 프론트 자동 진행 순서는 `FE-02 -> FE-03 -> FE-04 -> FE-05 -> FE-06 -> FE-07 -> FE-08`을 따른다.
-- 각 FE Phase 완료 시에도 검증, 문서 갱신, commit, 다음 프롬프트 제공을 유지한다.
+- 사용자가 프론트엔드 자동 진행을 요청한 경우, AI는 `FE-08 Frontend QA and Polish` 완료까지 다음 FE Phase를 중간 확인 없이 이어서 진행한다.
+- 각 FE Phase는 `docs/DEVELOPMENT_PLAN_CHECKLIST.md`, `docs/workflows/AI_TASK_TEMPLATE.md`, `docs/workflows/AGENT_ROLES.md`를 기준으로 Task Spec을 자체 생성한 뒤 수행한다.
+- 프론트 자동 진행 순서는 `FE-03 -> FE-04 -> FE-05 -> FE-06 -> FE-07 -> FE-08`을 따른다. 이미 완료된 FE Phase는 건너뛴다.
+- 각 FE Phase 완료 시 검증, 문서 갱신, commit, 다음 Phase 전환 기록을 유지한다.
+- 사용자가 별도 확인을 요구하지 않아도 다음 FE Phase로 이어가되, 최종 응답에는 완료한 Phase 범위와 다음으로 자동 진행할 Phase를 요약한다.
 - 다음 상황에서는 자동 진행을 멈추고 사용자 확인을 받는다.
   - `.env`, Firebase Console, 외부 계정, 배포 secret 등 사용자의 직접 작업이 필요한 경우
   - backend/API/Socket 계약 변경이 필요한 경우
   - `package-lock.json` 삭제/수정 판단이 필요한 경우
   - push, 배포, 외부 서비스 생성이 필요한 경우
   - MVP 범위를 벗어나는 기능 요청이 필요한 경우
+  - 같은 blocking condition이 반복되어 더 이상 의미 있는 프론트 진행이 불가능한 경우
 - 자동 진행 중에도 `.env`, token, private key, MongoDB URI, credential 값은 출력하거나 commit하지 않는다.
