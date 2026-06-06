@@ -28,11 +28,13 @@
 
 ## Handdrawn 적용 기준
 
-- 실제 Rough.js 패키지 도입은 dependency와 lockfile 변경이 필요하므로 MVP 1차 적용에서는 보류한다.
+- Rough.js는 실제 dependency로 도입하되 장식 SVG 레이어에만 사용한다.
+- Rough.js 적용 대상은 hero underline, room code badge, result/empty preview frame 같은 보조 장식으로 제한한다.
+- 기능 Canvas drawing, stroke 송수신, upload, timer, result save 동작에는 Rough.js를 사용하지 않는다.
 - 카드와 모달은 `8px` 이하의 비정형 border-radius 조합으로 손그림 느낌을 낸다.
 - 카드 내부에는 얇은 dashed inner border를 사용해 종이 위 스케치 느낌을 만든다.
 - 버튼 hover는 작은 회전과 그림자 축소로 눌리는 장난감 같은 감각을 준다.
-- H1에는 마커형 underline을 사용하되 본문 가독성을 가리지 않는다.
+- H1에는 Rough.js underline을 사용하되 본문 가독성을 가리지 않는다.
 - 모바일에서는 카드 회전을 제거하고 preview/grid 요소가 한 줄로 눌리지 않도록 한다.
 
 ## 레이아웃 원칙

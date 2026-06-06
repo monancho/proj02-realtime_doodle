@@ -8,6 +8,26 @@
 
 ## 작업 로그
 
+### 2026-06-06 PHASE-FE-ROUGHJS-DECORATION-LAYER
+
+- Agent: `frontend`
+- 목표: Rough.js를 실제 dependency로 도입하고 기능 동작을 바꾸지 않는 장식 레이어에 최소 적용.
+- 수행 내용:
+  - `roughjs`를 `@doodle/web` dependency로 추가하고 `pnpm-lock.yaml`을 갱신했다.
+  - `RoughDecoration` 컴포넌트를 추가해 Rough.js SVG를 mount 시 생성하고 cleanup 시 제거하도록 구성했다.
+  - hero underline, room code badge, gallery empty frame, result preview decoration에만 적용했다.
+  - Drawing canvas, stroke socket payload, upload, timer, result save 기능 로직은 변경하지 않았다.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/web typecheck`
+  - 실행: `corepack pnpm --filter @doodle/web build`
+  - 결과: 모두 통과
+- 주의:
+  - `package-lock.json`은 미추적 상태로 유지하고 수정/삭제/commit하지 않는다.
+  - 모바일/데스크톱 실제 브라우저 시각 QA는 별도 로컬 QA에서 확인한다.
+- 다음 추천 작업:
+  - `PHASE-LOCAL-E2E-PLAY-FLOW-QA-FIX`
+  - Google 로그인부터 방 생성/입장, 이미지 업로드, ready, start-game, 라운드 이미지 표시, socket drawing 동기화, 결과 전환까지 로컬 수동 QA로 점검한다.
+
 ### 2026-06-05 PHASE-00-DOCS-REFACTOR
 
 - Agent: `docs-maintainer`

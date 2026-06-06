@@ -19,6 +19,7 @@ import type { User } from "firebase/auth";
 import { io, type Socket } from "socket.io-client";
 import { ApiClientError, createApiClient, normalizeRoomCode } from "./api/client";
 import { createFirebaseClient } from "./auth/firebase";
+import { RoughDecoration } from "./components/RoughDecoration";
 
 type ViewMode = "lobby" | "room" | "play" | "gallery";
 type ModalMode = "create-room" | "join-room" | "nickname";
@@ -794,6 +795,7 @@ export function App() {
         <div>
           <p className="eyebrow">Realtime Doodle Relay</p>
           <h1 id="app-title">같이 그리고, 같이 망치고, 같이 저장하기</h1>
+          <RoughDecoration className="rough-underline" seed={21} variant="underline" />
           <p className="hero-copy">
             방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
           </p>
@@ -946,6 +948,7 @@ function LoggedOutView(props: LoggedOutViewProps) {
       <section className="login-panel" aria-labelledby="login-title">
         <p className="eyebrow">Realtime Doodle Relay</p>
         <h1 id="login-title">같이 그리고, 같이 망치고, 같이 저장하기</h1>
+        <RoughDecoration className="rough-underline" seed={29} variant="underline" />
         <p className="hero-copy">Google로 로그인하면 바로 방을 만들거나 초대 코드로 입장할 수 있습니다.</p>
         <button className="primary-button google-button" disabled={props.isBusy} onClick={props.onSignInWithGoogle} type="button">
           <LogIn size={18} />
@@ -1080,7 +1083,10 @@ function RoomView(props: RoomViewProps) {
           <Users size={20} />
           <h2>{props.room?.title ?? "대기실"}</h2>
         </div>
-        <div className="room-code">{props.activeRoomCode || "------"}</div>
+        <div className="room-code">
+          <RoughDecoration className="rough-badge" seed={31} variant="badge" />
+          <span>{props.activeRoomCode || "------"}</span>
+        </div>
         <dl className="summary-list">
           <div>
             <dt>상태</dt>
@@ -1493,6 +1499,7 @@ function GalleryView(props: GalleryViewProps) {
   if (props.state === "loading") {
     return (
       <section className="paper-card gallery-empty">
+        <RoughDecoration className="rough-empty-frame" seed={43} variant="frame" />
         <RefreshCw size={28} />
         <h2>결과를 불러오는 중입니다.</h2>
       </section>
@@ -1502,6 +1509,7 @@ function GalleryView(props: GalleryViewProps) {
   if (props.state === "error") {
     return (
       <section className="paper-card gallery-empty">
+        <RoughDecoration className="rough-empty-frame" seed={47} variant="frame" />
         <Download size={28} />
         <h2>{props.error ?? "결과 목록을 불러오지 못했습니다."}</h2>
       </section>
@@ -1511,6 +1519,7 @@ function GalleryView(props: GalleryViewProps) {
   if (props.results.length === 0) {
     return (
       <section className="paper-card gallery-empty">
+        <RoughDecoration className="rough-empty-frame" seed={53} variant="frame" />
         <Download size={28} />
         <h2>저장된 결과가 없습니다.</h2>
       </section>
@@ -1526,7 +1535,10 @@ function GalleryView(props: GalleryViewProps) {
       <section className="gallery-grid">
         {props.results.map((result) => (
           <article className="paper-card result-card" key={result.id}>
-            <div className="result-preview">Round {result.roundIndex + 1}</div>
+            <div className="result-preview">
+              <RoughDecoration className="rough-result" seed={result.roundIndex + 61} variant="result" />
+              <span>Round {result.roundIndex + 1}</span>
+            </div>
             <dl className="summary-list">
               <div>
                 <dt>stroke</dt>

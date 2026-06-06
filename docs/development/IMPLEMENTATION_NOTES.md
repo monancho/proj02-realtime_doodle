@@ -6,6 +6,14 @@
 
 ## 구현 메모
 
+### 2026-06-06 PHASE-FE-ROUGHJS-DECORATION-LAYER
+
+- `roughjs`를 `@doodle/web` dependency로 추가하고 `pnpm-lock.yaml`을 pnpm 기준으로 갱신했다.
+- `apps/web/src/components/RoughDecoration.tsx`를 추가해 Rough.js SVG를 React lifecycle 안에서 생성/정리한다.
+- 적용 범위는 hero underline, room code badge, gallery empty frame, result preview decoration으로 제한했다.
+- 기능 Canvas drawing, stroke 송수신, Socket, Upload, Timer, Result save 동작은 변경하지 않았다.
+- 기존 CSS handdrawn 스타일과 충돌하지 않도록 Rough.js SVG는 pointer event를 받지 않는 장식 레이어로 배치했다.
+
 ### 2026-06-05 PHASE-00-PROJECT-SCAFFOLD
 
 - pnpm workspace root를 `package.json`, `pnpm-workspace.yaml`로 생성했다.

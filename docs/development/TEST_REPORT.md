@@ -4,6 +4,24 @@
 
 ## 검증 결과
 
+### 2026-06-06 PHASE-FE-ROUGHJS-DECORATION-LAYER
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과
+  - `build`: 통과. Vite production build 완료
+  - `git status --short`: 변경 파일 확인 완료. `package-lock.json`은 미추적 상태로 유지
+  - dependency 추가: `roughjs` 설치 및 `pnpm-lock.yaml` 갱신 완료
+- 설치 경고:
+  - 일부 deprecated subdependency와 기존 server 쪽 peer dependency warning이 출력되었으나 web build에는 실패를 만들지 않았다.
+- 수동 QA:
+  - 브라우저에서 모바일/데스크톱 시각 겹침 확인은 이번 자동 검증 범위에서 미실행.
+  - 실제 Canvas drawing socket 동기화, Upload, Timer, Result save 수동 플로우는 기능 변경 범위가 아니어서 미실행.
+- 보안:
+  - `.env`, URI, private key, token 값은 열람/출력하지 않았다.
+
 ### 2026-06-05 PHASE-00-PROJECT-SCAFFOLD
 
 - 실행 명령: `git status --short`

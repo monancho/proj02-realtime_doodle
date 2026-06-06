@@ -8,8 +8,9 @@
 
 - 키워드: 낙서장, 손그림, 종이, 스티커, 삐뚤어진 테두리, 가벼운 장난감 같은 조작감
 - 방향: handdrawn.css 계열의 비정형 버튼, 완벽하게 직선이 아닌 카드, 단순한 음영
-- 현재 프론트 적용: `Gaegu` 제목/강조, `Pretendard` 본문/버튼 fallback, 비정형 border-radius, dashed inner border, 마커형 underline, 종이 격자 배경
-- Rough.js: 실제 패키지 도입은 의존성/lockfile 변경이 필요하므로 MVP 1차 디자인에서는 보류하고 CSS 기반 handdrawn 스타일로 대체한다.
+- 현재 프론트 적용: `Gaegu` 제목/강조, `Pretendard` 본문/버튼 fallback, 비정형 border-radius, dashed inner border, 종이 격자 배경, Rough.js 장식 레이어
+- Rough.js: 실제 패키지를 도입했으며 hero underline, room code badge, result/empty preview frame 같은 장식 SVG에만 사용한다.
+- Rough.js 제외 범위: 기능 Canvas drawing, stroke 송수신, upload/timer/result save 동작에는 적용하지 않는다.
 - 지양: 과도한 그라디언트, 지나치게 매끈한 SaaS dashboard, 고채도 네온 UI
 - 우선순위: 장식보다 드로잉 영역, 타이머, 채팅 가독성
 
