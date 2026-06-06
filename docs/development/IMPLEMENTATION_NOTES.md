@@ -568,3 +568,11 @@
 - 모바일에서는 카드 회전을 제거하고 upload preview가 한 열로 내려가도록 조정했다.
 - `docs/design/DESIGN_SYSTEM_WIREFRAME.md`, `docs/design/UI_STYLE_GUIDE.md`에 Rough.js 검토 결과와 적용 기준을 기록했다.
 - `package-lock.json`은 수정, 삭제, commit하지 않았다.
+### 2026-06-06 PHASE-LOCAL-E2E-PLAY-FLOW-QA-FIX
+
+- 로컬 플레이 흐름 결합 지점을 점검했다.
+- 자동 점검 대상은 `round-started`, `draw-stroke`, `result-saved`, `game-finished`, `start-game`, image download API 결합이다.
+- `result-saved` 수신 후 gallery 자동 전환 시 이전 pagination cursor가 남을 수 있어 `nextResultCursor`를 초기화하도록 수정했다.
+- 실제 Google 로그인, 2계정/2브라우저 drawing sync, canvas 원본 이미지 표시 확인은 사용자 수동 QA 체크리스트로 분리했다.
+- Rough.js 실제 도입은 dependency/lockfile 변경이 필요하므로 이번 QA에서는 보류 판단을 유지했다.
+- 백엔드 기능 코드는 변경하지 않았다.

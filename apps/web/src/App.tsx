@@ -244,6 +244,7 @@ export function App() {
         const knownIds = new Set(currentResults.map((result) => result.id));
         return knownIds.has(payload.result.id) ? currentResults : [payload.result, ...currentResults];
       });
+      setNextResultCursor(null);
       setResourceState((current) => ({ ...current, results: "ready" }));
       setViewMode("gallery");
       setMessage(`Round ${payload.roundIndex + 1} 결과가 저장되었습니다.`);

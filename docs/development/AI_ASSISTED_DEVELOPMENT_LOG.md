@@ -1358,3 +1358,25 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+### 2026-06-06 PHASE-LOCAL-E2E-PLAY-FLOW-QA-FIX
+
+- Agent: `qa-frontend`
+- 목표: 로컬 Google 로그인부터 start-game, 라운드 이미지 표시, drawing socket sync, result/gallery 자동 전환까지 플레이 흐름 점검.
+- 수행 내용:
+  - 프론트/백엔드 socket/API 결합 지점을 코드 기준으로 점검했다.
+  - `result-saved` 수신 후 gallery 자동 전환 시 이전 pagination cursor가 남을 수 있는 문제를 수정했다.
+  - 로컬 server/web 실행 기준과 사용자 수동 E2E 체크리스트를 `TEST_REPORT.md`에 기록했다.
+  - Rough.js 실제 도입은 dependency/lockfile 변경이 필요하므로 별도 phase 후보로 남겼다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과.
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 변경 파일 및 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 실제 Google 계정 로그인 자동화.
+  - 다중 브라우저 수동 drawing sync 자동화.
+  - Rough.js package 설치.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

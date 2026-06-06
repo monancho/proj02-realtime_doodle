@@ -944,3 +944,45 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-LOCAL-E2E-PLAY-FLOW-QA-FIX
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 18 files, 88 tests.
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - `git status --short`: frontend/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 자동 점검/수정:
+  - `round-started`, `draw-stroke`, `result-saved`, `game-finished`, `start-game` 결합 지점을 검색 점검했다.
+  - `result-saved` 수신 후 gallery 자동 전환 시 이전 pagination cursor가 남을 수 있어 `nextResultCursor`를 초기화하도록 수정했다.
+- 로컬 실행 기준:
+  - 백엔드: `corepack pnpm --filter @doodle/server dev`
+  - 프론트엔드: `corepack pnpm --filter @doodle/web dev`
+  - 웹 접속: Vite가 출력하는 localhost URL을 사용한다. 일반적으로 `http://localhost:5173` 또는 사용 중인 포트의 fallback URL이다.
+  - API health 확인: `http://localhost:4000/health`
+- 사용자 수동 체크리스트:
+  - [ ] Google 계정 A로 로그인한다.
+  - [ ] 방을 생성하고 roomCode를 확인한다.
+  - [ ] Google 계정 B 또는 별도 브라우저 세션으로 같은 roomCode에 입장한다.
+  - [ ] A/B가 각각 이미지 1장을 선택하고 preview 확인 후 업로드한다.
+  - [ ] 같은 사용자가 두 번째 이미지를 업로드할 수 없는지 확인한다.
+  - [ ] participants ready 상태가 A/B 모두 `Ready`로 바뀌는지 확인한다.
+  - [ ] host에게만 `시작하기` 버튼이 보이고, 모든 참가자가 ready일 때 활성화되는지 확인한다.
+  - [ ] start-game 후 play 화면으로 자동 전환되는지 확인한다.
+  - [ ] 라운드 시작 시 업로드된 원본 이미지가 canvas 배경에 표시되는지 확인한다.
+  - [ ] 한 브라우저에서 그린 stroke가 다른 브라우저 canvas에 반영되는지 확인한다.
+  - [ ] `round-ended` 후 drawing이 lock되는지 확인한다.
+  - [ ] `result-saved` 또는 `game-finished` 후 gallery 화면으로 자동 전환되는지 확인한다.
+  - [ ] result 목록과 download 버튼이 표시되는지 확인한다.
+- 미실행:
+  - 실제 Google 로그인과 다중 브라우저 조작은 사용자 계정/브라우저 세션이 필요한 수동 QA 범위라 자동 수행하지 않았다.
+  - Rough.js 실제 도입은 dependency/lockfile 변경이 필요해 이번 QA에서는 보류 판단을 유지했다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
