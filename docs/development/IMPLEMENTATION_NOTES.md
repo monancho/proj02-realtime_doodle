@@ -240,3 +240,16 @@
 - server broadcast는 같은 Socket.IO room `room:${roomCode}` 사용자에게만 전달한다.
 - MVP 기본 구현에서는 stroke 영구 저장을 제외하고, `roomCode + roundId`별 in-memory 최근 200개 stroke payload 정책 초안으로 정리했다.
 - Chat, Upload, Timer, Round feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-07-DRAWING-IMPLEMENTATION
+
+- Socket.IO `draw-stroke` handler를 구현했다.
+- payload는 `{ roomCode, roundId, stroke }`를 사용하며 `roomCode`는 trim + uppercase normalize한다.
+- socket auth context와 `RoomRepository.findRoomByCode(roomCode)` 기반 room membership 검증을 추가했다.
+- 검증 성공 시 `draw-stroke`를 Socket.IO room `room:${roomCode}`에만 emit한다.
+- broadcast payload는 `{ roomCode, roundId, stroke, firebaseUid, createdAt }`를 사용한다.
+- stroke validation은 `strokeId`, `tool`, `color`, `width`, `points`, point coordinate/pressure/time 기준으로 수행한다.
+- payload당 `points`는 1개 이상 128개 이하로 제한한다.
+- `RecentStrokeBatchStore`를 추가해 server memory에 `roomCode + roundId`별 최근 200개 stroke batch만 보관한다.
+- stroke 영구 저장, MongoDB stroke repository, stroke 조회 API는 구현하지 않았다.
+- Chat, Upload, Timer, Round feature는 구현하지 않았다.

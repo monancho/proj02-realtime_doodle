@@ -583,3 +583,34 @@
 - 다음 추천 작업:
   - `PHASE-07-DRAWING-IMPLEMENTATION`
   - Socket.IO `draw-stroke` broadcast와 in-memory recent stroke batches를 membership 검증 기반으로 구현.
+
+### 2026-06-06 PHASE-07-DRAWING-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Socket.IO `draw-stroke` broadcast와 in-memory recent stroke batches를 room membership 검증 기반으로 구현.
+- 수행 내용:
+  - `apps/server/src/socket/rooms.ts`에 `draw-stroke` handler 추가.
+  - `draw-stroke` payload `{ roomCode, roundId, stroke }` 검증 추가.
+  - `roomCode` trim + uppercase normalize 처리 추가.
+  - socket auth context와 `RoomRepository.findRoomByCode(roomCode)` 기반 membership 검증 추가.
+  - 성공 시 `draw-stroke` payload를 Socket.IO room `room:${roomCode}`에만 emit하도록 구현.
+  - stroke point validation과 payload당 points 1개 이상 128개 이하 제한 추가.
+  - `RecentStrokeBatchStore`를 추가해 `roomCode + roundId`별 in-memory 최근 200개 stroke batch만 보관.
+  - `apps/server/src/socket/rooms.test.ts`에 mock/in-memory repository 기반 Drawing handler 테스트 추가.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - stroke 영구 저장.
+  - MongoDB stroke repository.
+  - stroke 조회 API.
+  - Chat, Upload, Timer, Round feature.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 최초 실패 후 수정하여 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 14 files, 55 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-08-ROUND-TIMER-PLAN`
+  - Round/Timer 구현 전에 `start-game`, `round-started`, `round-ended` payload와 host 권한, 상태 전이, duration 기준을 문서화.

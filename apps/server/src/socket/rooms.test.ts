@@ -5,10 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
 import {
   createSocketRoomName,
+  handleDrawStroke,
   handleJoinRoom,
   handleLeaveRoom,
   handleSendMessage,
-  RecentChatMessageStore
+  type DrawStroke,
+  RecentChatMessageStore,
+  RecentStrokeBatchStore
 } from "./rooms";
 
 const roomSettings: RoomSettings = {
@@ -289,6 +292,173 @@ describe("room membership socket handlers", () => {
     expect(messages[0]?.message).toBe("message-1");
     expect(messages[49]?.message).toBe("message-50");
   });
+
+  it("broadcasts valid drawing strokes to the matching socket room", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123"
+    });
+    await createRoom(repository);
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+    const recentStrokeBatches = new RecentStrokeBatchStore();
+
+    await handleDrawStroke(
+      createDrawingDependencies({
+        io,
+        repository,
+        socket,
+        recentStrokeBatches
+      }),
+      {
+        roomCode: " abc123 ",
+        roundId: " round-1 ",
+        stroke: {
+          strokeId: " stroke-1 ",
+          tool: "pen",
+          color: "#1A2b3C",
+          width: 8,
+          points: [
+            { x: 0, y: 0.25, pressure: 0.5, t: 1 },
+            { x: 1, y: 0.75, pressure: null, t: null }
+          ]
+        }
+      }
+    );
+
+    const expectedStrokeBatch = {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: {
+        strokeId: "stroke-1",
+        tool: "pen",
+        color: "#1A2b3C",
+        width: 8,
+        points: [
+          { x: 0, y: 0.25, pressure: 0.5, t: 1 },
+          { x: 1, y: 0.75, pressure: null, t: null }
+        ]
+      },
+      firebaseUid: "host-uid",
+      createdAt: "2026-06-06T00:00:00.000Z"
+    };
+
+    expect(io.to).toHaveBeenCalledWith("room:ABC123");
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "draw-stroke",
+      expectedStrokeBatch
+    );
+    expect(recentStrokeBatches.list("abc123", " round-1 ")).toEqual([
+      expectedStrokeBatch
+    ]);
+  });
+
+  it("rejects draw-stroke without authenticated socket context", async () => {
+    const repository = new InMemoryRoomRepository();
+    const socket = createMockSocket(undefined);
+    const io = createMockIo();
+
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: createValidStroke()
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "AUTH_TOKEN_MISSING" })
+    );
+  });
+
+  it("rejects invalid draw-stroke payloads", async () => {
+    const repository = new InMemoryRoomRepository();
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: { ...createValidStroke(), points: [] }
+    });
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: {
+        ...createValidStroke(),
+        points: Array.from({ length: 129 }, () => ({ x: 0.5, y: 0.5 }))
+      }
+    });
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: { ...createValidStroke(), points: [{ x: 1.1, y: 0.5 }] }
+    });
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: { ...createValidStroke(), color: "red" }
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledTimes(4);
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "DRAW_PAYLOAD_INVALID" })
+    );
+  });
+
+  it("rejects draw-stroke for missing rooms and non-participants", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123"
+    });
+    await createRoom(repository);
+    const socket = createMockSocket(guestAuth);
+    const io = createMockIo();
+
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "NONE01",
+      roundId: "round-1",
+      stroke: createValidStroke()
+    });
+    await handleDrawStroke(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: createValidStroke()
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_NOT_FOUND" })
+    );
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_ACCESS_DENIED" })
+    );
+  });
+
+  it("keeps only the latest 200 recent stroke batches per room and round", () => {
+    const recentStrokeBatches = new RecentStrokeBatchStore();
+
+    for (let index = 0; index < 201; index += 1) {
+      recentStrokeBatches.append({
+        roomCode: "ABC123",
+        roundId: "round-1",
+        stroke: {
+          ...createValidStroke(),
+          strokeId: `stroke-${index}`
+        },
+        firebaseUid: "host-uid",
+        createdAt: new Date(index).toISOString()
+      });
+    }
+
+    const strokeBatches = recentStrokeBatches.list("abc123", " round-1 ");
+
+    expect(strokeBatches).toHaveLength(200);
+    expect(strokeBatches[0]?.stroke.strokeId).toBe("stroke-1");
+    expect(strokeBatches[199]?.stroke.strokeId).toBe("stroke-200");
+  });
 });
 
 async function createRoom(
@@ -346,5 +516,35 @@ function createChatDependencies({
     socket,
     recentMessages,
     now: () => new Date("2026-06-06T00:00:00.000Z")
+  };
+}
+
+function createDrawingDependencies({
+  io,
+  repository,
+  socket,
+  recentStrokeBatches = new RecentStrokeBatchStore()
+}: {
+  io: Pick<Server, "to">;
+  repository: InMemoryRoomRepository;
+  socket: Pick<Socket, "data" | "emit" | "join" | "leave">;
+  recentStrokeBatches?: RecentStrokeBatchStore;
+}) {
+  return {
+    io,
+    repository,
+    socket,
+    recentStrokeBatches,
+    now: () => new Date("2026-06-06T00:00:00.000Z")
+  };
+}
+
+function createValidStroke(): DrawStroke {
+  return {
+    strokeId: "stroke-1",
+    tool: "pen",
+    color: "#123ABC",
+    width: 4,
+    points: [{ x: 0.5, y: 0.5 }]
   };
 }
