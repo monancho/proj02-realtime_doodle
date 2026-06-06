@@ -411,3 +411,13 @@
 - FE-01부터 FE-08까지 Web scaffold, Firebase auth client, lobby/room, upload/gallery, socket/chat, canvas drawing, round timer UX, frontend QA/polish 단계로 나누었다.
 - 현재 완료된 FE-01 Web scaffold 상태를 명시했다.
 - 프론트 작업 원칙으로 서버 API/Socket 계약 사용, `VITE_` 환경변수, secret 출력 금지, 백엔드 구현 분리 기준을 적었다.
+
+### 2026-06-06 PHASE-FE-02-FIREBASE-AUTH-CLIENT
+
+- `apps/web`에 Firebase Client SDK를 추가하고 이메일/비밀번호 로그인 UI를 구현했다.
+- Firebase web config는 `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`만 읽도록 분리했다.
+- Firebase 로그인 성공 후 ID Token을 발급받아 API client에 연결하고 `POST /api/users/me`를 호출해 user upsert를 수행한다.
+- 로그인 사용자는 토큰 갱신 버튼으로 `getIdToken(true)`를 호출할 수 있다.
+- 로그아웃 시 Firebase session, token, user profile, 현재 room/images/results 상태를 정리한다.
+- 수동 Firebase ID Token 입력은 `details` 기반 개발용 fallback으로 유지했다.
+- Socket.IO client, Canvas drawing, Chat 구현은 추가하지 않았다.

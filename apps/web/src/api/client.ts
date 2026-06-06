@@ -6,7 +6,9 @@ import type {
   ListRoomImagesResponse,
   ListRoomResultsResponse,
   RoomDetail,
-  UploadImageResponse
+  UploadImageResponse,
+  UpsertMeResponse,
+  UserProfile
 } from "@doodle/shared";
 
 export interface ApiClientOptions {
@@ -15,6 +17,7 @@ export interface ApiClientOptions {
 }
 
 export interface ApiClient {
+  upsertMe(input: { nickname?: string | null; avatarUrl?: string | null }): Promise<UserProfile>;
   createRoom(input: { title: string }): Promise<RoomDetail>;
   getRoom(roomCode: string): Promise<RoomDetail>;
   joinRoom(roomCode: string): Promise<RoomDetail>;
@@ -65,6 +68,13 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
   }
 
   return {
+    async upsertMe(input) {
+      const response = await requestJson<UpsertMeResponse>("/api/users/me", {
+        method: "POST",
+        body: JSON.stringify(input)
+      });
+      return response.user;
+    },
     async createRoom(input) {
       const response = await requestJson<CreateRoomResponse>("/api/rooms", {
         method: "POST",

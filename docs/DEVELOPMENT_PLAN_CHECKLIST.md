@@ -49,6 +49,7 @@ P3 항목은 MVP 제외 또는 후순위이며 명시 요청 없이 구현하지
 현재 완료된 프론트 작업:
 
 - `FE-01 Web scaffold`: 완료. `apps/web`은 Vite + React + TypeScript 기반 앱으로 전환되었고 REST API client shell을 포함한다.
+- `FE-02 Firebase Auth Client`: 완료. Firebase Client SDK 로그인, ID Token 발급/갱신, `/api/users/me` 연동을 포함한다.
 
 프론트 작업 원칙:
 

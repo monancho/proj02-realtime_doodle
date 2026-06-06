@@ -558,3 +558,25 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-06 PHASE-FE-02-FIREBASE-AUTH-CLIENT
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - `git status --short`: Firebase auth client 구현 파일, 문서 변경, pnpm lockfile 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - Firebase Client SDK import와 auth UI TypeScript compile 검증.
+  - `/api/users/me` API client 타입 검증.
+  - Vite production bundle 생성 검증.
+- 미실행:
+  - 실제 Firebase 로그인 smoke: 실제 Firebase web config와 사용자 계정이 필요한 범위라 이번 작업에서 제외했다.
+  - Socket.IO, Canvas, Chat 검증: 이번 FE-02 범위가 아니다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - Firebase client config는 브라우저 공개용 `VITE_` 값만 사용한다.
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

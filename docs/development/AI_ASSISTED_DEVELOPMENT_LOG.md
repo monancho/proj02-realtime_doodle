@@ -994,3 +994,29 @@
 - 다음 추천 작업:
   - `PHASE-FE-02-FIREBASE-AUTH-CLIENT`
   - Firebase Client SDK 로그인과 ID Token 발급/갱신, `/api/users/me` 연동을 프론트에 구현한다.
+
+### 2026-06-06 PHASE-FE-02-FIREBASE-AUTH-CLIENT
+
+- Agent: `frontend`
+- 목표: 프론트엔드 Firebase Client SDK 로그인과 ID Token 발급/갱신, `/api/users/me` 연동 구현.
+- 수행 내용:
+  - `@doodle/web`에 `firebase` 의존성 추가.
+  - `src/auth/firebase.ts`를 추가해 Firebase client app/auth 초기화를 `VITE_` 환경변수 기반으로 분리.
+  - 이메일/비밀번호 로그인 UI와 로그인 상태 표시, 토큰 갱신, 로그아웃 동작을 추가.
+  - 로그인 성공 시 ID Token을 발급받고 `ApiClient.upsertMe()`로 `/api/users/me`를 호출한다.
+  - 로그아웃 시 token, profile, room/images/results 상태를 정리한다.
+  - 개발용 수동 token fallback은 접을 수 있는 패널로 유지했다.
+- 의도적으로 제외:
+  - Socket.IO client 연결.
+  - Canvas drawing 구현.
+  - Chat 구현.
+  - 실제 Firebase 계정 기반 smoke 검증.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 작업 변경과 기존 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 다음 추천 작업:
+  - `PHASE-FE-03-LOBBY-ROOM-FLOW`
+  - 로그인된 사용자 기준으로 방 생성/입장, room detail refresh, 참가자/업로드 상태 UX를 다듬는다.

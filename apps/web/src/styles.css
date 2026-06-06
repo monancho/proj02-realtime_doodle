@@ -98,6 +98,55 @@ h2 {
   padding: 16px;
 }
 
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-summary {
+  display: grid;
+  gap: 14px;
+  border: 2px dashed #222222;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 12px;
+}
+
+.auth-summary div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.auth-summary strong {
+  overflow-wrap: anywhere;
+}
+
+.auth-summary span {
+  color: #6b6258;
+  overflow-wrap: anywhere;
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dev-token-panel {
+  border-top: 2px solid rgba(34, 34, 34, 0.12);
+  padding-top: 10px;
+}
+
+.dev-token-panel summary {
+  cursor: pointer;
+  color: #6b6258;
+  font-weight: 800;
+}
+
+.dev-token-panel label {
+  margin-top: 10px;
+}
+
 label {
   display: grid;
   gap: 7px;
