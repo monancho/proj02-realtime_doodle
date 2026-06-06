@@ -1398,3 +1398,95 @@ Upload 구현 이후 `round-started`는 `imageId` 단일 필드보다 `image: Im
 - Timer scheduling과 `round-ended` 자동 emit은 구현하지 않았다.
 - Result save는 구현하지 않았다.
 - multi-instance random coordination과 durable round recovery는 구현하지 않았다.
+
+## Timer/Round End 구현 계획
+
+이 섹션은 `PHASE-10-TIMER-ROUND-END-PLAN`의 기준 계약이다. Timer/round end 구현 코드는 아직 작성하지 않으며, 다음 구현 단계에서 Socket.IO timer handler와 repository 계약이 이 내용을 따른다.
+
+### 목표 경계
+
+Timer/round end는 `start-game` 성공으로 시작된 현재 라운드가 `roundDurationSec`만큼 진행된 뒤 서버가 라운드를 닫고, 다음 미사용 이미지가 있으면 다음 라운드를 시작하거나 더 이상 사용할 이미지가 없으면 room을 `finished`로 전이하는 기능이다.
+
+MVP에서는 단일 서버 프로세스의 in-memory timer만 사용한다. Redis scheduler, durable timer recovery, multi-instance timer coordination, Result save는 이 단계의 범위가 아니다.
+
+### Event Payload 기준
+
+```ts
+import type { ImageMetadata, RoomDetail } from "@doodle/shared";
+
+export interface RoundEndedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+  endedAt: string;
+}
+
+export interface GameFinishedPayload {
+  roomCode: string;
+  room: RoomDetail;
+  finishedAt: string;
+}
+```
+
+- `round-ended`는 같은 Socket.IO room `room:${roomCode}`에만 emit한다.
+- `game-finished`는 room status가 `finished`로 전이된 뒤 같은 Socket.IO room에 emit한다.
+- 상태 변경 뒤 `room-updated`는 기존 기준대로 `{ room: RoomDetail }` shape를 유지한다.
+- payload에는 token, credential, URI, private key 값을 포함하지 않는다.
+
+### Round Timer 만료 처리 순서
+
+1. `start-game` 또는 다음 라운드 시작 성공 시 `roomCode + roundId` key로 in-memory timer를 등록한다.
+2. timer가 만료되면 `RoomRepository.findRoomByCode(roomCode)`로 최신 room을 다시 조회한다.
+3. room이 없거나 status가 `playing`이 아니면 timer callback은 추가 emit 없이 safe no-op 처리한다.
+4. callback의 `roundId`와 현재 active round가 다르면 stale timer로 보고 safe no-op 처리한다.
+5. 현재 라운드를 닫고 `round-ended` `{ roomCode, roundId, roundIndex, image, endedAt }`를 emit한다.
+6. 해당 `roomCode + roundId`에 대한 추가 drawing write를 차단한다.
+7. `ImageRepository.listUnusedImagesByRoomCode(roomCode)`로 다음 후보 이미지를 조회한다.
+8. unused image가 있으면 deterministic test가 가능하도록 selector를 통해 하나를 고르고 `used: true`로 처리한다.
+9. 다음 round를 생성하고 `currentRoundIndex`를 1 증가시킨 뒤 `round-started`를 emit한다.
+10. unused image가 없으면 room status를 `finished`로 전이하고 `game-finished`와 `room-updated`를 emit한다.
+
+### Drawing 차단 기준
+
+- `draw-stroke`는 room status가 `playing`인 경우에만 허용한다.
+- `draw-stroke.roundId`는 현재 active round id와 일치해야 한다.
+- `round-ended` emit 이후 같은 `roundId`로 들어오는 `draw-stroke`는 거절한다.
+- 종료된 round에 대한 최근 stroke batch는 읽기/재전송 용도로 남길 수 있지만 새 stroke append는 허용하지 않는다.
+- 구현 단계의 socket error code는 `DRAW_ROUND_CLOSED` 또는 `ROUND_STATE_INVALID` 중 하나로 고정하되, 클라이언트가 code 중심으로 분기할 수 있게 message에는 secret을 포함하지 않는다.
+
+### 다음 라운드 전이 기준
+
+| 조건 | 처리 |
+|---|---|
+| unused image 존재 | image selector로 1개 선택, `used: true`, `currentRoundIndex + 1`, 새 `roundId` 생성 |
+| 다음 라운드 시작 성공 | `round-started` `{ roomCode, roundId, roundIndex, image, durationSec, startedAt }` emit |
+| 다음 timer 등록 | 새 `roomCode + roundId` key로 in-memory timer 등록 |
+| 상태 | room status는 계속 `playing` 유지 |
+
+### Finished 전이 기준
+
+| 조건 | 처리 |
+|---|---|
+| unused image 없음 | room status를 `finished`로 전이 |
+| active timer | 해당 room의 active timer reference 제거 |
+| emit | `game-finished` `{ roomCode, room, finishedAt }` emit 후 `room-updated` `{ room }` emit |
+| 이후 `start-game` | `ROOM_STATE_INVALID`로 거절 |
+| 이후 `draw-stroke` | room status가 `playing`이 아니므로 거절 |
+
+### Error Code 기준
+
+| Code | 기준 |
+|---|---|
+| `ROOM_NOT_FOUND` | timer 만료 처리 또는 socket event 중 room을 찾을 수 없음 |
+| `ROOM_STATE_INVALID` | room status가 요청을 처리할 수 없는 상태 |
+| `ROUND_STATE_INVALID` | 요청 round가 현재 active round와 일치하지 않음 |
+| `DRAW_ROUND_CLOSED` | 이미 종료된 round에 stroke를 보내는 경우 |
+| `ROUND_IMAGE_NOT_FOUND` | 다음 round로 사용할 unused image가 없음. Timer 만료 flow에서는 error emit 대신 `finished` 전이에 사용 |
+
+### 구현 제외 범위
+
+- Timer/round end handler 코드는 이 단계에서 구현하지 않는다.
+- Result save와 합성 이미지 생성은 구현하지 않는다.
+- Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않는다.
+- Drawing, Chat, Upload 기존 동작을 변경하지 않는다.

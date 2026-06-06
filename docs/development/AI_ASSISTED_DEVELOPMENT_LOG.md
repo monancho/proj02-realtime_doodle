@@ -765,3 +765,29 @@
 - 다음 추천 작업:
   - `PHASE-10-TIMER-ROUND-END-PLAN`
   - Timer/round end 구현 전에 `round-ended`, 드로잉 차단, 다음 라운드 또는 finished 전이 기준을 문서화.
+
+### 2026-06-06 PHASE-10-TIMER-ROUND-END-PLAN
+
+- Agent: `backend`
+- 목표: Timer/round end 구현 전에 `round-ended`, drawing 차단, 다음 round 또는 finished 전이 기준 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Timer/Round End 구현 계획 섹션 추가.
+  - `round-ended` payload를 `{ roomCode, roundId, roundIndex, image, endedAt }` 기준으로 정리.
+  - `game-finished` payload를 `{ roomCode, room, finishedAt }` 기준으로 정리.
+  - timer 만료 시 room 재조회, stale timer no-op, `round-ended` emit, drawing 차단, unused image 조회, 다음 round 또는 finished 전이 순서 정리.
+  - 종료된 round와 finished room에서 drawing을 차단하는 기준 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Timer/round end 구현 코드.
+  - Result save.
+  - Redis scheduler, durable timer recovery, multi-instance coordination.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 문서 4개와 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-10-TIMER-ROUND-END-IMPLEMENTATION`
+  - In-memory round timer, `round-ended`, drawing block, next round 또는 finished 전이를 구현.

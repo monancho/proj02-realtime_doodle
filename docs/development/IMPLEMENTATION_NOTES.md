@@ -319,3 +319,15 @@
 - 성공 시 `round-started`를 같은 Socket.IO room `room:${roomCode}`에만 emit한다.
 - `round-started` payload는 `{ roomCode, roundId, roundIndex, image, durationSec, startedAt }`를 사용한다.
 - Timer scheduling, `round-ended` 자동 emit, Result save는 구현하지 않았다.
+
+### 2026-06-06 PHASE-10-TIMER-ROUND-END-PLAN
+
+- Timer/round end 구현 전에 `round-ended`, `game-finished`, drawing 차단, 다음 round 또는 finished 전이 기준을 문서화했다.
+- Timer/round end 구현 코드는 추가하지 않았다.
+- `round-ended` payload는 `{ roomCode, roundId, roundIndex, image, endedAt }` 기준으로 정리했다.
+- `game-finished` payload는 `{ roomCode, room, finishedAt }` 기준으로 정리했다.
+- round timer 만료 시 최신 room 재조회, stale timer no-op, `round-ended` emit, drawing write 차단, unused image 조회, 다음 round 또는 `finished` 전이 순서로 정리했다.
+- 종료된 round의 `draw-stroke`는 차단하고, room status가 `playing`이며 `roundId`가 현재 active round와 일치할 때만 drawing을 허용하는 기준으로 정리했다.
+- 다음 unused image가 있으면 `used: true` 처리 후 `currentRoundIndex + 1`로 다음 `round-started`를 emit하는 기준으로 정리했다.
+- unused image가 없으면 room status를 `finished`로 전이하고 `game-finished`와 `room-updated`를 emit하는 기준으로 정리했다.
+- Result save, durable timer recovery, Redis scheduler, multi-instance coordination은 MVP 제외 범위로 유지했다.
