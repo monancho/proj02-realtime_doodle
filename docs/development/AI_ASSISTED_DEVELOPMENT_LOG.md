@@ -1220,3 +1220,25 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-06 PHASE-FE-AUTH-LOBBY-UX-REFINE
+
+- Agent: `frontend`
+- 목표: Google 로그인 중심 초기 진입/로비 UX 정리와 방 만들기/입장 모달화.
+- 수행 내용:
+  - 로그인 전에는 Google 로그인 중심의 단일 화면만 렌더링하도록 변경했다.
+  - 로그인 후 상단 오른쪽 프로필 메뉴를 추가하고 닉네임 변경/로그아웃 액션을 제공했다.
+  - 일반 UI에서 API 서버 input과 개발용 token fallback을 제거했다.
+  - 로비를 `방 만들기`, `방 입장` 두 CTA 중심으로 단순화했다.
+  - 방 만들기와 방 입장 입력을 각각 모달 form으로 이동했다.
+  - 백엔드는 변경하지 않고 Firebase ID Token 검증 흐름을 유지했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 프론트/문서 변경과 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 백엔드 provider 강제 검증.
+  - Socket, Drawing, Upload, Timer, Result 기능 변경.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

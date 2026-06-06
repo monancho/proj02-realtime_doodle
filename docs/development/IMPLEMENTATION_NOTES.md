@@ -431,6 +431,17 @@
 - 개발용 token fallback은 숨겨진 `details` 영역으로 유지하되 일반 수동 QA 흐름에서는 사용하지 않는다.
 - 로컬 기본 API URL fallback을 `http://localhost:4000`으로 맞췄다.
 - 방이 없을 때 `대기실/플레이/갤러리` 탭이 먼저 보이지 않도록 하고, 방 선택 이후에 `방 준비/그리기/결과` 이동을 보여준다.
+
+### 2026-06-06 PHASE-FE-AUTH-LOBBY-UX-REFINE
+
+- 로그인 전 화면은 Google 로그인 CTA 중심의 단일 진입 화면으로 정리했다.
+- 일반 UI에서 API 서버 입력과 개발용 token fallback을 제거했다.
+- 로그인 후 상단 오른쪽에 Google 프로필 이미지와 닉네임을 표시하는 프로필 메뉴를 추가했다.
+- 프로필 메뉴에서 닉네임 변경과 로그아웃을 제공한다.
+- 로비는 `방 만들기`, `방 입장` 두 개의 주요 CTA만 표시한다.
+- 방 이름과 방 코드는 로비에 상시 노출하지 않고 각각 모달에서 입력하도록 변경했다.
+- Google OAuth ID Token 기반 API 호출과 기존 Firebase Admin 백엔드 검증은 유지했다.
+- Socket, Drawing, Upload, Timer, Result 기능 코드는 변경하지 않았다.
 ### 2026-06-06 PHASE-FE-03-LOBBY-ROOM-FLOW
 
 - 로그인 전 방 생성/입장 action을 비활성화하고 안내 문구를 추가했다.

@@ -39,15 +39,56 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
-.app-shell {
+.app-shell,
+.login-shell {
   width: min(1180px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 28px 0 48px;
 }
 
-.hero-panel {
+.login-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.login-panel {
+  display: grid;
+  gap: 18px;
+  width: min(680px, 100%);
+  text-align: center;
+}
+
+.login-panel h1 {
+  margin-inline: auto;
+}
+
+.login-panel .hero-copy {
+  margin-inline: auto;
+}
+
+.login-message {
+  margin: 0;
+  color: #5f5a52;
+  font-weight: 800;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #222222;
+  padding-bottom: 14px;
+}
+
+.app-header > strong {
+  font-size: 1.05rem;
+}
+
+.intro-panel {
+  display: grid;
   gap: 24px;
   align-items: stretch;
   margin-bottom: 18px;
@@ -84,7 +125,6 @@ h2 {
   line-height: 1.7;
 }
 
-.connection-panel,
 .paper-card {
   border: 2px solid #222222;
   border-radius: 8px;
@@ -92,70 +132,9 @@ h2 {
   box-shadow: 5px 5px 0 rgba(34, 34, 34, 0.16);
 }
 
-.connection-panel {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-}
-
-.auth-form {
-  display: grid;
-  gap: 12px;
-}
-
 .google-button {
-  width: 100%;
-}
-
-.nickname-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: end;
-}
-
-.auth-summary {
-  display: grid;
-  gap: 14px;
-  border: 2px dashed #222222;
-  border-radius: 8px;
-  background: #fffefa;
-  padding: 12px;
-}
-
-.auth-summary div:first-child {
-  display: grid;
-  gap: 4px;
-}
-
-.auth-summary strong {
-  overflow-wrap: anywhere;
-}
-
-.auth-summary span {
-  color: #6b6258;
-  overflow-wrap: anywhere;
-}
-
-.auth-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.dev-token-panel {
-  border-top: 2px solid rgba(34, 34, 34, 0.12);
-  padding-top: 10px;
-}
-
-.dev-token-panel summary {
-  cursor: pointer;
-  color: #6b6258;
-  font-weight: 800;
-}
-
-.dev-token-panel label {
-  margin-top: 10px;
+  justify-self: center;
+  min-width: 220px;
 }
 
 label {
@@ -191,7 +170,9 @@ textarea {
 .primary-button,
 .secondary-button,
 .icon-button,
-.download-link {
+.download-link,
+.profile-button,
+.profile-popover button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -223,6 +204,58 @@ textarea {
   padding: 0 14px;
 }
 
+.profile-menu {
+  position: relative;
+}
+
+.profile-button {
+  min-height: 46px;
+  background: #fffefa;
+  padding: 0 12px 0 8px;
+}
+
+.profile-button img,
+.profile-button span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid #222222;
+  border-radius: 999px;
+  background: #f4c542;
+  font-weight: 900;
+}
+
+.profile-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  display: none;
+  min-width: 180px;
+  border: 2px solid #222222;
+  border-radius: 8px;
+  background: #fffefa;
+  box-shadow: 5px 5px 0 rgba(34, 34, 34, 0.16);
+  padding: 8px;
+}
+
+.profile-menu:hover .profile-popover,
+.profile-menu:focus-within .profile-popover {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-popover button {
+  width: 100%;
+  min-height: 38px;
+  justify-content: flex-start;
+  border-width: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 8px;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.56;
@@ -248,7 +281,7 @@ button:disabled {
   padding: 4px 10px;
 }
 
-.content-grid,
+.lobby-actions,
 .room-layout,
 .play-layout,
 .gallery-grid {
@@ -256,7 +289,7 @@ button:disabled {
   gap: 18px;
 }
 
-.content-grid {
+.lobby-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -273,7 +306,7 @@ button:disabled {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-.action-card,
+.lobby-action-button,
 .room-summary,
 .upload-card,
 .participants-card,
@@ -314,9 +347,26 @@ button:disabled {
   background: #f4c542;
 }
 
-.action-card {
+.lobby-action-button {
   display: grid;
-  gap: 16px;
+  gap: 12px;
+  min-height: 220px;
+  align-content: center;
+  justify-items: start;
+  color: #222222;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lobby-action-button h2 {
+  font-size: 1.4rem;
+}
+
+.lobby-action-button p {
+  margin: 0;
+  color: #5f5a52;
+  font-weight: 800;
+  line-height: 1.6;
 }
 
 .card-heading {
@@ -613,16 +663,44 @@ button:disabled {
   min-height: 64px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(34, 34, 34, 0.42);
+  padding: 20px;
+}
+
+.modal-panel {
+  width: min(440px, 100%);
+  border: 2px solid #222222;
+  border-radius: 8px;
+  background: #fffefa;
+  box-shadow: 7px 7px 0 rgba(34, 34, 34, 0.2);
+  padding: 18px;
+}
+
+.modal-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-form {
+  display: grid;
+  gap: 14px;
+}
+
 @media (max-width: 900px) {
-  .hero-panel,
-  .content-grid,
+  .intro-panel,
+  .lobby-actions,
   .room-layout,
   .play-layout {
     grid-template-columns: 1fr;
-  }
-
-  .connection-panel {
-    order: -1;
   }
 
   .canvas-stage {
@@ -654,15 +732,9 @@ button:disabled {
     padding: 10px 0;
   }
 
-  .gallery-toolbar,
-  .auth-actions,
-  .nickname-form {
+  .gallery-toolbar {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .nickname-form {
-    grid-template-columns: 1fr;
   }
 
   .room-code {

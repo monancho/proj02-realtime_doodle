@@ -600,6 +600,32 @@
   - 실제 Google popup 로그인은 사용자 브라우저 세션과 Firebase Console의 Google provider 활성화가 필요해 수동 QA 범위로 남겼다.
 - secret 출력 여부:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-06 PHASE-FE-AUTH-LOBBY-UX-REFINE
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과.
+  - `git status --short`: 프론트/문서 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - 로그인 전 Google 로그인 전용 화면 compile 확인.
+  - 로그인 후 상단 프로필 메뉴, 닉네임 변경 모달, 로그아웃 버튼 compile 확인.
+  - 로비의 `방 만들기`/`방 입장` CTA와 모달 form compile 확인.
+  - 일반 UI에서 API 서버 input과 개발용 token fallback 제거 확인.
+  - 기존 Socket, Drawing, Upload, Timer, Result handler compile 유지 확인.
+- 미실행:
+  - 실제 Google popup 로그인과 프로필 메뉴 hover/click 동작은 사용자 브라우저 세션이 필요한 수동 QA 범위로 남겼다.
+- 수동 확인 항목:
+  - [ ] 로그인 전에는 Google 로그인 버튼 중심 화면만 보이는지 확인한다.
+  - [ ] 로그인 후 로비에 `방 만들기`, `방 입장` 두 CTA만 주요 액션으로 보이는지 확인한다.
+  - [ ] 상단 오른쪽 프로필 hover/click 시 `닉네임 변경`, `로그아웃`이 보이는지 확인한다.
+  - [ ] `방 만들기` 클릭 시 방 이름 모달이 열리고 생성 성공 후 방 준비 화면으로 이동하는지 확인한다.
+  - [ ] `방 입장` 클릭 시 방 코드 모달이 열리고 입장 성공 후 방 준비 화면으로 이동하는지 확인한다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - secret 출력 여부:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
