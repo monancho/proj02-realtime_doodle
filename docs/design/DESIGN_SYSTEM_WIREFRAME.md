@@ -11,6 +11,8 @@
 - 현재 프론트 적용: `Gaegu` 제목/강조, `Pretendard` 본문/버튼 fallback, 비정형 border-radius, dashed inner border, 종이 격자 배경, Rough.js 장식 레이어
 - Rough.js: 실제 패키지를 도입했으며 hero underline, room code badge, result/empty preview frame 같은 장식 SVG에만 사용한다.
 - Rough.js 제외 범위: 기능 Canvas drawing, stroke 송수신, upload/timer/result save 동작에는 적용하지 않는다.
+- 참고 와이어프레임 반영: 로그인 카드는 중앙 DOODLE 브랜딩을 크게 두고, 상단 앱 헤더는 종이 내비게이션 바처럼 보이게 한다.
+- 참고 와이어프레임 반영: 방 대기 화면은 방 코드와 복사 버튼, 참가자 ready 상태, 사용자당 사진 1장 업로드 안내가 한눈에 보이도록 구성한다.
 - 지양: 과도한 그라디언트, 지나치게 매끈한 SaaS dashboard, 고채도 네온 UI
 - 우선순위: 장식보다 드로잉 영역, 타이머, 채팅 가독성
 

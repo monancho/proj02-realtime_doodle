@@ -8,6 +8,27 @@
 
 ## 작업 로그
 
+### 2026-06-06 PHASE-FE-WIREFRAME-REFERENCE-POLISH
+
+- Agent: `frontend`
+- 목표: 사용자가 제공한 손그림 와이어프레임 이미지를 참고해 현재 구현 가능한 UI 요소를 자율 반영.
+- 수행 내용:
+  - 로그인 화면을 중앙 종이 카드와 큰 `DOODLE` 워드마크 중심으로 조정했다.
+  - 상단 헤더를 손그림 내비게이션 바처럼 보이게 변경했다.
+  - 방 대기 화면에 방 코드 복사 버튼을 추가했다.
+  - 업로드 박스에 사용자당 사진 1장 업로드 기준을 더 명확히 표시했다.
+  - 참가자 목록에 와이어프레임 스타일의 색 점을 추가했다.
+- 의도적으로 제외:
+  - 방 목록, 공개/비공개 방, 비밀번호 입장처럼 아직 backend/API 계약이 없는 기능.
+  - Socket drawing, Upload, Timer, Result save 동작 변경.
+- 검증:
+  - 실행: `corepack pnpm --filter @doodle/web typecheck`
+  - 실행: `corepack pnpm --filter @doodle/web build`
+  - 결과: 모두 통과
+- 주의:
+  - `package-lock.json`은 미추적 상태로 유지하고 수정/삭제/commit하지 않는다.
+  - 실제 브라우저 시각 QA와 로컬 E2E는 별도 작업에서 확인한다.
+
 ### 2026-06-06 PHASE-FE-ROUGHJS-DECORATION-LAYER
 
 - Agent: `frontend`

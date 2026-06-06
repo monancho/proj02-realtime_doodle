@@ -69,13 +69,29 @@ a {
 
 .login-panel {
   display: grid;
-  gap: 18px;
-  width: min(680px, 100%);
+  gap: 16px;
+  width: min(520px, 100%);
+  border: 3px solid var(--ink);
+  border-radius: 7px 5px 8px 6px;
+  background: rgba(255, 254, 250, 0.9);
+  box-shadow: 6px 6px 0 rgba(34, 34, 34, 0.14);
+  padding: clamp(28px, 6vw, 54px);
   text-align: center;
 }
 
+.login-brand {
+  margin: 0 auto;
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: clamp(3rem, 11vw, 5rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.9;
+}
+
 .login-panel h1 {
+  max-width: 420px;
   margin-inline: auto;
+  font-size: clamp(1.8rem, 6vw, 3rem);
 }
 
 .login-panel .rough-underline {
@@ -98,13 +114,17 @@ a {
   gap: 16px;
   align-items: center;
   margin-bottom: 24px;
-  border-bottom: 3px solid var(--ink);
-  padding-bottom: 14px;
+  border: 3px solid var(--ink);
+  border-radius: 7px 5px 8px 6px;
+  background: rgba(255, 254, 250, 0.86);
+  box-shadow: 4px 4px 0 rgba(34, 34, 34, 0.12);
+  padding: 10px 12px;
 }
 
 .app-header > strong {
   font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.8rem;
+  line-height: 1;
 }
 
 .intro-panel {
@@ -112,6 +132,11 @@ a {
   gap: 24px;
   align-items: stretch;
   margin-bottom: 18px;
+}
+
+.app-shell .intro-panel h1 {
+  max-width: 620px;
+  font-size: clamp(2.1rem, 5.6vw, 4.4rem);
 }
 
 .eyebrow {
@@ -195,7 +220,21 @@ h2 {
 
 .google-button {
   justify-self: center;
-  min-width: 220px;
+  min-width: 260px;
+  background: #eef8e8;
+}
+
+.google-mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #fffefa;
+  color: #d94b38;
+  font-family: "Pretendard", sans-serif;
+  font-weight: 900;
 }
 
 label {
@@ -352,6 +391,20 @@ button:disabled {
   font-weight: 700;
 }
 
+.status-strip::before {
+  content: "i";
+  display: grid;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid var(--blue);
+  border-radius: 999px;
+  color: var(--blue);
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-weight: 900;
+}
+
 .busy-dot {
   flex: 0 0 auto;
   border-radius: 999px;
@@ -393,6 +446,11 @@ button:disabled {
 .gallery-empty,
 .result-card {
   padding: 18px;
+}
+
+.room-summary {
+  display: grid;
+  gap: 12px;
 }
 
 .round-status {
@@ -462,6 +520,14 @@ button:disabled {
   transform: rotate(-4deg);
 }
 
+.room-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
 .room-code {
   position: relative;
   display: inline-flex;
@@ -475,6 +541,11 @@ button:disabled {
   font-size: 1.55rem;
   font-weight: 900;
   transform: rotate(0.6deg);
+}
+
+.copy-code-button {
+  min-height: 36px;
+  padding: 0 10px;
 }
 
 .room-code span {
@@ -515,6 +586,8 @@ button:disabled {
 }
 
 .upload-box {
+  display: grid;
+  gap: 8px;
   min-height: 150px;
   place-items: center;
   border: 2px dashed var(--ink);
@@ -524,6 +597,11 @@ button:disabled {
     var(--paper);
   text-align: center;
   cursor: pointer;
+}
+
+.upload-box strong {
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: 1.35rem;
 }
 
 .upload-box.disabled {
@@ -624,14 +702,37 @@ button:disabled {
 .image-list li,
 .participant-list li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px dashed rgba(34, 34, 34, 0.26);
   padding-bottom: 8px;
 }
 
+.participant-list li i {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--pink);
+}
+
+.participant-list li:nth-child(2n) i {
+  background: var(--blue);
+}
+
+.participant-list li:nth-child(3n) i {
+  background: var(--yellow);
+}
+
+.participant-list li:nth-child(4n) i {
+  background: #c8e8bd;
+}
+
 .image-list span,
 .participant-list span {
+  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }

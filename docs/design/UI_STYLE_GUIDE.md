@@ -35,6 +35,8 @@
 - 카드 내부에는 얇은 dashed inner border를 사용해 종이 위 스케치 느낌을 만든다.
 - 버튼 hover는 작은 회전과 그림자 축소로 눌리는 장난감 같은 감각을 준다.
 - H1에는 Rough.js underline을 사용하되 본문 가독성을 가리지 않는다.
+- 로그인 화면은 큰 `DOODLE` 워드마크와 단일 Google CTA로 시작한다.
+- 대기실은 room code badge, copy button, ready count, 참가자 색 점, 사진 1장 업로드 안내를 우선 노출한다.
 - 모바일에서는 카드 회전을 제거하고 preview/grid 요소가 한 줄로 눌리지 않도록 한다.
 
 ## 레이아웃 원칙

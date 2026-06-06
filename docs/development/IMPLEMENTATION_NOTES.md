@@ -6,6 +6,14 @@
 
 ## 구현 메모
 
+### 2026-06-06 PHASE-FE-WIREFRAME-REFERENCE-POLISH
+
+- 사용자가 제공한 손그림 와이어프레임 이미지를 기준으로 프론트 UI를 기능 변경 없이 정리했다.
+- 로그인 화면은 중앙 종이 카드, 큰 `DOODLE` 워드마크, Google 단일 CTA가 먼저 보이도록 조정했다.
+- 앱 상단은 손그림 내비게이션 바처럼 보이도록 브랜드 크기와 테두리/배경을 조정했다.
+- 방 대기 화면에는 방 코드 복사 버튼, 사진 1장 업로드 강조, 참가자 색 점을 추가했다.
+- 방 생성/입장, 업로드, Socket drawing, Timer, Result save 동작과 API 계약은 변경하지 않았다.
+
 ### 2026-06-06 PHASE-FE-ROUGHJS-DECORATION-LAYER
 
 - `roughjs`를 `@doodle/web` dependency로 추가하고 `pnpm-lock.yaml`을 pnpm 기준으로 갱신했다.

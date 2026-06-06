@@ -4,6 +4,24 @@
 
 ## 검증 결과
 
+### 2026-06-06 PHASE-FE-WIREFRAME-REFERENCE-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과
+  - `build`: 통과. Vite production build 완료
+  - `git status --short`: 변경 파일 확인 완료. `package-lock.json`은 미추적 상태로 유지
+- 확인 범위:
+  - 로그인/헤더/방 대기실 UI 변경이 TypeScript compile과 production build에 영향을 주지 않는지 확인.
+  - 방 코드 복사는 browser clipboard API를 사용하며 실패 시 안전한 안내 메시지를 표시한다.
+- 미실행:
+  - 실제 브라우저에서 모바일/데스크톱 시각 QA는 미실행.
+  - 실제 Google 로그인, 이미지 업로드, Socket drawing 동기화, Timer/Result 플로우는 이번 시각 polish 범위가 아니어서 미실행.
+- 보안:
+  - `.env`, URI, private key, token 값은 열람/출력하지 않았다.
+
 ### 2026-06-06 PHASE-FE-ROUGHJS-DECORATION-LAYER
 
 - 실행 명령: `corepack pnpm --filter @doodle/web typecheck`

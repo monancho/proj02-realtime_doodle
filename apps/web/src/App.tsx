@@ -1,4 +1,5 @@
 import {
+  Copy,
   Download,
   ImagePlus,
   LogIn,
@@ -650,6 +651,20 @@ export function App() {
     setSocketError(null);
   }
 
+  async function handleCopyRoomCode() {
+    if (!activeRoomCode) {
+      setMessage("복사할 방 코드가 없습니다.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(activeRoomCode);
+      setMessage(`${activeRoomCode} 방 코드를 복사했습니다.`);
+    } catch {
+      setMessage("방 코드 복사에 실패했습니다. 화면의 코드를 직접 복사해 주세요.");
+    }
+  }
+
   async function refreshRoomData(roomCode: string, roomSeed?: RoomDetail) {
     const normalizedRoomCode = normalizeRoomCode(roomCode);
     setResourceState((current) => ({
@@ -843,6 +858,7 @@ export function App() {
           uploadPreview={uploadPreview}
           uploadError={uploadError}
           onCancelUploadPreview={clearUploadPreview}
+          onCopyRoomCode={() => void handleCopyRoomCode()}
           onConfirmUpload={() => void handleConfirmUpload()}
           onRefreshRoom={() => void handleRefreshRoom()}
           onSelectUploadFile={handleSelectUploadFile}
@@ -947,11 +963,14 @@ function LoggedOutView(props: LoggedOutViewProps) {
     <main className="login-shell">
       <section className="login-panel" aria-labelledby="login-title">
         <p className="eyebrow">Realtime Doodle Relay</p>
+        <div className="login-brand">DOODLE</div>
         <h1 id="login-title">같이 그리고, 같이 망치고, 같이 저장하기</h1>
         <RoughDecoration className="rough-underline" seed={29} variant="underline" />
         <p className="hero-copy">Google로 로그인하면 바로 방을 만들거나 초대 코드로 입장할 수 있습니다.</p>
         <button className="primary-button google-button" disabled={props.isBusy} onClick={props.onSignInWithGoogle} type="button">
-          <LogIn size={18} />
+          <span className="google-mark" aria-hidden="true">
+            G
+          </span>
           Google로 로그인
         </button>
         <p className="login-message" aria-live="polite">
@@ -975,7 +994,7 @@ function AppHeader(props: AppHeaderProps) {
 
   return (
     <header className="app-header">
-      <strong>Realtime Doodle Relay</strong>
+      <strong>DOODLE</strong>
       <div className="profile-menu">
         <button className="profile-button" type="button">
           {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{displayName.slice(0, 1)}</span>}
@@ -1062,6 +1081,7 @@ interface RoomViewProps {
   uploadPreview: UploadPreview | null;
   uploadError: string | null;
   onCancelUploadPreview: () => void;
+  onCopyRoomCode: () => void;
   onConfirmUpload: () => void;
   onRefreshRoom: () => void;
   onSelectUploadFile: (file: File | null) => void;
@@ -1083,9 +1103,20 @@ function RoomView(props: RoomViewProps) {
           <Users size={20} />
           <h2>{props.room?.title ?? "대기실"}</h2>
         </div>
-        <div className="room-code">
-          <RoughDecoration className="rough-badge" seed={31} variant="badge" />
-          <span>{props.activeRoomCode || "------"}</span>
+        <div className="room-code-row">
+          <div className="room-code">
+            <RoughDecoration className="rough-badge" seed={31} variant="badge" />
+            <span>{props.activeRoomCode || "------"}</span>
+          </div>
+          <button
+            className="icon-button copy-code-button"
+            disabled={!props.canUseRoomActions || props.isBusy}
+            onClick={props.onCopyRoomCode}
+            type="button"
+          >
+            <Copy size={16} />
+            복사
+          </button>
         </div>
         <dl className="summary-list">
           <div>
@@ -1132,6 +1163,7 @@ function RoomView(props: RoomViewProps) {
         ) : null}
         <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
           <Upload size={28} />
+          <strong>사진 1장 업로드</strong>
           <span>
             {props.myUploadedImage
               ? "사용자당 이미지는 1장만 업로드할 수 있습니다."
@@ -1234,6 +1266,7 @@ function ParticipantPanel({
         <ul className="participant-list">
           {room.participants.map((participant) => (
             <li key={participant.firebaseUid}>
+              <i aria-hidden="true" />
               <span>
                 {participant.nickname ?? "익명 참가자"}
                 {participant.firebaseUid === currentFirebaseUid ? <small>나</small> : null}
