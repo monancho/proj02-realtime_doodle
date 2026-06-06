@@ -613,6 +613,14 @@ button:disabled {
   .connection-panel {
     order: -1;
   }
+
+  .canvas-stage {
+    min-height: auto;
+  }
+
+  .chat-list {
+    max-height: 240px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -633,5 +641,15 @@ button:disabled {
     align-items: flex-start;
     flex-direction: column;
     padding: 10px 0;
+  }
+
+  .gallery-toolbar,
+  .auth-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .room-code {
+    width: 100%;
   }
 }

@@ -50,6 +50,12 @@ P3 항목은 MVP 제외 또는 후순위이며 명시 요청 없이 구현하지
 
 - `FE-01 Web scaffold`: 완료. `apps/web`은 Vite + React + TypeScript 기반 앱으로 전환되었고 REST API client shell을 포함한다.
 - `FE-02 Firebase Auth Client`: 완료. Firebase Client SDK 로그인, ID Token 발급/갱신, `/api/users/me` 연동을 포함한다.
+- `FE-03 Lobby and Room Flow`: 완료. 로그인 기반 방 생성/입장, room detail refresh, 참가자/이미지 상태 UX를 정리했다.
+- `FE-04 Image Upload and Gallery`: 완료. 이미지 업로드 사전 검증, 업로드 후 목록 refresh, 결과 갤러리/download UX를 정리했다.
+- `FE-05 Socket Room and Chat`: 완료. Socket auth, `join-room`/`leave-room`, `room-updated`, chat 송수신 UI를 구현했다.
+- `FE-06 Canvas Drawing`: 완료. Canvas drawing surface, pointer stroke 입력, `draw-stroke` 송수신, local canvas 반영을 구현했다.
+- `FE-07 Round Timer UX`: 완료. `round-started`, countdown, `round-ended`, `game-finished` 기반 상태 전환을 구현했다.
+- `FE-08 Frontend QA and Polish`: 완료. 주요 flow 점검 기준, responsive/accessibility/error/loading polish와 build warning 정리를 수행했다.
 
 프론트 작업 원칙:
 

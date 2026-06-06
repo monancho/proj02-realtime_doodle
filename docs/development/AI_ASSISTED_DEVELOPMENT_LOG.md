@@ -1127,3 +1127,27 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 다음 자동 진행:
   - `PHASE-FE-08-FRONTEND-QA-POLISH`
+### 2026-06-06 PHASE-FE-08-FRONTEND-QA-POLISH
+
+- Agent: `frontend`
+- 목표: 프론트 주요 user flow와 responsive/error/loading/accessibility polish 마무리.
+- 수행 내용:
+  - FE-03부터 FE-08 완료 상태를 개발 체크리스트에 반영.
+  - mobile/desktop responsive layout 보강.
+  - Vite build chunk size warning 정리.
+  - 수동 QA 기준을 TEST_REPORT에 기록.
+- 의도적으로 제외:
+  - backend 구현 변경.
+  - 배포 수행.
+  - 실제 Firebase/Socket multi-client E2E smoke.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 작업 변경과 기존 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 프론트 자동 진행 결과:
+  - FE-03, FE-04, FE-05, FE-06, FE-07, FE-08 구현 완료.
+- 다음 추천 작업:
+  - `PHASE-13-CICD-DEPLOY-PLAN`
+  - Render/server 배포와 프론트 배포 URL 기준의 CI/CD, env, smoke 검증 범위를 문서화한다.

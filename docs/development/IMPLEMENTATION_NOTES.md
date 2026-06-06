@@ -463,3 +463,10 @@
 - 다음 `round-started` 수신 시 canvas stroke 상태를 초기화한다.
 - `game-finished` 수신 시 gallery CTA를 표시한다.
 - Timer scheduling은 서버 책임으로 유지했고 Result save flow는 구현하지 않았다.
+### 2026-06-06 PHASE-FE-08-FRONTEND-QA-POLISH
+
+- `docs/DEVELOPMENT_PLAN_CHECKLIST.md`의 FE-03부터 FE-08까지 완료 상태를 갱신했다.
+- responsive layout을 보강했다: mobile play/chat layout, gallery toolbar, auth actions, room code sizing.
+- Vite build chunk size warning은 Firebase/Socket client bundle 규모를 고려해 `chunkSizeWarningLimit`를 700KB로 조정해 정리했다.
+- 주요 수동 점검 흐름을 문서화했다: 로그인 -> 방 생성 -> 업로드 -> room 상태, 로그인 -> 방 입장 -> socket join -> chat, round -> drawing -> round end -> gallery.
+- backend 구현과 배포는 변경하지 않았다.

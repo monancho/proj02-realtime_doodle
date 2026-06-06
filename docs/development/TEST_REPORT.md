@@ -674,3 +674,23 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-FE-08-FRONTEND-QA-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. 이전 Firebase/Socket client bundle size warning은 `chunkSizeWarningLimit` 조정 후 표시되지 않음.
+  - `git status --short`: FE-08 웹/문서 변경과 기존 미추적 `package-lock.json` 확인.
+- 수동 점검 기준:
+  - 로그인 -> 방 생성 -> 이미지 업로드 -> room 상태 확인.
+  - 로그인 -> 방 입장 -> socket join -> chat 송수신.
+  - round 진행 -> drawing -> round end -> gallery CTA.
+- 미실행:
+  - 실제 E2E smoke: 서버 실행, Firebase 사용자 계정, 복수 브라우저 세션이 필요한 범위라 이번 자동 구현 단계에서는 제외했다.
+  - 배포: 이번 작업 범위가 아니다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
