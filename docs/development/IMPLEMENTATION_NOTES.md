@@ -343,3 +343,16 @@
 - `draw-stroke`는 room status가 `playing`이고 active round id가 일치할 때만 허용하도록 차단 기준을 구현했다.
 - `DRAW_ROUND_CLOSED`, `ROUND_STATE_INVALID` socket error code를 추가했다.
 - Result save, Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않았다.
+
+### 2026-06-06 PHASE-11-RESULT-SAVE-PLAN
+
+- Result save 구현 전에 라운드 종료 후 결과 이미지 생성/저장, MongoDB GridFS 저장, `results` metadata 저장 범위를 문서화했다.
+- Result save 구현 코드는 추가하지 않았다.
+- 결과 저장 trigger는 `round-ended` emit 직후 `roomCode + roundId` 기준 idempotent 처리로 정리했다.
+- 원본 image와 drawing stroke 합성은 원본 pixel canvas와 normalized stroke point를 기준으로 수행하는 MVP 정책으로 정리했다.
+- 결과 이미지 GridFS bucket은 `resultImages`, thumbnail bucket은 선택적으로 `resultThumbnails`를 사용하는 기준으로 정리했다.
+- Render local filesystem에 결과 이미지나 thumbnail을 영구 저장하지 않는 정책을 유지했다.
+- `results` metadata schema와 `roomCode`, `roundId`, `roundIndex`, `sourceImageId`, `resultFileId` 연결 기준을 정리했다.
+- 결과 완료 event는 `result-saved` `{ roomCode, roundId, roundIndex, result, createdAt }` 기준으로 정리했다.
+- 실패 code와 MVP 재시도 범위는 같은 프로세스 내 1회 best-effort로 정리했다.
+- Gallery/download, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.

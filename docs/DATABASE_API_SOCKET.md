@@ -1536,3 +1536,114 @@ export interface GameFinishedPayload {
 - Result save와 합성 이미지 생성은 구현하지 않았다.
 - Redis scheduler, durable timer recovery, multi-instance coordination은 구현하지 않았다.
 - 실제 MongoDB 연결 검증은 수행하지 않았다.
+
+## Result Save 구현 계획
+
+이 섹션은 `PHASE-11-RESULT-SAVE-PLAN`의 기준 계약이다. Result save 구현 코드는 아직 작성하지 않으며, 다음 구현 단계에서 결과 합성, GridFS 저장, `results` metadata repository가 이 내용을 따른다.
+
+### 목표 경계
+
+Result save는 round가 종료된 뒤 원본 이미지와 해당 round의 drawing stroke를 하나의 결과 이미지로 합성하고, 결과 이미지 바이너리를 MongoDB GridFS에 저장한 뒤 조회에 필요한 metadata를 `results` collection에 저장하는 기능이다.
+
+MVP에서는 서버 단일 프로세스에서 round 종료 직후 best-effort로 처리한다. Redis scheduler, durable job queue, multi-instance result worker, Gallery/download API는 이 단계의 범위가 아니다.
+
+### 결과 저장 Trigger 기준
+
+| Trigger | 기준 |
+|---|---|
+| `round-ended` emit 직후 | 해당 round의 drawing이 닫힌 뒤 결과 저장을 시작한다. |
+| 다음 round 시작 전 | MVP 기본 정책은 `round-ended` 후 결과 저장을 시도하고, 저장 실패가 다음 round 시작 자체를 막지는 않도록 한다. |
+| `game-finished` 전 | 마지막 round 결과 저장도 동일하게 시도한다. 실패해도 room `finished` 전이는 유지한다. |
+| 중복 trigger | `roomCode + roundId` 기준 idempotent하게 처리한다. 이미 저장된 result가 있으면 새 GridFS file을 만들지 않는다. |
+
+### 이미지 합성 MVP 기준
+
+- 원본 이미지는 `images` metadata의 `fileId`로 GridFS bucket `originalImages`에서 stream 또는 buffer로 읽는다.
+- drawing stroke는 현재 MVP의 in-memory recent stroke batches를 `roomCode + roundId` 기준으로 사용한다.
+- stroke 영구 아카이브가 없으므로 서버 재시작 후 과거 round result 재생성은 보장하지 않는다.
+- 합성 canvas 크기는 원본 이미지의 실제 pixel size를 우선 사용한다.
+- 원본 width/height metadata가 `null`이면 이미지 decoder에서 크기를 읽고, 읽지 못하면 `RESULT_IMAGE_INVALID`로 실패 처리한다.
+- stroke point의 `x`, `y`는 0..1 normalized coordinate로 해석해 canvas pixel 좌표로 변환한다.
+- `pen`은 stroke color/width를 적용하고, `eraser`는 destination-out 또는 투명 stroke 정책으로 처리한다.
+- MVP 결과 포맷은 `image/png`를 기본으로 한다. 원본 MIME type을 그대로 유지하지 않는다.
+- 썸네일 생성은 MVP 구현에서 선택 사항이며, 구현하더라도 실패가 원본 result 저장 성공을 무효화하지 않는다.
+
+### GridFS 저장 기준
+
+- 결과 이미지 바이너리는 MongoDB GridFS bucket `resultImages`에 저장한다.
+- thumbnail을 생성하는 경우 bucket은 `resultThumbnails`를 사용한다.
+- GridFS file metadata에는 `roomCode`, `roundId`, `sourceImageId`, `mimeType`, `createdAt`을 포함한다.
+- GridFS 저장 성공 후 `results` metadata insert를 수행한다.
+- metadata insert 실패 시 가능한 경우 방금 업로드한 result GridFS file 삭제를 시도한다.
+- Render local filesystem에는 결과 이미지와 thumbnail을 영구 저장하지 않는다.
+- 임시 파일이 꼭 필요하면 request/job 처리 중 생성하고 완료 또는 실패 시 삭제한다. 기본 구현은 buffer/stream 기반을 우선한다.
+
+### `results` Metadata Schema 기준
+
+```ts
+export interface ResultMetadata {
+  id: string;
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  sourceImageId: string;
+  sourceImageFileId: string;
+  resultFileId: string;
+  thumbnailFileId: string | null;
+  mimeType: "image/png";
+  width: number;
+  height: number;
+  strokeCount: number;
+  createdAt: string;
+}
+```
+
+- `roomCode`는 normalized uppercase room code를 저장한다.
+- `roundId`는 `round-ended` payload의 round id와 일치한다.
+- `roundIndex`는 `round-ended.roundIndex`와 일치한다.
+- `sourceImageId`는 `round-ended.image.id`와 일치한다.
+- `sourceImageFileId`는 원본 `ImageMetadata.fileId`를 기록해 추적 가능성을 유지한다.
+- `resultFileId`는 GridFS bucket `resultImages`의 file id다.
+- `thumbnailFileId`는 thumbnail 미생성 또는 실패 시 `null`이다.
+
+### 결과 완료 Event Payload 기준
+
+```ts
+import type { ResultMetadata } from "@doodle/shared";
+
+export interface ResultSavedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  result: ResultMetadata;
+  createdAt: string;
+}
+```
+
+- event name은 `result-saved`를 사용한다.
+- `result-saved`는 같은 Socket.IO room `room:${roomCode}`에만 emit한다.
+- Gallery/download 구현 전에도 클라이언트는 payload metadata를 통해 저장 완료 여부를 알 수 있다.
+- payload에는 token, credential, URI, private key 값을 포함하지 않는다.
+
+### 실패와 재시도 기준
+
+| Code | 기준 |
+|---|---|
+| `RESULT_SOURCE_IMAGE_NOT_FOUND` | source image metadata 또는 GridFS 원본 file을 찾을 수 없음 |
+| `RESULT_IMAGE_INVALID` | 원본 이미지 decode 또는 크기 확인 실패 |
+| `RESULT_STROKE_RENDER_FAILED` | stroke rendering 중 복구 불가능한 오류 |
+| `RESULT_STORAGE_FAILED` | result GridFS 저장 실패 |
+| `RESULT_METADATA_FAILED` | `results` metadata 저장 실패 |
+| `RESULT_ALREADY_EXISTS` | 같은 `roomCode + roundId` result가 이미 존재 |
+
+- MVP 자동 재시도는 같은 프로세스 내 1회까지로 제한한다.
+- 재시도 후에도 실패하면 `result-save-failed`를 같은 Socket.IO room에 emit할 수 있다.
+- 실패가 다음 round 시작 또는 room `finished` 전이를 rollback하지 않는다.
+- 수동 재처리 API와 durable retry queue는 MVP 이후 별도 단계에서 다룬다.
+
+### 구현 제외 범위
+
+- Result save 구현 코드는 이 단계에서 작성하지 않는다.
+- Gallery/download API는 구현하지 않는다.
+- Redis scheduler, durable job queue, multi-instance processing은 구현하지 않는다.
+- 고급 이미지 편집, 이미지 필터, 투표/랭킹은 MVP 범위 밖이다.

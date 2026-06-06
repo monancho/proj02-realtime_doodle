@@ -822,3 +822,32 @@
   - `PHASE-11-RESULT-SAVE-PLAN`
   - round 종료 후 합성 이미지 생성/저장과 `results` metadata 저장 범위를 문서화.
 
+
+### 2026-06-06 PHASE-11-RESULT-SAVE-PLAN
+
+- Agent: `backend`
+- 목표: Result save 구현 전에 결과 이미지 생성/저장, GridFS 저장, `results` metadata 저장 범위 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Result Save 구현 계획 섹션 추가.
+  - `round-ended` 이후 `roomCode + roundId` 기준 결과 저장 trigger와 idempotency 기준 정리.
+  - 원본 image와 in-memory stroke batch 합성 MVP 기준 정리.
+  - GridFS bucket `resultImages`, 선택 thumbnail bucket `resultThumbnails` 저장 기준 정리.
+  - Render local filesystem 영구 저장 금지 정책 재확인.
+  - `results` metadata schema와 room/round/image 연결 기준 정리.
+  - `result-saved` event payload와 실패/error code, 재시도 범위 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Result save 구현 코드.
+  - Gallery/download API.
+  - Redis scheduler, durable job queue, multi-instance processing.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 문서 4개와 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-11-RESULT-SAVE-IMPLEMENTATION`
+  - round 종료 후 result image 합성, GridFS 저장, `results` metadata repository, `result-saved` emit을 구현.
+
