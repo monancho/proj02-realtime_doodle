@@ -447,3 +447,11 @@
 - `send-message` UI를 추가하고 trim, 빈 문자열 차단, 200자 이하 제한을 적용했다.
 - `receive-message` payload를 chat list에 표시한다.
 - Canvas drawing과 Timer UX는 구현하지 않았다.
+### 2026-06-06 PHASE-FE-06-CANVAS-DRAWING
+
+- Canvas drawing surface를 추가했다.
+- Pointer event 기반 stroke 입력을 구현하고 좌표를 0-1 정규화 point로 저장한다.
+- stroke points는 payload당 최대 128개로 batch한다.
+- `draw-stroke` event를 Socket.IO room으로 전송하고, 수신한 `draw-stroke` stroke를 local canvas에 반영한다.
+- room status가 `playing`이 아니거나 socket이 connected가 아니면 drawing을 비활성화한다.
+- Chat 기능은 유지하되 확장하지 않았고 Result save API는 구현하지 않았다.

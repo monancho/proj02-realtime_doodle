@@ -12,7 +12,7 @@ import {
   Upload,
   Users
 } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { ImageMetadata, ListRoomResultsResponse, ResultMetadata, RoomDetail, UserProfile } from "@doodle/shared";
 import type { User } from "firebase/auth";
@@ -52,11 +52,32 @@ interface SocketErrorPayload {
   message?: string;
 }
 
+interface DrawPoint {
+  x: number;
+  y: number;
+  t: number;
+}
+
+interface DrawStroke {
+  color: string;
+  width: number;
+  points: DrawPoint[];
+}
+
+interface DrawStrokePayload {
+  roomCode: string;
+  roundId: string;
+  stroke: DrawStroke;
+  firebaseUid?: string;
+  createdAt?: string;
+}
+
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 const defaultSocketUrl = import.meta.env.VITE_SOCKET_URL ?? defaultApiBaseUrl;
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxImageSizeBytes = 10 * 1024 * 1024;
 const maxChatMessageLength = 200;
+const maxStrokePointsPerPayload = 128;
 const initialResourceState: ResourceState = {
   room: "idle",
   participants: "idle",
@@ -93,6 +114,7 @@ export function App() {
   const [socketError, setSocketError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatDraft, setChatDraft] = useState("");
+  const [drawStrokes, setDrawStrokes] = useState<DrawStroke[]>([]);
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
   const socketRef = useRef<Socket | null>(null);
@@ -154,6 +176,10 @@ export function App() {
 
     socket.on("receive-message", (payload: ChatMessage) => {
       setChatMessages((currentMessages) => [...currentMessages.slice(-99), payload]);
+    });
+
+    socket.on("draw-stroke", (payload: DrawStrokePayload) => {
+      setDrawStrokes((currentStrokes) => [...currentStrokes.slice(-399), payload.stroke]);
     });
 
     return () => {
@@ -371,6 +397,32 @@ export function App() {
     setSocketError(null);
   }
 
+  function handleDrawStroke(stroke: DrawStroke) {
+    if (!room || !socketRef.current || socketStatus !== "connected") {
+      setSocketError("Socket room에 연결된 뒤 그림을 그릴 수 있습니다.");
+      return;
+    }
+
+    if (room.status !== "playing") {
+      setSocketError("라운드가 진행 중일 때만 그림을 그릴 수 있습니다.");
+      return;
+    }
+
+    const roomCode = normalizeRoomCode(room.roomCode);
+    const roundId = createClientRoundId(room);
+    const batches = chunkStroke(stroke, maxStrokePointsPerPayload);
+
+    setDrawStrokes((currentStrokes) => [...currentStrokes.slice(-399), ...batches]);
+
+    for (const batch of batches) {
+      socketRef.current.emit("draw-stroke", {
+        roomCode,
+        roundId,
+        stroke: batch
+      });
+    }
+  }
+
   async function refreshRoomData(roomCode: string, roomSeed?: RoomDetail) {
     const normalizedRoomCode = normalizeRoomCode(roomCode);
     setResourceState((current) => ({
@@ -447,6 +499,7 @@ export function App() {
     setResourceErrors(initialResourceErrors);
     setChatMessages([]);
     setChatDraft("");
+    setDrawStrokes([]);
     setSocketError(null);
     setSocketStatus("idle");
   }
@@ -554,11 +607,13 @@ export function App() {
         <PlayView
           chatDraft={chatDraft}
           chatMessages={chatMessages}
+          drawStrokes={drawStrokes}
           imageCount={images.length}
           room={room}
           socketError={socketError}
           socketStatus={socketStatus}
           onChatDraftChange={setChatDraft}
+          onDrawStroke={handleDrawStroke}
           onSendMessage={handleSendMessage}
         />
       ) : null}
@@ -853,19 +908,21 @@ interface PlayViewProps {
   socketError: string | null;
   chatMessages: ChatMessage[];
   chatDraft: string;
+  drawStrokes: DrawStroke[];
   onChatDraftChange: (value: string) => void;
+  onDrawStroke: (stroke: DrawStroke) => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
 function PlayView(props: PlayViewProps) {
   return (
     <section className="play-layout">
-      <div className="canvas-stage" aria-label="캔버스 자리 표시">
-        <div className="canvas-placeholder">
-          <Palette size={44} />
-          <span>{props.room?.status === "playing" ? "라운드 진행 중" : "캔버스 준비 중"}</span>
-        </div>
-      </div>
+      <CanvasPanel
+        disabled={!props.room || props.room.status !== "playing" || props.socketStatus !== "connected"}
+        strokes={props.drawStrokes}
+        title={props.room?.status === "playing" ? "라운드 진행 중" : "캔버스 준비 중"}
+        onDrawStroke={props.onDrawStroke}
+      />
       <aside className="paper-card chat-card">
         <div className="card-heading">
           <MessageCircle size={20} />
@@ -907,6 +964,99 @@ function PlayView(props: PlayViewProps) {
         </div>
       </aside>
     </section>
+  );
+}
+
+interface CanvasPanelProps {
+  disabled: boolean;
+  strokes: DrawStroke[];
+  title: string;
+  onDrawStroke: (stroke: DrawStroke) => void;
+}
+
+function CanvasPanel(props: CanvasPanelProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const draftPointsRef = useRef<DrawPoint[]>([]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#fffefa";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (const stroke of props.strokes) {
+      drawStroke(context, stroke, canvas.width, canvas.height);
+    }
+  }, [props.strokes]);
+
+  function handlePointerDown(event: PointerEvent<HTMLCanvasElement>) {
+    if (props.disabled) {
+      return;
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    draftPointsRef.current = [createPoint(event)];
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLCanvasElement>) {
+    if (props.disabled || draftPointsRef.current.length === 0) {
+      return;
+    }
+
+    draftPointsRef.current = [...draftPointsRef.current, createPoint(event)];
+    previewDraftStroke(event.currentTarget, draftPointsRef.current);
+  }
+
+  function handlePointerUp(event: PointerEvent<HTMLCanvasElement>) {
+    if (props.disabled || draftPointsRef.current.length === 0) {
+      return;
+    }
+
+    const points = [...draftPointsRef.current, createPoint(event)].slice(0, maxStrokePointsPerPayload * 2);
+    draftPointsRef.current = [];
+
+    if (points.length < 1) {
+      return;
+    }
+
+    props.onDrawStroke({
+      color: "#222222",
+      width: 4,
+      points
+    });
+  }
+
+  return (
+    <div className={props.disabled ? "canvas-stage disabled" : "canvas-stage"}>
+      <div className="canvas-header">
+        <Palette size={20} />
+        <span>{props.title}</span>
+      </div>
+      <canvas
+        ref={canvasRef}
+        aria-label="낙서 캔버스"
+        height={720}
+        width={960}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => {
+          draftPointsRef.current = [];
+        }}
+      />
+      {props.disabled ? <p className="canvas-lock">Socket 연결과 playing 상태가 준비되면 그림을 그릴 수 있습니다.</p> : null}
+    </div>
   );
 }
 
@@ -1048,6 +1198,77 @@ function formatSocketStatus(status: "idle" | "connecting" | "connected" | "error
   };
 
   return labels[status];
+}
+
+function createPoint(event: PointerEvent<HTMLCanvasElement>): DrawPoint {
+  const rect = event.currentTarget.getBoundingClientRect();
+
+  return {
+    x: clamp((event.clientX - rect.left) / rect.width),
+    y: clamp((event.clientY - rect.top) / rect.height),
+    t: Date.now()
+  };
+}
+
+function drawStroke(context: CanvasRenderingContext2D, stroke: DrawStroke, width: number, height: number) {
+  if (stroke.points.length === 0) {
+    return;
+  }
+
+  context.strokeStyle = stroke.color;
+  context.lineWidth = stroke.width;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.beginPath();
+
+  const [firstPoint, ...restPoints] = stroke.points;
+  context.moveTo(firstPoint.x * width, firstPoint.y * height);
+
+  for (const point of restPoints) {
+    context.lineTo(point.x * width, point.y * height);
+  }
+
+  context.stroke();
+}
+
+function previewDraftStroke(canvas: HTMLCanvasElement, points: DrawPoint[]) {
+  const context = canvas.getContext("2d");
+
+  if (!context || points.length < 2) {
+    return;
+  }
+
+  drawStroke(
+    context,
+    {
+      color: "#222222",
+      width: 4,
+      points: points.slice(-2)
+    },
+    canvas.width,
+    canvas.height
+  );
+}
+
+function chunkStroke(stroke: DrawStroke, chunkSize: number): DrawStroke[] {
+  const chunks: DrawStroke[] = [];
+
+  for (let index = 0; index < stroke.points.length; index += chunkSize) {
+    chunks.push({
+      ...stroke,
+      points: stroke.points.slice(index, index + chunkSize)
+    });
+  }
+
+  return chunks;
+}
+
+function createClientRoundId(room: RoomDetail): string {
+  return `round-${room.currentRoundIndex}`;
+}
+
+function clamp(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
 
 function formatDateTime(value: string): string {
