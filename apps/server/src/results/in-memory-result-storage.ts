@@ -1,8 +1,10 @@
 import type {
+  ResultImageDownload,
   ResultImageStorage,
   StoreResultImageInput,
   StoredResultImage
 } from "./storage";
+import { createReadableFromResultBuffer } from "./storage";
 
 interface StoredResultImageRecord {
   buffer: Buffer;
@@ -15,6 +17,22 @@ export class InMemoryResultImageStorage implements ResultImageStorage {
 
   public async deleteFile(fileId: string): Promise<void> {
     this.filesById.delete(fileId);
+  }
+
+  public async getResultImage(
+    fileId: string
+  ): Promise<ResultImageDownload | null> {
+    const file = this.filesById.get(fileId);
+
+    if (!file) {
+      return null;
+    }
+
+    return {
+      stream: createReadableFromResultBuffer(file.buffer),
+      mimeType: "image/png",
+      size: file.buffer.byteLength
+    };
   }
 
   public async storeResultImage(
@@ -39,4 +57,3 @@ export class InMemoryResultImageStorage implements ResultImageStorage {
       : null;
   }
 }
-

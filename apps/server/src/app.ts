@@ -10,6 +10,14 @@ import {
   createRoomImageRouter
 } from "./images/routes";
 import type { ImageStorage } from "./images/storage";
+import { InMemoryResultRepository } from "./results/in-memory-result-repository";
+import { InMemoryResultImageStorage } from "./results/in-memory-result-storage";
+import type { ResultRepository } from "./results/repository";
+import {
+  createResultBinaryRouter,
+  createRoomResultRouter
+} from "./results/routes";
+import type { ResultImageStorage } from "./results/storage";
 import { InMemoryRoomRepository } from "./rooms/in-memory-room-repository";
 import type { RoomRepository } from "./rooms/repository";
 import { createRoomRouter } from "./rooms/routes";
@@ -21,6 +29,8 @@ export interface AppDependencies {
   authMiddleware?: RequestHandler;
   imageRepository?: ImageRepository;
   imageStorage?: ImageStorage;
+  resultRepository?: ResultRepository;
+  resultStorage?: ResultImageStorage;
   roomRepository?: RoomRepository;
   userRepository?: UserRepository;
 }
@@ -50,6 +60,10 @@ export function createApp(dependencies: AppDependencies = {}): Express {
   const imageRepository =
     dependencies.imageRepository ?? new InMemoryImageRepository();
   const imageStorage = dependencies.imageStorage ?? new InMemoryImageStorage();
+  const resultRepository =
+    dependencies.resultRepository ?? new InMemoryResultRepository();
+  const resultStorage =
+    dependencies.resultStorage ?? new InMemoryResultImageStorage();
 
   app.use(
     "/api/users",
@@ -76,6 +90,26 @@ export function createApp(dependencies: AppDependencies = {}): Express {
       authMiddleware,
       imageRepository,
       imageStorage,
+      roomRepository
+    })
+  );
+
+  app.use(
+    "/api/rooms/:roomCode/results",
+    createRoomResultRouter({
+      authMiddleware,
+      resultRepository,
+      resultStorage,
+      roomRepository
+    })
+  );
+
+  app.use(
+    "/api/results",
+    createResultBinaryRouter({
+      authMiddleware,
+      resultRepository,
+      resultStorage,
       roomRepository
     })
   );

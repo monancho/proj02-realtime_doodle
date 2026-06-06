@@ -380,3 +380,14 @@
 - `ROOM_NOT_FOUND`, `ROOM_ACCESS_DENIED`, `RESULT_NOT_FOUND`, `RESULT_FILE_NOT_FOUND`, `RESULT_QUERY_INVALID` error code 기준을 정리했다.
 - Thumbnail API는 MVP 선택 범위로 문서화만 하고 구현 제외로 유지했다.
 - Result save, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
+
+### 2026-06-06 PHASE-12-GALLERY-DOWNLOAD-IMPLEMENTATION
+
+- `results` metadata list API와 result image GridFS download API를 인증 및 room membership 검증 기반으로 구현했다.
+- `GET /api/rooms/:roomCode/results`를 추가했다.
+- `GET /api/results/:resultId/download`를 추가했다.
+- `ResultRepository.findResultById()`와 `ResultRepository.listResultsByRoomCode()` 계약 및 in-memory/MongoDB 구현을 추가했다.
+- `ResultImageStorage.getResultImage()` 계약 및 in-memory/GridFS 구현을 추가했다.
+- pagination은 기본 limit 20, 최대 limit 50, cursor 기반으로 구현했다.
+- result image download response에 `Content-Type`, `Content-Length`, `Content-Disposition`, `Cache-Control` header를 설정한다.
+- Thumbnail API, Result save flow 변경, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.

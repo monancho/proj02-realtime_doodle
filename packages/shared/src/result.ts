@@ -14,3 +14,11 @@ export interface ResultMetadata {
   createdAt: string;
 }
 
+export interface ListRoomResultsResponse {
+  results: ResultMetadata[];
+  page: {
+    limit: number;
+    cursor: string | null;
+    nextCursor: string | null;
+  };
+}

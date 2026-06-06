@@ -500,3 +500,23 @@
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.
 
+
+### 2026-06-06 PHASE-12-GALLERY-DOWNLOAD-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `test`: 통과. 17 files, 75 tests.
+  - `git status --short`: Gallery/download 구현/문서 변경 파일과 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - room participant의 result metadata 목록 조회와 cursor pagination 검증.
+  - result image download stream body와 `Content-Type`, `Content-Length`, `Content-Disposition`, `Cache-Control` header 검증.
+  - non-participant list/download 접근 거절 검증.
+  - invalid query, missing room, missing result, missing result file error code 검증.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase/GridFS 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.

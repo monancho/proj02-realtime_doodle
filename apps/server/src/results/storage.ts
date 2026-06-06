@@ -15,8 +15,15 @@ export interface StoredResultImage {
   fileId: string;
 }
 
+export interface ResultImageDownload {
+  stream: NodeJS.ReadableStream;
+  mimeType: "image/png";
+  size: number;
+}
+
 export interface ResultImageStorage {
   deleteFile(fileId: string): Promise<void>;
+  getResultImage(fileId: string): Promise<ResultImageDownload | null>;
   storeResultImage(input: StoreResultImageInput): Promise<StoredResultImage>;
 }
 
@@ -25,4 +32,3 @@ export function createReadableFromResultBuffer(
 ): NodeJS.ReadableStream {
   return Readable.from(buffer);
 }
-

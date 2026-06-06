@@ -1783,3 +1783,49 @@ export interface ListRoomResultsResponse {
 - Result save flow는 이 단계에서 변경하지 않는다.
 - Redis scheduler, durable job queue, multi-instance processing은 구현하지 않는다.
 - Thumbnail API와 thumbnail 생성은 구현하지 않는다.
+
+## Gallery/Download 구현 기록
+
+이 섹션은 `PHASE-12-GALLERY-DOWNLOAD-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 HTTP API
+
+| Method | Path | 구현 결과 |
+|---|---|---|
+| `GET` | `/api/rooms/:roomCode/results` | room participant 대상 result metadata 목록 조회 |
+| `GET` | `/api/results/:resultId/download` | room participant 대상 result image stream 다운로드 |
+
+### 구현된 검증과 Pagination
+
+- Firebase HTTP auth middleware의 auth context를 사용한다.
+- `roomCode`는 trim 후 uppercase normalize한다.
+- 두 API 모두 result의 room 또는 route room에 대해 `RoomRepository.findRoomByCode()`로 room을 조회한다.
+- 요청자의 `firebaseUid`가 room participants에 없으면 `ROOM_ACCESS_DENIED`로 거절한다.
+- metadata 목록은 `{ results, page }` shape로 반환한다.
+- 기본 limit은 20, 최대 limit은 50이다.
+- sort는 `createdAt` descending, 같은 값이면 `id` descending이다.
+- cursor는 `{ createdAt, id }`를 base64url encoding한 opaque string을 사용한다.
+
+### Download Stream 기준
+
+- `GET /api/results/:resultId/download`는 `ResultRepository.findResultById()`로 metadata를 조회한다.
+- `result.resultFileId`로 `ResultImageStorage.getResultImage()`를 호출한다.
+- storage 구현은 GridFS bucket `resultImages`에서 file을 조회하고 stream을 반환한다.
+- 응답 header는 `Content-Type`, `Content-Length`, `Content-Disposition`, `Cache-Control`을 설정한다.
+- filename은 `doodle-${roomCode}-${roundIndex}.png` 형식을 사용하며 secret 값을 포함하지 않는다.
+
+### Repository/Storage 변경
+
+- `ResultRepository.findResultById()` 계약을 추가했다.
+- `ResultRepository.listResultsByRoomCode()` 계약을 추가했다.
+- `InMemoryResultRepository`와 `MongoResultRepository`에 find/list 구현을 추가했다.
+- `ResultImageStorage.getResultImage()` 계약을 추가했다.
+- `InMemoryResultImageStorage`와 GridFS result storage에 stream 조회 구현을 추가했다.
+- Express app에 room result router와 result binary router를 연결했다.
+
+### 구현 제외 범위
+
+- Thumbnail API는 구현하지 않았다.
+- Result save flow는 변경하지 않았다.
+- Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
+- 실제 MongoDB/GridFS 연결 검증은 수행하지 않았다.

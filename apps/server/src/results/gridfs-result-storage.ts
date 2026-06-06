@@ -3,6 +3,7 @@ import { Readable } from "node:stream";
 import { GridFSBucket, ObjectId, type Db } from "mongodb";
 
 import type {
+  ResultImageDownload,
   ResultImageStorage,
   StoreResultImageInput,
   StoredResultImage
@@ -23,6 +24,28 @@ class GridFsResultImageStorage implements ResultImageStorage {
     if (ObjectId.isValid(fileId)) {
       await this.bucket.delete(new ObjectId(fileId));
     }
+  }
+
+  public async getResultImage(
+    fileId: string
+  ): Promise<ResultImageDownload | null> {
+    if (!ObjectId.isValid(fileId)) {
+      return null;
+    }
+
+    const objectId = new ObjectId(fileId);
+    const files = await this.bucket.find({ _id: objectId }).limit(1).toArray();
+    const file = files[0] as { length: number } | undefined;
+
+    if (!file) {
+      return null;
+    }
+
+    return {
+      stream: this.bucket.openDownloadStream(objectId),
+      mimeType: "image/png",
+      size: file.length
+    };
   }
 
   public async storeResultImage(

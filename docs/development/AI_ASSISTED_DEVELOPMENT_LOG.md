@@ -913,3 +913,32 @@
   - `PHASE-12-GALLERY-DOWNLOAD-IMPLEMENTATION`
   - `results` metadata list API와 result image GridFS download API를 인증 및 room membership 검증 기반으로 구현.
 
+
+### 2026-06-06 PHASE-12-GALLERY-DOWNLOAD-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: `results` metadata list API와 result image GridFS download API를 인증 및 room membership 검증 기반으로 구현.
+- 수행 내용:
+  - `GET /api/rooms/:roomCode/results` API 추가.
+  - `GET /api/results/:resultId/download` API 추가.
+  - `ResultRepository.findResultById()`와 `listResultsByRoomCode()` 계약 및 구현 추가.
+  - `ResultImageStorage.getResultImage()` 계약 및 구현 추가.
+  - Express app에 result route wiring 추가.
+  - result route 테스트 추가.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Thumbnail API.
+  - Result save flow 변경.
+  - Redis scheduler, durable job queue, multi-instance processing.
+  - 실제 MongoDB/GridFS 연결 검증.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 17 files, 75 tests.
+  - `git status --short`: Gallery/download 구현/문서 변경 파일과 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-13-CICD-DEPLOY-PLAN`
+  - Render/server 배포와 프론트 배포 URL 기준의 CI/CD, env, smoke 검증 범위를 문서화.

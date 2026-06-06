@@ -107,6 +107,8 @@ export async function createServerDependencies(
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
       imageRepository,
       imageStorage,
+      resultRepository,
+      resultStorage,
       roomRepository,
       userRepository
     })

@@ -4,12 +4,16 @@ import type {
   Filter,
   IndexSpecification,
   OptionalUnlessRequiredId,
+  ObjectId,
   WithId
 } from "mongodb";
+import { ObjectId as MongoObjectId } from "mongodb";
 
 import { normalizeRoomCode } from "../rooms/room-code";
 import type {
   CreateResultMetadataInput,
+  ListResultsByRoomCodeInput,
+  ListResultsByRoomCodeOutput,
   ResultRepository
 } from "./repository";
 
@@ -33,6 +37,13 @@ export interface ResultCollection {
     document: OptionalUnlessRequiredId<ResultDocument>
   ): Promise<{ insertedId?: unknown } | unknown>;
   findOne(filter: Filter<ResultDocument>): Promise<WithId<ResultDocument> | null>;
+  find(filter: Filter<ResultDocument>): {
+    sort(sort: Record<string, 1 | -1>): {
+      limit(limit: number): {
+        toArray(): Promise<Array<WithId<ResultDocument>>>;
+      };
+    };
+  };
   createIndex(
     indexSpec: IndexSpecification,
     options?: { unique?: true }
@@ -77,6 +88,20 @@ export class MongoResultRepository implements ResultRepository {
     return mapResultDocumentToMetadata(insertedDocument ?? document);
   }
 
+  public async findResultById(
+    resultId: string
+  ): Promise<ResultMetadata | null> {
+    if (!MongoObjectId.isValid(resultId)) {
+      return null;
+    }
+
+    const document = await this.collection.findOne({
+      _id: new MongoObjectId(resultId) as unknown as ObjectId
+    } as Filter<ResultDocument>);
+
+    return document ? mapResultDocumentToMetadata(document) : null;
+  }
+
   public async findResultByRoomRound(input: {
     roomCode: string;
     roundId: string;
@@ -87,6 +112,32 @@ export class MongoResultRepository implements ResultRepository {
     });
 
     return document ? mapResultDocumentToMetadata(document) : null;
+  }
+
+  public async listResultsByRoomCode(
+    input: ListResultsByRoomCodeInput
+  ): Promise<ListResultsByRoomCodeOutput> {
+    const filter: Filter<ResultDocument> = {
+      roomCode: normalizeRoomCode(input.roomCode),
+      ...(input.cursor ? createCursorFilter(input.cursor) : {})
+    } as Filter<ResultDocument>;
+    const documents = await this.collection
+      .find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(input.limit + 1)
+      .toArray();
+    const pageDocuments = documents.slice(0, input.limit);
+    const hasNextPage = documents.length > input.limit;
+    const results = pageDocuments.map(mapResultDocumentToMetadata);
+    const lastResult = results.at(-1);
+
+    return {
+      results,
+      nextCursor:
+        hasNextPage && lastResult
+          ? { createdAt: lastResult.createdAt, id: lastResult.id }
+          : null
+    };
   }
 }
 
@@ -129,3 +180,23 @@ export function mapResultDocumentToMetadata(
   };
 }
 
+function createCursorFilter(cursor: {
+  createdAt: string;
+  id: string;
+}): Filter<ResultDocument> {
+  const createdAt = new Date(cursor.createdAt);
+
+  if (!MongoObjectId.isValid(cursor.id)) {
+    return { createdAt: { $lt: createdAt } } as Filter<ResultDocument>;
+  }
+
+  return {
+    $or: [
+      { createdAt: { $lt: createdAt } },
+      {
+        createdAt,
+        _id: { $lt: new MongoObjectId(cursor.id) }
+      }
+    ]
+  } as Filter<ResultDocument>;
+}
