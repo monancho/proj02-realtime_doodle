@@ -1230,3 +1230,45 @@ export interface ListRoomImagesResponse {
 - Image upload 구현 코드는 이 단계에서 작성하지 않는다.
 - Random round start, Timer, Result save는 구현하지 않는다.
 - 이미지 리사이징, 썸네일 생성, 바이러스 스캔, 고급 이미지 편집은 MVP 범위 밖이다.
+
+## Image Upload/GridFS 구현 기록
+
+이 섹션은 `PHASE-07-IMAGE-UPLOAD-GRIDFS-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 HTTP API
+
+| Method | Path | 구현 결과 |
+|---|---|---|
+| `POST` | `/api/rooms/:roomCode/images` | multipart/form-data 단일 `image` file field 업로드 |
+| `GET` | `/api/rooms/:roomCode/images` | room participant 대상 image metadata 목록 조회 |
+| `GET` | `/api/images/:imageId` | room participant 대상 GridFS 원본 이미지 stream 응답 |
+
+### 구현된 검증
+
+- Firebase HTTP auth middleware의 auth context를 사용한다.
+- `roomCode`는 trim 후 uppercase normalize한다.
+- `RoomRepository.findRoomByCode(roomCode)`로 room을 조회한다.
+- room이 없으면 `ROOM_NOT_FOUND`로 응답한다.
+- auth user가 room participants에 없으면 `ROOM_ACCESS_DENIED`로 응답한다.
+- 업로드는 `waiting` room에서만 허용하고, 아니면 `ROOM_STATE_INVALID`로 응답한다.
+- 사용자별 업로드 수는 `room.settings.maxImagesPerUser` 이하로 제한하고, 초과 시 `IMAGE_LIMIT_REACHED`로 응답한다.
+- multipart payload는 단일 `image` file field만 허용한다.
+- MIME type은 `image/jpeg`, `image/png`, `image/webp`만 허용한다.
+- 0 byte 파일은 `IMAGE_FILE_EMPTY`로 거절한다.
+- 10MB 초과 파일은 `IMAGE_FILE_TOO_LARGE`로 거절한다.
+
+### 저장 구현
+
+- `ImageRepository` 계약과 `InMemoryImageRepository`, `MongoImageRepository`를 추가했다.
+- `ImageStorage` 계약과 `InMemoryImageStorage`, GridFS 기반 storage를 추가했다.
+- MongoDB metadata collection은 `images`를 사용한다.
+- GridFS bucket 기본값은 `originalImages`다.
+- GridFS 저장 성공 후 `images` metadata를 insert한다.
+- metadata insert 실패 시 업로드한 GridFS file 삭제를 시도한다.
+- Render local filesystem에 이미지 바이너리를 영구 저장하지 않는다.
+
+### 구현 제외 범위
+
+- Random round start, Timer, Result save는 구현하지 않았다.
+- 이미지 리사이징, 썸네일 생성, 바이러스 스캔, 고급 이미지 편집은 구현하지 않았다.
+- 실제 MongoDB/GridFS 연결 검증은 이번 테스트 범위에서 제외했다.

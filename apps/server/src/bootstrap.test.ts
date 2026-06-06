@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { createServerDependencies } from "./bootstrap";
 import type { ServerEnv } from "./config/env";
 import type { MongoDbConnection } from "./db/mongodb";
+import { InMemoryImageRepository } from "./images/in-memory-image-repository";
+import { InMemoryImageStorage } from "./images/in-memory-image-storage";
 import { InMemoryRoomRepository } from "./rooms/in-memory-room-repository";
 import { InMemoryUserRepository } from "./users/in-memory-user-repository";
 
@@ -46,10 +48,14 @@ describe("createServerDependencies", () => {
     const roomRepository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "ABC123"
     });
+    const imageRepository = new InMemoryImageRepository();
+    const imageStorage = new InMemoryImageStorage();
 
     const dependencies = await createServerDependencies(env, {
       connectDb: vi.fn().mockResolvedValue(mongoConnection),
       createVerifier: () => verifier,
+      createImageRepository: vi.fn().mockResolvedValue(imageRepository),
+      createImageStorage: () => imageStorage,
       createRoomRepository: vi.fn().mockResolvedValue(roomRepository),
       createUserRepository: vi.fn().mockResolvedValue(userRepository)
     });
@@ -86,10 +92,14 @@ describe("createServerDependencies", () => {
     const roomRepository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "ABC123"
     });
+    const imageRepository = new InMemoryImageRepository();
+    const imageStorage = new InMemoryImageStorage();
 
     const dependencies = await createServerDependencies(env, {
       connectDb: vi.fn().mockResolvedValue(mongoConnection),
       createVerifier: () => verifier,
+      createImageRepository: vi.fn().mockResolvedValue(imageRepository),
+      createImageStorage: () => imageStorage,
       createRoomRepository: vi.fn().mockResolvedValue(roomRepository),
       createUserRepository: vi.fn().mockResolvedValue(userRepository)
     });

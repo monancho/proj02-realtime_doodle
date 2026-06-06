@@ -279,3 +279,17 @@
 - 원본 이미지 바이너리는 MongoDB GridFS bucket `originalImages`에 저장하고, API/랜덤 선택은 `images` metadata를 기준으로 한다.
 - Render local filesystem에는 업로드 이미지나 결과 이미지를 영구 저장하지 않는 정책을 명시했다.
 - Random round start, Timer, Result save는 구현하지 않았다.
+
+### 2026-06-06 PHASE-07-IMAGE-UPLOAD-GRIDFS-IMPLEMENTATION
+
+- Image upload API, GridFS storage, images metadata repository를 구현했다.
+- `POST /api/rooms/:roomCode/images`는 multipart/form-data 단일 `image` file field를 처리한다.
+- `GET /api/rooms/:roomCode/images` metadata 목록 조회를 구현했다.
+- `GET /api/images/:imageId` 원본 이미지 stream 응답을 구현했다.
+- Firebase auth context와 `RoomRepository.findRoomByCode(roomCode)` 기반 room membership 검증을 추가했다.
+- `waiting` room에서만 업로드를 허용하고, 사용자별 `maxImagesPerUser` 제한을 적용했다.
+- MIME type은 `image/jpeg`, `image/png`, `image/webp`만 허용하고, 0 byte와 10MB 초과 파일을 거절한다.
+- `ImageRepository`, `ImageStorage` 계약과 in-memory/MongoDB GridFS 구현을 추가했다.
+- MongoDB `images` metadata index와 GridFS bucket `originalImages` wiring을 bootstrap에 추가했다.
+- Render local filesystem에 이미지를 영구 저장하는 코드는 추가하지 않았다.
+- Random round start, Timer, Result save는 구현하지 않았다.

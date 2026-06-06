@@ -2,6 +2,14 @@ import type { AuthErrorResponse } from "@doodle/shared";
 import express, { type Express, type RequestHandler } from "express";
 
 import { handleHealthRequest } from "./health";
+import { InMemoryImageRepository } from "./images/in-memory-image-repository";
+import { InMemoryImageStorage } from "./images/in-memory-image-storage";
+import type { ImageRepository } from "./images/repository";
+import {
+  createImageBinaryRouter,
+  createRoomImageRouter
+} from "./images/routes";
+import type { ImageStorage } from "./images/storage";
 import { InMemoryRoomRepository } from "./rooms/in-memory-room-repository";
 import type { RoomRepository } from "./rooms/repository";
 import { createRoomRouter } from "./rooms/routes";
@@ -11,6 +19,8 @@ import { createUserRouter } from "./users/routes";
 
 export interface AppDependencies {
   authMiddleware?: RequestHandler;
+  imageRepository?: ImageRepository;
+  imageStorage?: ImageStorage;
   roomRepository?: RoomRepository;
   userRepository?: UserRepository;
 }
@@ -33,23 +43,48 @@ export function createApp(dependencies: AppDependencies = {}): Express {
       .json(healthResponse.body);
   });
 
+  const authMiddleware =
+    dependencies.authMiddleware ?? createMissingAuthMiddleware();
+  const roomRepository =
+    dependencies.roomRepository ?? new InMemoryRoomRepository();
+  const imageRepository =
+    dependencies.imageRepository ?? new InMemoryImageRepository();
+  const imageStorage = dependencies.imageStorage ?? new InMemoryImageStorage();
+
   app.use(
     "/api/users",
     createUserRouter({
-      authMiddleware:
-        dependencies.authMiddleware ?? createMissingAuthMiddleware(),
+      authMiddleware,
       repository:
         dependencies.userRepository ?? new InMemoryUserRepository()
     })
   );
 
   app.use(
+    "/api/rooms/:roomCode/images",
+    createRoomImageRouter({
+      authMiddleware,
+      imageRepository,
+      imageStorage,
+      roomRepository
+    })
+  );
+
+  app.use(
+    "/api/images",
+    createImageBinaryRouter({
+      authMiddleware,
+      imageRepository,
+      imageStorage,
+      roomRepository
+    })
+  );
+
+  app.use(
     "/api/rooms",
     createRoomRouter({
-      authMiddleware:
-        dependencies.authMiddleware ?? createMissingAuthMiddleware(),
-      repository:
-        dependencies.roomRepository ?? new InMemoryRoomRepository()
+      authMiddleware,
+      repository: roomRepository
     })
   );
 

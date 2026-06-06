@@ -14,6 +14,13 @@ export type {
 export { REQUIRED_SERVER_ENV_KEYS } from "./env";
 export type { RequiredServerEnvKey } from "./env";
 export type {
+  ImageMetadata,
+  ImageMimeType,
+  ImageUploader,
+  ListRoomImagesResponse,
+  UploadImageResponse
+} from "./image";
+export type {
   CreateRoomRequest,
   CreateRoomResponse,
   GetRoomResponse,

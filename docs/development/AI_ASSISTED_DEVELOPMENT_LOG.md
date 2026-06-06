@@ -670,3 +670,38 @@
 - 다음 추천 작업:
   - `PHASE-07-IMAGE-UPLOAD-GRIDFS-IMPLEMENTATION`
   - Image upload API, GridFS storage, images metadata repository를 인증 및 room membership 검증 기반으로 구현.
+
+### 2026-06-06 PHASE-07-IMAGE-UPLOAD-GRIDFS-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Image upload API, GridFS storage, images metadata repository를 인증 및 room membership 검증 기반으로 구현.
+- 수행 내용:
+  - shared image contract 추가.
+  - `ImageRepository`, `ImageStorage` 계약 추가.
+  - `InMemoryImageRepository`, `InMemoryImageStorage` 추가.
+  - `MongoImageRepository`와 GridFS image storage 추가.
+  - `POST /api/rooms/:roomCode/images` 구현.
+  - `GET /api/rooms/:roomCode/images` 구현.
+  - `GET /api/images/:imageId` 구현.
+  - Firebase auth context, room membership, waiting room, per-user maxImagesPerUser 검증 추가.
+  - MIME type, 0 byte, 10MB 초과 파일 검증 추가.
+  - bootstrap에 MongoDB `images` index와 GridFS storage wiring 추가.
+  - Image route 테스트 추가.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Random round start.
+  - Timer.
+  - Result save.
+  - 실제 MongoDB/GridFS 연결 검증.
+  - 이미지 리사이징, 썸네일 생성, 고급 이미지 편집.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 최초 실패 후 수정하여 통과.
+  - `corepack pnpm --filter @doodle/server test`: 최초 실패 후 수정하여 통과. 15 files, 61 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-08-RANDOM-ROUND-START-PLAN`
+  - 미사용 이미지 랜덤 선택과 `round-started` payload를 Image metadata 기반으로 문서화.

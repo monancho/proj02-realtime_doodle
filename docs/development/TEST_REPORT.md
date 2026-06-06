@@ -359,3 +359,25 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-07-IMAGE-UPLOAD-GRIDFS-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - 최초 `typecheck`: 실패. MongoDB GridFS upload option type에 `contentType` field가 없어 metadata 저장으로 수정.
+  - 최초 `test`: 실패. binary stream 응답 테스트가 `response.text`를 읽어 `response.body` buffer 검증으로 수정.
+  - 수정 후 `typecheck`: 통과.
+  - 수정 후 `test`: 통과. 15 files, 61 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - image upload 성공 시 metadata 생성과 original file 저장 검증.
+  - room image metadata 목록 조회 검증.
+  - original image stream 응답 검증.
+  - non-participant, non-waiting room, unsupported MIME type, empty file, per-user upload limit error code 검증.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase/GridFS 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
