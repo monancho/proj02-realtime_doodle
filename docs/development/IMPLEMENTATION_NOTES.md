@@ -557,3 +557,14 @@
 - 제목/강조 UI는 `Gaegu`, 본문/버튼은 `Pretendard` fallback 중심으로 조정했다.
 - Rough.js 패키지는 이번 즉시 수정에서 추가하지 않고 CSS 기반 손그림 톤만 1차 반영했다.
 - 백엔드 코드, `.env`, secret 파일은 수정하지 않았다.
+### 2026-06-06 PHASE-FE-HANDDRAWN-DESIGN-SYSTEM
+
+- 기능 동작 변경 없이 `apps/web/src/styles.css` 중심으로 손그림 낙서 스타일을 정리했다.
+- 제목/강조는 `Gaegu`, 본문/버튼은 `Pretendard` fallback 기준으로 분리했다.
+- Rough.js 실제 패키지 도입은 dependency와 lockfile 변경이 필요해 이번 MVP 1차 적용에서는 보류했다.
+- CSS 기반으로 handdrawn border, sketchy card, dashed inner border, marker-like H1 underline, doodle-style divider를 적용했다.
+- 버튼 hover에 작은 회전/그림자 변화를 추가해 손으로 누르는 조작감을 만들었다.
+- 방 코드, 업로드 박스, 캔버스, 채팅, 갤러리, 모달의 border-radius와 dashed border를 통일했다.
+- 모바일에서는 카드 회전을 제거하고 upload preview가 한 열로 내려가도록 조정했다.
+- `docs/design/DESIGN_SYSTEM_WIREFRAME.md`, `docs/design/UI_STYLE_GUIDE.md`에 Rough.js 검토 결과와 적용 기준을 기록했다.
+- `package-lock.json`은 수정, 삭제, commit하지 않았다.

@@ -925,3 +925,22 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-FE-HANDDRAWN-DESIGN-SYSTEM
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - `git status --short`: frontend/design/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - CSS-only handdrawn style 변경이 TypeScript compile과 Vite build에 영향을 주지 않는지 확인.
+  - 모바일 breakpoint에서 카드 회전 제거와 upload preview 단일 column fallback을 CSS로 반영.
+- 미실행:
+  - 실제 브라우저 시각 QA는 로컬 서버 실행 후 수동 확인이 필요하다.
+  - Rough.js 실제 패키지 도입은 dependency/lockfile 변경이 필요해 이번 작업에서 수행하지 않았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

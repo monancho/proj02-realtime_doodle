@@ -1337,3 +1337,24 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+### 2026-06-06 PHASE-FE-HANDDRAWN-DESIGN-SYSTEM
+
+- Agent: `frontend`
+- 목표: Rough.js/Gaegu/Pretendard 기반 손그림 낙서 스타일 정리.
+- 수행 내용:
+  - 기능 동작은 변경하지 않고 CSS 중심으로 UI 분위기를 조정했다.
+  - `Gaegu`를 제목/강조에, `Pretendard` fallback을 본문/버튼에 유지했다.
+  - Rough.js 실제 도입은 dependency/lockfile 변경이 필요해 보류했다.
+  - 종이 배경, 마커형 underline, sketchy card, dashed inner border, 비정형 버튼/입력/모달/캔버스 스타일을 적용했다.
+  - 모바일에서 카드 회전을 제거하고 upload preview layout을 단일 column으로 보정했다.
+  - 디자인 문서에 Rough.js 보류와 CSS handdrawn 적용 기준을 기록했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `git status --short`: 변경 파일 및 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 기능 동작 변경.
+  - Rough.js package 설치.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
