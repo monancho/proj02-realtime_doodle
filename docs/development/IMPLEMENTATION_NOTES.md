@@ -455,3 +455,11 @@
 - `draw-stroke` event를 Socket.IO room으로 전송하고, 수신한 `draw-stroke` stroke를 local canvas에 반영한다.
 - room status가 `playing`이 아니거나 socket이 connected가 아니면 drawing을 비활성화한다.
 - Chat 기능은 유지하되 확장하지 않았고 Result save API는 구현하지 않았다.
+### 2026-06-06 PHASE-FE-07-ROUND-TIMER-UX
+
+- `round-started`, `round-ended`, `game-finished` socket event handler를 추가했다.
+- `round-started` payload를 active round 상태로 저장하고 countdown을 표시한다.
+- `round-ended` 수신 시 active round를 ended 상태로 표시하고 drawing을 비활성화한다.
+- 다음 `round-started` 수신 시 canvas stroke 상태를 초기화한다.
+- `game-finished` 수신 시 gallery CTA를 표시한다.
+- Timer scheduling은 서버 책임으로 유지했고 Result save flow는 구현하지 않았다.

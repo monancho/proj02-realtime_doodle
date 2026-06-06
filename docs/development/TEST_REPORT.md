@@ -655,3 +655,22 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+### 2026-06-06 PHASE-FE-07-ROUND-TIMER-UX
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `git status --short`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Firebase/Socket client bundle size 경고는 남아 있으나 실패는 아님.
+  - `git status --short`: FE-07 웹/문서 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - round-started/round-ended/game-finished handler와 countdown TypeScript compile 검증.
+  - Drawing lock 상태 compile 검증.
+  - Vite production bundle 생성 검증.
+- 미실행:
+  - 실제 round timer socket smoke: 서버 실행과 game start flow가 필요한 범위라 이번 자동 구현 단계에서는 제외했다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

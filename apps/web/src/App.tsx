@@ -72,6 +72,27 @@ interface DrawStrokePayload {
   createdAt?: string;
 }
 
+interface RoundStartedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+  durationSec: number;
+  startedAt: string;
+}
+
+interface RoundEndedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+  endedAt: string;
+}
+
+interface ActiveRound extends RoundStartedPayload {
+  endedAt: string | null;
+}
+
 const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 const defaultSocketUrl = import.meta.env.VITE_SOCKET_URL ?? defaultApiBaseUrl;
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -115,6 +136,10 @@ export function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatDraft, setChatDraft] = useState("");
   const [drawStrokes, setDrawStrokes] = useState<DrawStroke[]>([]);
+  const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
+  const [roundEnded, setRoundEnded] = useState<RoundEndedPayload | null>(null);
+  const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
+  const [remainingSec, setRemainingSec] = useState<number | null>(null);
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
   const socketRef = useRef<Socket | null>(null);
@@ -182,6 +207,29 @@ export function App() {
       setDrawStrokes((currentStrokes) => [...currentStrokes.slice(-399), payload.stroke]);
     });
 
+    socket.on("round-started", (payload: RoundStartedPayload) => {
+      setActiveRound({ ...payload, endedAt: null });
+      setRoundEnded(null);
+      setGameFinishedAt(null);
+      setDrawStrokes([]);
+      setViewMode("play");
+      setMessage(`Round ${payload.roundIndex + 1}이 시작되었습니다.`);
+    });
+
+    socket.on("round-ended", (payload: RoundEndedPayload) => {
+      setRoundEnded(payload);
+      setActiveRound((currentRound) =>
+        currentRound && currentRound.roundId === payload.roundId ? { ...currentRound, endedAt: payload.endedAt } : currentRound
+      );
+      setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다.`);
+    });
+
+    socket.on("game-finished", (payload: { roomCode: string; room: RoomDetail; finishedAt: string }) => {
+      setRoom(payload.room);
+      setGameFinishedAt(payload.finishedAt);
+      setMessage("게임이 종료되었습니다. 갤러리에서 결과를 확인하세요.");
+    });
+
     return () => {
       socket.emit("leave-room", { roomCode });
       socket.disconnect();
@@ -190,6 +238,24 @@ export function App() {
       }
     };
   }, [activeToken, room?.roomCode]);
+
+  useEffect(() => {
+    if (!activeRound || activeRound.endedAt) {
+      setRemainingSec(null);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const startedAtMs = new Date(activeRound.startedAt).getTime();
+      const elapsedSec = Math.floor((Date.now() - startedAtMs) / 1000);
+      setRemainingSec(Math.max(0, activeRound.durationSec - elapsedSec));
+    };
+
+    updateRemaining();
+    const intervalId = window.setInterval(updateRemaining, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeRound]);
 
   async function runAction(action: () => Promise<void>) {
     setIsBusy(true);
@@ -409,7 +475,7 @@ export function App() {
     }
 
     const roomCode = normalizeRoomCode(room.roomCode);
-    const roundId = createClientRoundId(room);
+    const roundId = activeRound?.roundId ?? createClientRoundId(room);
     const batches = chunkStroke(stroke, maxStrokePointsPerPayload);
 
     setDrawStrokes((currentStrokes) => [...currentStrokes.slice(-399), ...batches]);
@@ -500,6 +566,10 @@ export function App() {
     setChatMessages([]);
     setChatDraft("");
     setDrawStrokes([]);
+    setActiveRound(null);
+    setRoundEnded(null);
+    setGameFinishedAt(null);
+    setRemainingSec(null);
     setSocketError(null);
     setSocketStatus("idle");
   }
@@ -605,15 +675,20 @@ export function App() {
 
       {viewMode === "play" ? (
         <PlayView
+          activeRound={activeRound}
           chatDraft={chatDraft}
           chatMessages={chatMessages}
           drawStrokes={drawStrokes}
+          gameFinishedAt={gameFinishedAt}
           imageCount={images.length}
+          remainingSec={remainingSec}
           room={room}
+          roundEnded={roundEnded}
           socketError={socketError}
           socketStatus={socketStatus}
           onChatDraftChange={setChatDraft}
           onDrawStroke={handleDrawStroke}
+          onOpenGallery={() => void handleLoadResults()}
           onSendMessage={handleSendMessage}
         />
       ) : null}
@@ -909,8 +984,13 @@ interface PlayViewProps {
   chatMessages: ChatMessage[];
   chatDraft: string;
   drawStrokes: DrawStroke[];
+  activeRound: ActiveRound | null;
+  roundEnded: RoundEndedPayload | null;
+  gameFinishedAt: string | null;
+  remainingSec: number | null;
   onChatDraftChange: (value: string) => void;
   onDrawStroke: (stroke: DrawStroke) => void;
+  onOpenGallery: () => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -918,12 +998,25 @@ function PlayView(props: PlayViewProps) {
   return (
     <section className="play-layout">
       <CanvasPanel
-        disabled={!props.room || props.room.status !== "playing" || props.socketStatus !== "connected"}
+        disabled={
+          !props.room ||
+          props.room.status !== "playing" ||
+          props.socketStatus !== "connected" ||
+          !props.activeRound ||
+          Boolean(props.activeRound.endedAt)
+        }
         strokes={props.drawStrokes}
-        title={props.room?.status === "playing" ? "라운드 진행 중" : "캔버스 준비 중"}
+        title={props.activeRound ? `Round ${props.activeRound.roundIndex + 1}` : "캔버스 준비 중"}
         onDrawStroke={props.onDrawStroke}
       />
       <aside className="paper-card chat-card">
+        <RoundStatusPanel
+          activeRound={props.activeRound}
+          gameFinishedAt={props.gameFinishedAt}
+          remainingSec={props.remainingSec}
+          roundEnded={props.roundEnded}
+          onOpenGallery={props.onOpenGallery}
+        />
         <div className="card-heading">
           <MessageCircle size={20} />
           <h2>채팅</h2>
@@ -967,6 +1060,52 @@ function PlayView(props: PlayViewProps) {
   );
 }
 
+interface RoundStatusPanelProps {
+  activeRound: ActiveRound | null;
+  roundEnded: RoundEndedPayload | null;
+  gameFinishedAt: string | null;
+  remainingSec: number | null;
+  onOpenGallery: () => void;
+}
+
+function RoundStatusPanel(props: RoundStatusPanelProps) {
+  if (props.gameFinishedAt) {
+    return (
+      <section className="round-status finished">
+        <strong>게임 종료</strong>
+        <span>{formatDateTime(props.gameFinishedAt)}</span>
+        <button className="primary-button" onClick={props.onOpenGallery} type="button">
+          갤러리 보기
+        </button>
+      </section>
+    );
+  }
+
+  if (props.roundEnded) {
+    return (
+      <section className="round-status ended">
+        <strong>Round {props.roundEnded.roundIndex + 1} 종료</strong>
+        <span>다음 라운드를 기다리는 중입니다.</span>
+      </section>
+    );
+  }
+
+  if (props.activeRound) {
+    return (
+      <section className="round-status playing">
+        <strong>Round {props.activeRound.roundIndex + 1}</strong>
+        <span>{props.remainingSec ?? props.activeRound.durationSec}초 남음</span>
+      </section>
+    );
+  }
+
+  return (
+    <section className="round-status">
+      <strong>라운드 대기</strong>
+      <span>방장이 게임을 시작하면 타이머가 표시됩니다.</span>
+    </section>
+  );
+}
 interface CanvasPanelProps {
   disabled: boolean;
   strokes: DrawStroke[];

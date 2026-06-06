@@ -272,6 +272,37 @@ button:disabled {
   padding: 18px;
 }
 
+.round-status {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  border: 2px solid #222222;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 12px;
+}
+
+.round-status strong {
+  font-size: 1rem;
+}
+
+.round-status span {
+  color: #6b6258;
+  font-weight: 800;
+}
+
+.round-status.playing {
+  background: #dff0df;
+}
+
+.round-status.ended {
+  background: #e8dcc8;
+}
+
+.round-status.finished {
+  background: #f4c542;
+}
+
 .action-card {
   display: grid;
   gap: 16px;
