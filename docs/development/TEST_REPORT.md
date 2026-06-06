@@ -648,6 +648,28 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-06 LOCAL-VITE-FALLBACK-CORS-FIX
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 18 files, 83 tests.
+  - `git status --short`: backend/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - configured client origin `http://localhost:5173` preflight 허용 유지 확인.
+  - local development mode에서 Vite fallback origin `http://localhost:5174` preflight 허용 확인.
+  - 다른 origin `http://localhost:3000` preflight 거절 유지 확인.
+  - Socket.IO CORS도 non-production에서 localhost Vite fallback origin pattern을 허용하도록 설정 확인.
+- 사용자 조치:
+  - 이미 실행 중인 백엔드는 새 CORS 코드가 반영되도록 재시작해야 한다.
+  - 브라우저는 `http://localhost:5174`로 접속 중이면 그대로 사용해도 되고, 5173을 쓰려면 기존 Vite 프로세스를 정리한 뒤 다시 실행한다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 - secret 출력 여부:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:

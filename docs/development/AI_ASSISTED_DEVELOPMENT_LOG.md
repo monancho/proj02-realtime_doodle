@@ -1264,3 +1264,23 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-06 LOCAL-VITE-FALLBACK-CORS-FIX
+
+- Agent: `backend`
+- 목표: Vite dev server가 5174 등 fallback port로 실행될 때 local HTTP API/Socket CORS가 막히는 문제 해결.
+- 수행 내용:
+  - HTTP CORS middleware가 configured origin뿐 아니라 non-production에서 localhost/127.0.0.1 Vite fallback origin pattern을 허용하도록 변경했다.
+  - Express app bootstrap에서 `NODE_ENV !== "production"`일 때만 localhost dev origin fallback을 켰다.
+  - Socket.IO CORS도 non-production에서 같은 localhost Vite fallback origin pattern을 허용하도록 보강했다.
+  - `http://localhost:5174` preflight 허용 테스트를 추가했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과.
+  - `git status --short`: backend/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - production origin 완화.
+  - 프론트엔드 코드 변경.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

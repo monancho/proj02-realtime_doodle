@@ -104,6 +104,7 @@ export async function createServerDependencies(
     roomRepository,
     tokenVerifier,
     app: createApp({
+      allowLocalhostDevOrigins: env.NODE_ENV !== "production",
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
       corsOrigin: env.CLIENT_URL,
       imageRepository,

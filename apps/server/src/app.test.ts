@@ -44,4 +44,22 @@ describe("HTTP CORS", () => {
       .set("Access-Control-Request-Method", "POST")
       .expect(403);
   });
+
+  it("allows Vite fallback localhost ports in local development mode", async () => {
+    const app = createApp({
+      allowLocalhostDevOrigins: true,
+      corsOrigin: "http://localhost:5173"
+    });
+
+    const response = await request(app)
+      .options("/api/users/me")
+      .set("Origin", "http://localhost:5174")
+      .set("Access-Control-Request-Method", "POST")
+      .set("Access-Control-Request-Headers", "authorization,content-type")
+      .expect(204);
+
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://localhost:5174"
+    );
+  });
 });

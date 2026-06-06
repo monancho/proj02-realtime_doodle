@@ -452,6 +452,14 @@
 - Firebase Admin verifier는 decoded token의 `firebase` claim을 `VerifiedFirebaseToken`으로 전달하도록 보강했다.
 - `/api/users/me` user upsert contract와 Google nickname/avatarUrl 저장 흐름은 변경하지 않았다.
 - 실제 Firebase Admin 또는 실제 Google OAuth 연결 검증은 수행하지 않고 mock token verifier 기반 테스트로 검증했다.
+
+### 2026-06-06 LOCAL-VITE-FALLBACK-CORS-FIX
+
+- 로컬 웹 dev server가 `http://localhost:5173` 대신 `http://localhost:5174`로 뜰 때 HTTP API preflight가 CORS에서 거절되는 문제를 확인했다.
+- production에서는 설정된 `CLIENT_URL`/`SOCKET_CORS_ORIGIN`만 허용하는 정책을 유지한다.
+- non-production 서버 실행에서는 `http://localhost:5170`부터 `http://localhost:5179` 및 `http://127.0.0.1:5170`부터 `http://127.0.0.1:5179` 범위의 Vite fallback origin을 HTTP API와 Socket.IO CORS에서 허용하도록 보강했다.
+- CORS 응답의 `Access-Control-Allow-Origin`은 실제 요청 origin을 반사하되, 허용된 origin인 경우에만 설정한다.
+- Google popup 과정의 `Cross-Origin-Opener-Policy` warning은 Firebase popup 흐름에서 브라우저가 표시할 수 있는 경고이며, 이번 장애의 직접 원인은 `/api/users/me` preflight CORS 실패였다.
 ### 2026-06-06 PHASE-FE-03-LOBBY-ROOM-FLOW
 
 - 로그인 전 방 생성/입장 action을 비활성화하고 안내 문구를 추가했다.

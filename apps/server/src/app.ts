@@ -2,7 +2,10 @@ import type { AuthErrorResponse } from "@doodle/shared";
 import express, { type Express, type RequestHandler } from "express";
 
 import { handleHealthRequest } from "./health";
-import { createHttpCorsMiddleware } from "./http-cors";
+import {
+  createAllowedCorsOrigins,
+  createHttpCorsMiddleware
+} from "./http-cors";
 import { InMemoryImageRepository } from "./images/in-memory-image-repository";
 import { InMemoryImageStorage } from "./images/in-memory-image-storage";
 import type { ImageRepository } from "./images/repository";
@@ -27,6 +30,7 @@ import type { UserRepository } from "./users/repository";
 import { createUserRouter } from "./users/routes";
 
 export interface AppDependencies {
+  allowLocalhostDevOrigins?: boolean;
   authMiddleware?: RequestHandler;
   corsOrigin?: string;
   imageRepository?: ImageRepository;
@@ -42,7 +46,12 @@ export function createApp(dependencies: AppDependencies = {}): Express {
 
   app.disable("x-powered-by");
   if (dependencies.corsOrigin) {
-    app.use(createHttpCorsMiddleware({ origin: dependencies.corsOrigin }));
+    app.use(
+      createHttpCorsMiddleware({
+        allowLocalhostDevOrigins: dependencies.allowLocalhostDevOrigins,
+        origins: createAllowedCorsOrigins(dependencies.corsOrigin)
+      })
+    );
   }
   app.use(express.json());
 

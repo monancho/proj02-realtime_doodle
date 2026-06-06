@@ -4,6 +4,7 @@ import { Server as SocketIoServer } from "socket.io";
 import { createSocketAuthMiddleware } from "../auth/socket";
 import type { TokenVerifier } from "../auth/tokens";
 import type { ServerEnv } from "../config/env";
+import { createAllowedCorsOrigins } from "../http-cors";
 import type { ImageRepository } from "../images/repository";
 import type { ImageStorage } from "../images/storage";
 import { DeterministicPngResultImageComposer } from "../results/composer";
@@ -36,7 +37,13 @@ export function createSocketServer({
 }: SocketServerDependencies): SocketIoServer {
   const io = new SocketIoServer(httpServer, {
     cors: {
-      origin: env.SOCKET_CORS_ORIGIN
+      origin:
+        env.NODE_ENV === "production"
+          ? createAllowedCorsOrigins(env.SOCKET_CORS_ORIGIN)
+          : [
+              ...createAllowedCorsOrigins(env.SOCKET_CORS_ORIGIN),
+              /^http:\/\/(?:localhost|127\.0\.0\.1):517[0-9]$/
+            ]
     }
   });
 
