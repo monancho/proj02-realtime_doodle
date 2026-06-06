@@ -556,3 +556,30 @@
 - 다음 추천 작업:
   - `PHASE-07-DRAWING-PLAN`
   - Drawing 구현 전에 `draw-stroke` payload, throttle/batch 기준, stroke validation, 저장 범위를 문서화.
+
+### 2026-06-06 PHASE-07-DRAWING-PLAN
+
+- Agent: `backend`
+- 목표: Drawing 구현 전에 `draw-stroke` payload, throttle/batch 기준, stroke validation, 저장 범위 문서화.
+- 수행 내용:
+  - `docs/DATABASE_API_SOCKET.md`에 Drawing 구현 계획 추가.
+  - `draw-stroke` payload `{ roomCode, roundId, stroke }` 기준 정리.
+  - stroke point validation 기준 정리.
+  - throttle/batch 전송 기준 정리.
+  - 같은 Socket.IO room broadcast 경계 정리.
+  - MVP stroke 저장 범위를 in-memory recent stroke batches 초안으로 정리.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Drawing 구현 코드.
+  - Chat, Upload, Timer, Round feature.
+  - stroke 영구 아카이브, Redis adapter, multi-instance stroke sync.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-07-DRAWING-IMPLEMENTATION`
+  - Socket.IO `draw-stroke` broadcast와 in-memory recent stroke batches를 membership 검증 기반으로 구현.

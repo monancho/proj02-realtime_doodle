@@ -297,3 +297,17 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-07-DRAWING-PLAN
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- 미실행:
+  - `test`: 이번 단계는 Drawing 구현 없이 문서 계획만 정리했으며 사용자 지정 validation command에 포함되지 않음.
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.

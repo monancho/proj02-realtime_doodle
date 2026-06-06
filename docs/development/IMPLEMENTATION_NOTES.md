@@ -227,3 +227,16 @@
 - `RecentChatMessageStore`를 추가해 server memory에 roomCode별 최근 50개 chat message만 보관한다.
 - 영구 채팅 아카이브, MongoDB chat repository, Chat 조회 API는 구현하지 않았다.
 - Drawing, Upload, Timer, Round feature는 구현하지 않았다.
+
+### 2026-06-06 PHASE-07-DRAWING-PLAN
+
+- Drawing 구현 전에 `draw-stroke` payload, throttle/batch 기준, stroke validation, 저장 범위를 문서화했다.
+- Drawing 구현 코드는 추가하지 않았다.
+- `draw-stroke` payload는 `{ roomCode, roundId, stroke }`로 정리했다.
+- stroke는 `strokeId`, `tool`, `color`, `width`, `points`를 포함하는 구조로 정리했다.
+- point는 normalized canvas coordinate 기준으로 `x`, `y`를 0 이상 1 이하 finite number로 제한한다.
+- `points`는 payload당 1개 이상 128개 이하로 제한하는 초안을 정리했다.
+- client는 raw pointer event가 아니라 16ms 이상 또는 animation frame 단위 batch 전송을 권장한다.
+- server broadcast는 같은 Socket.IO room `room:${roomCode}` 사용자에게만 전달한다.
+- MVP 기본 구현에서는 stroke 영구 저장을 제외하고, `roomCode + roundId`별 in-memory 최근 200개 stroke payload 정책 초안으로 정리했다.
+- Chat, Upload, Timer, Round feature는 구현하지 않았다.
