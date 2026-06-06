@@ -391,3 +391,15 @@
 - pagination은 기본 limit 20, 최대 limit 50, cursor 기반으로 구현했다.
 - result image download response에 `Content-Type`, `Content-Length`, `Content-Disposition`, `Cache-Control` header를 설정한다.
 - Thumbnail API, Result save flow 변경, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
+
+### 2026-06-06 FRONTEND-VITE-REACT-SCAFFOLD
+
+- `apps/web`을 placeholder 패키지에서 실제 Vite + React + TypeScript 앱으로 전환했다.
+- `@doodle/web`에 React, React DOM, Vite, Vite React plugin, lucide-react와 React 타입 의존성을 추가했다.
+- `apps/web/index.html`, `vite.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/styles.css`, `src/api/client.ts`, `src/vite-env.d.ts`를 추가했다.
+- 첫 화면은 로비, 대기실, 플레이, 갤러리 탭으로 구성했다.
+- 로컬/배포 API 서버 URL은 `VITE_API_BASE_URL` 또는 화면 입력값으로 설정한다.
+- Firebase Client SDK 로그인은 아직 구현하지 않고, 현재는 로컬 검증용 Firebase ID Token을 사용자가 직접 입력하는 경계로 유지했다.
+- REST API client는 방 생성, 방 조회, 방 입장, 이미지 목록/업로드, 결과 목록, 결과 다운로드를 서버 계약에 맞춰 호출한다.
+- 결과 다운로드는 인증 헤더가 필요하므로 단순 링크가 아니라 fetch 후 Blob 다운로드로 구현했다.
+- Socket.IO client, 실시간 canvas drawing, 채팅 UI 연결, Firebase Client SDK 로그인은 다음 프론트 slice로 남겼다.

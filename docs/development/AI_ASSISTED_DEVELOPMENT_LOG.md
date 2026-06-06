@@ -942,3 +942,33 @@
 - 다음 추천 작업:
   - `PHASE-13-CICD-DEPLOY-PLAN`
   - Render/server 배포와 프론트 배포 URL 기준의 CI/CD, env, smoke 검증 범위를 문서화.
+
+### 2026-06-06 FRONTEND-VITE-REACT-SCAFFOLD
+
+- Agent: `frontend`
+- 목표: placeholder 상태의 `apps/web`을 실제 Vite + React + TypeScript 앱 scaffold로 전환.
+- 수행 내용:
+  - `@doodle/web` scripts를 실제 `typecheck`, `build`, `dev`, `preview` 명령으로 교체.
+  - React/Vite/lucide 의존성과 React 타입 의존성 추가.
+  - Vite entry와 React root를 추가.
+  - `App.tsx`에 로비, 방 생성/입장, 대기실, 이미지 업로드, 플레이 placeholder, 결과 갤러리 화면을 구성.
+  - `src/api/client.ts`에 서버 REST 계약 기반 API client를 추가.
+  - 인증이 필요한 result download는 fetch + Blob 다운로드 방식으로 구현.
+  - `styles.css`에 hand-drawn paper UI 방향의 responsive layout을 추가.
+- 의도적으로 제외:
+  - Firebase Client SDK 로그인 구현.
+  - Socket.IO client 연결.
+  - Canvas drawing 실제 편집 도구.
+  - Chat 실시간 UI.
+  - 프론트 e2e 테스트.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 최초 실패 후 Vite 타입 선언 추가로 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 충돌/주의:
+  - 기존 미추적 `package-lock.json`은 건드리지 않았다.
+  - `pnpm-lock.yaml`은 pnpm workspace 의존성 추가로 갱신되었다.
+- 다음 추천 작업:
+  - `PHASE-FE-02-FIREBASE-AUTH-CLIENT`
+  - Firebase Client SDK 로그인과 ID Token 발급/갱신, `/api/users/me` 연동을 프론트에 구현한다.

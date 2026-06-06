@@ -520,3 +520,25 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.
+
+### 2026-06-06 FRONTEND-VITE-REACT-SCAFFOLD
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 결과:
+  - 최초 `typecheck`/`build`: 실패. `import.meta.env`와 CSS side-effect import를 위한 Vite 타입 선언이 없었다.
+  - `apps/web/src/vite-env.d.ts` 추가 후 `typecheck`: 통과.
+  - `build`: 통과. Vite production build 생성 확인.
+  - `server typecheck`: 통과.
+  - Vite dev server: `5173`, `5174`가 사용 중이라 `http://localhost:5175`로 실행되었고 HTTP 200 응답 확인.
+- 테스트 범위:
+  - React/Vite TypeScript compile 검증.
+  - Vite production bundle 생성 검증.
+- 미실행:
+  - web unit/e2e test: 아직 테스트 도구와 브라우저 시나리오가 구성되지 않았다.
+  - 실제 Firebase 로그인/API smoke: 사용자의 실제 ID Token과 서버 실행이 필요한 범위라 이번 작업에서 제외했다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

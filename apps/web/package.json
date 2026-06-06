@@ -5,8 +5,22 @@
   "type": "module",
   "scripts": {
     "lint": "echo \"lint not configured for @doodle/web yet\"",
-    "typecheck": "echo \"typecheck not configured for @doodle/web yet\"",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"test not configured for @doodle/web yet\"",
-    "build": "echo \"build not configured for @doodle/web yet\""
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "lucide-react": "^1.17.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "vite": "^8.0.16"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
   }
 }

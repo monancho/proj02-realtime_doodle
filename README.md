@@ -76,3 +76,12 @@ docs/
 - `join-room`은 HTTP join 이후 repository membership을 확인한다.
 - `room-updated` payload는 `{ room: RoomDetail }`을 사용한다.
 - `leave-room`은 MVP에서 MongoDB `rooms.participants`를 제거하지 않고 socket presence만 처리한다.
+
+## Frontend Scaffold Update
+
+`apps/web`은 이제 placeholder가 아니라 Vite + React + TypeScript 기반 앱으로 전환되었다.
+
+- 로비, 방 생성/입장, 대기실, 이미지 업로드, 플레이 placeholder, 결과 갤러리 shell을 포함한다.
+- 서버 REST API client가 추가되어 방/이미지/결과 API를 호출할 수 있다.
+- Firebase Client SDK 로그인과 Socket.IO client 연결은 아직 다음 프론트 작업으로 남아 있다.
+- 로컬 실행은 `corepack pnpm --filter @doodle/web dev`를 사용한다.
