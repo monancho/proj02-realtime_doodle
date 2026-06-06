@@ -221,3 +221,19 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 README_AND_DOC_SYNC
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `git status --short`: 문서 변경 파일과 미추적 `package-lock.json` 확인.
+- 미실행:
+  - `test`: 이번 단계는 앱 기능 코드 변경 없이 문서 동기화만 수행했으며 사용자 지정 validation command에 포함되지 않음.
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- `package-lock.json` 처리 방안:
+  - 현재 저장소는 pnpm workspace와 `pnpm-lock.yaml`을 기준으로 한다.
+  - `package-lock.json`은 npm lockfile이므로 pnpm 기준 프로젝트에서는 일반적으로 추적하지 않는 것이 일관적이다.
+  - 사용자 승인 없이 삭제하지 않았고 commit 대상에도 포함하지 않았다.

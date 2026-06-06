@@ -33,14 +33,16 @@
   };
   participants: Array<{
     firebaseUid: string;
-    nickname: string;
-    socketId?: string;
+    nickname: string | null;
+    avatarUrl: string | null;
     joinedAt: Date;
   }>;
   createdAt: Date;
   updatedAt: Date;
 }
 ```
+
+`rooms.participants`는 영속 room membership만 저장한다. Socket.IO `socketId`와 접속 여부 같은 presence 정보는 MVP에서 socket layer의 메모리 상태로 분리하며 MongoDB room document에 저장하지 않는다.
 
 ### `images`
 

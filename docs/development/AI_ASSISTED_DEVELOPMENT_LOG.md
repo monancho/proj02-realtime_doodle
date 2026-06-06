@@ -426,3 +426,28 @@
 - 다음 추천 작업:
   - `PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION`
   - Socket.IO server wiring과 `join-room`/`leave-room` membership 검증을 repository mock 중심 테스트로 구현.
+
+### 2026-06-06 README_AND_DOC_SYNC
+
+- Agent: `docs-maintainer`
+- 목표: 다음 Socket 구현 전에 현재 구현 상태와 문서 간 불일치 정리.
+- 수행 내용:
+  - README.md의 현재 상태와 다음 작업을 최신 Phase 기준으로 갱신.
+  - `docs/DATABASE_API_SOCKET.md`의 `rooms.participants` schema를 current Room contract와 맞춤.
+  - `docs/USER_FLOW.md`의 이탈/재접속 정책을 Socket membership 계획과 맞춤.
+  - IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - 앱 기능 코드 구현.
+  - `apps/**`, `packages/**` 수정.
+  - `.env`, reference PDF/DOCX/image 수정.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `git status --short`: 문서 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- `package-lock.json` 처리:
+  - pnpm workspace 기준으로는 `pnpm-lock.yaml`이 기준 lockfile이다.
+  - `package-lock.json`은 사용자 승인 없이 삭제하지 않았고 commit에도 포함하지 않았다.
+- 다음 추천 작업:
+  - `PHASE-05-SOCKET-ROOM-MEMBERSHIP-IMPLEMENTATION`
+  - Socket.IO server wiring과 `join-room`/`leave-room` membership 검증을 repository mock 중심 테스트로 구현.

@@ -62,10 +62,12 @@
 
 | 상황 | MVP 정책 |
 |---|---|
-| 대기실에서 이탈 | 참가자 목록에서 제거 |
-| 라운드 중 일시 끊김 | 재접속 시 같은 방 입장 허용. 현재 Canvas 복원은 MVP 후순위 |
-| 방장 이탈 | MVP에서는 게임 중단 권장 |
+| 대기실에서 socket 이탈 | socket room에서만 퇴장 처리. MVP에서는 MongoDB `rooms.participants`에서 제거하지 않음 |
+| 라운드 중 일시 끊김 | HTTP membership이 유지되므로 재접속 시 같은 방 socket room 재입장 허용. 현재 Canvas 복원은 MVP 후순위 |
+| 방장 socket 이탈 | 영속 host/participant 정보는 유지. MVP에서는 진행 중 게임 중단 또는 재입장 대기 정책을 후속 단계에서 확정 |
 | 업로드 후 이탈 | 이미 업로드된 이미지는 라운드 후보로 유지 |
+
+`participantCount`는 영속 participants 수를 의미한다. 실시간 접속자 수가 필요해지면 후속 단계에서 별도 presence payload 또는 in-memory presence store를 추가한다.
 
 ## 와이어프레임 연결
 

@@ -180,3 +180,14 @@
 - `room-updated` payload는 `{ room: RoomDetail }`로 shared room contract와 맞춘다.
 - `leave-room`은 MVP에서 영속 participants를 제거하지 않고 socket presence만 처리하는 정책으로 정리했다.
 - Drawing, Chat, Upload, Timer feature는 구현하지 않았다.
+
+### 2026-06-06 README_AND_DOC_SYNC
+
+- 다음 Socket 구현 전에 README와 기준 문서 간 불일치를 정리했다.
+- README의 현재 상태를 Phase 5 Socket room membership 구현 직전 상태로 갱신했다.
+- `docs/DATABASE_API_SOCKET.md`의 top-level `rooms` schema를 current Room contract/MongoRoomRepository 방향과 맞췄다.
+  - participant `nickname`은 `string | null`로 정리했다.
+  - participant `avatarUrl`을 추가했다.
+  - 영속 participants에서 `socketId`를 제거하고 socket presence는 socket layer 메모리 상태로 분리한다고 명시했다.
+- `docs/USER_FLOW.md`의 이탈/재접속 정책을 Socket membership 계획과 맞췄다.
+- 앱 기능 코드, packages 코드, `.env`, reference artifact는 수정하지 않았다.
