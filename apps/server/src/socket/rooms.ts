@@ -4,6 +4,14 @@ import type { AuthContext, ImageMetadata, RoomDetail } from "@doodle/shared";
 import type { Server, Socket } from "socket.io";
 
 import type { ImageRepository } from "../images/repository";
+import type { ImageStorage } from "../images/storage";
+import { DeterministicPngResultImageComposer } from "../results/composer";
+import { InMemoryResultRepository } from "../results/in-memory-result-repository";
+import { InMemoryResultImageStorage } from "../results/in-memory-result-storage";
+import {
+  ResultSaveService,
+  type ResultSavedPayload
+} from "../results/service";
 import type { RoomRepository } from "../rooms/repository";
 import { normalizeRoomCode } from "../rooms/room-code";
 
@@ -131,7 +139,9 @@ interface DrawingEventDependencies extends RoomEventDependencies {
 interface RoundEventDependencies extends RoomEventDependencies {
   imageRepository: ImageRepository;
   now: () => Date;
+  recentStrokeBatches: RecentStrokeBatchStore;
   roundIdGenerator: () => string;
+  resultSaveService: Pick<ResultSaveService, "saveRoundResult">;
   selectImage: (images: ImageMetadata[]) => ImageMetadata;
   roundState: RoundRuntimeStateStore;
   timerScheduler: RoundTimerScheduler;
@@ -142,7 +152,9 @@ interface RoundTimerDependencies {
   repository: RoomRepository;
   imageRepository: ImageRepository;
   now: () => Date;
+  recentStrokeBatches: RecentStrokeBatchStore;
   roundIdGenerator: () => string;
+  resultSaveService: Pick<ResultSaveService, "saveRoundResult">;
   selectImage: (images: ImageMetadata[]) => ImageMetadata;
   roundState: RoundRuntimeStateStore;
   timerScheduler: RoundTimerScheduler;
@@ -282,12 +294,25 @@ export class InMemoryRoundTimerScheduler implements RoundTimerScheduler {
 export function registerRoomMembershipHandlers(
   io: Server,
   repository: RoomRepository,
-  imageRepository: ImageRepository
+  imageRepository: ImageRepository,
+  imageStorage?: ImageStorage,
+  resultSaveService?: ResultSaveService
 ): void {
   const recentMessages = new RecentChatMessageStore();
   const recentStrokeBatches = new RecentStrokeBatchStore();
   const roundState = new RoundRuntimeStateStore();
   const timerScheduler = new InMemoryRoundTimerScheduler();
+  const saveService =
+    resultSaveService ??
+    (imageStorage
+      ? new ResultSaveService({
+          composer: new DeterministicPngResultImageComposer(),
+          imageStorage,
+          now: () => new Date(),
+          resultRepository: new InMemoryResultRepository(),
+          resultStorage: new InMemoryResultImageStorage()
+        })
+      : null);
 
   io.on("connection", (socket) => {
     socket.on("join-room", (payload: unknown) => {
@@ -333,7 +358,9 @@ export function registerRoomMembershipHandlers(
           socket,
           imageRepository,
           now: () => new Date(),
+          recentStrokeBatches,
           roundIdGenerator: createRoundId,
+          resultSaveService: saveService ?? createDisabledResultSaveService(),
           selectImage: selectRandomImage,
           roundState,
           timerScheduler
@@ -704,6 +731,19 @@ export async function handleRoundTimerExpired(
   dependencies.io
     .to(createSocketRoomName(room.roomCode))
     .emit("round-ended", endedPayload);
+  const resultSavedPayload = await dependencies.resultSaveService.saveRoundResult(
+    {
+      round: endedPayload,
+      strokes: dependencies.recentStrokeBatches.list(
+        room.roomCode,
+        expiredRound.roundId
+      )
+    }
+  );
+
+  if (resultSavedPayload) {
+    emitResultSaved(dependencies.io, resultSavedPayload);
+  }
 
   const unusedImages =
     await dependencies.imageRepository.listUnusedImagesByRoomCode(room.roomCode);
@@ -766,6 +806,22 @@ function scheduleRoundTimer(
       void handleRoundTimerExpired(dependencies, round);
     }
   });
+}
+
+function emitResultSaved(
+  io: Pick<Server, "to">,
+  payload: ResultSavedPayload
+): void {
+  io.to(createSocketRoomName(payload.roomCode)).emit("result-saved", payload);
+}
+
+function createDisabledResultSaveService(): Pick<
+  ResultSaveService,
+  "saveRoundResult"
+> {
+  return {
+    saveRoundResult: async () => null
+  };
 }
 
 export function createSocketRoomName(roomCode: string): string {

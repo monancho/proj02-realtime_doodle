@@ -851,3 +851,34 @@
   - `PHASE-11-RESULT-SAVE-IMPLEMENTATION`
   - round 종료 후 result image 합성, GridFS 저장, `results` metadata repository, `result-saved` emit을 구현.
 
+
+### 2026-06-06 PHASE-11-RESULT-SAVE-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Round 종료 후 result image 합성, GridFS 저장, `results` metadata repository, `result-saved` emit 구현.
+- 수행 내용:
+  - `packages/shared/src/result.ts`에 `ResultMetadata` 추가.
+  - `apps/server/src/results`에 repository, storage, composer, service 모듈 추가.
+  - MongoDB `results` repository와 GridFS bucket `resultImages` storage skeleton 구현.
+  - bootstrap/server/socket dependency wiring에 result repository/storage/service 연결.
+  - `handleRoundTimerExpired`에서 `round-ended` 이후 result save를 trigger하고 성공 시 `result-saved` emit 추가.
+  - result save 실패가 다음 round/finished 전이를 막지 않도록 best-effort 처리.
+  - service/socket/bootstrap 테스트 추가 및 갱신.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Gallery/download API.
+  - Redis scheduler, durable job queue, multi-instance processing.
+  - 실제 MongoDB/GridFS 연결 검증.
+  - 고급 이미지 합성 라이브러리 기반 pixel-perfect rendering.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 16 files, 71 tests.
+  - `git status --short`: result 구현/문서 변경 파일과 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-12-GALLERY-DOWNLOAD-PLAN`
+  - 저장된 `results` metadata 조회와 result image download API 범위를 문서화.
+

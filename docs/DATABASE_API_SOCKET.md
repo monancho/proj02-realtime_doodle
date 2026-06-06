@@ -1647,3 +1647,46 @@ export interface ResultSavedPayload {
 - Gallery/download API는 구현하지 않는다.
 - Redis scheduler, durable job queue, multi-instance processing은 구현하지 않는다.
 - 고급 이미지 편집, 이미지 필터, 투표/랭킹은 MVP 범위 밖이다.
+
+## Result Save 구현 기록
+
+이 섹션은 `PHASE-11-RESULT-SAVE-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 계약과 모듈
+
+| 영역 | 구현 결과 |
+|---|---|
+| shared contract | `ResultMetadata` 타입 추가 및 `@doodle/shared` export |
+| result repository | `ResultRepository`, `InMemoryResultRepository`, `MongoResultRepository` 추가 |
+| result storage | `ResultImageStorage`, `InMemoryResultImageStorage`, GridFS `resultImages` storage 추가 |
+| composer | `ResultImageComposer` 계약과 deterministic PNG result composer 추가 |
+| service | `ResultSaveService`가 source image read, compose, GridFS 저장, metadata 저장, idempotency 처리 |
+| socket | `round-ended` 이후 best-effort result save trigger 및 `result-saved` emit 추가 |
+
+### Result Save Flow
+
+1. `handleRoundTimerExpired`가 `round-ended`를 같은 Socket.IO room에 emit한다.
+2. `ResultSaveService.saveRoundResult()`를 호출한다.
+3. service는 `roomCode + roundId` 기준 기존 result metadata를 먼저 조회한다.
+4. 기존 result가 있으면 새 GridFS file을 만들지 않고 기존 metadata로 `result-saved` payload를 만든다.
+5. 기존 result가 없으면 `ImageMetadata.fileId`로 원본 image를 `ImageStorage.getFile()`에서 읽는다.
+6. `RecentStrokeBatchStore.list(roomCode, roundId)` 결과를 composer에 전달한다.
+7. composer는 MVP deterministic `image/png` result buffer를 생성한다.
+8. result buffer는 GridFS bucket `resultImages`에 저장한다.
+9. `results` metadata를 생성한다.
+10. 성공 시 `result-saved` `{ roomCode, roundId, roundIndex, result, createdAt }`를 같은 Socket.IO room에 emit한다.
+
+### Failure Policy
+
+- result save는 같은 프로세스 안에서 최대 2회 시도한다.
+- source image read, compose, result storage, metadata 저장 실패는 service 내부에서 `null`로 흡수한다.
+- 실패해도 다음 round 시작 또는 room `finished` 전이는 rollback하지 않는다.
+- metadata 저장 실패 시 가능한 경우 방금 저장한 result GridFS file 삭제를 시도한다.
+- `result-save-failed` event와 durable retry queue는 구현하지 않았다.
+
+### 구현 제외 범위
+
+- Gallery/download API는 구현하지 않았다.
+- Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
+- 실제 MongoDB/GridFS 연결 검증은 수행하지 않았다.
+- 고급 이미지 합성 라이브러리 기반 pixel-perfect rendering은 구현하지 않았다.

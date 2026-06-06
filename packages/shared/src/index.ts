@@ -32,4 +32,5 @@ export type {
   RoomStatus,
   RoomSummary
 } from "./room";
+export type { ResultMetadata } from "./result";
 export type { UpsertMeRequest, UpsertMeResponse, UserProfile } from "./user";

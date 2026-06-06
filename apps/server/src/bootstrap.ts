@@ -18,6 +18,14 @@ import {
 } from "./images/mongodb-image-repository";
 import type { ImageRepository } from "./images/repository";
 import type { ImageStorage } from "./images/storage";
+import { createGridFsResultImageStorage } from "./results/gridfs-result-storage";
+import {
+  createMongoResultRepository,
+  ensureResultIndexes,
+  type ResultDocument
+} from "./results/mongodb-result-repository";
+import type { ResultRepository } from "./results/repository";
+import type { ResultImageStorage } from "./results/storage";
 import {
   createMongoRoomRepository,
   ensureRoomIndexes,
@@ -36,6 +44,8 @@ export interface ServerDependencies {
   imageRepository: ImageRepository;
   imageStorage: ImageStorage;
   mongoConnection: MongoDbConnection;
+  resultRepository: ResultRepository;
+  resultStorage: ResultImageStorage;
   roomRepository: RoomRepository;
   tokenVerifier: TokenVerifier;
 }
@@ -53,6 +63,10 @@ export interface BootstrapAdapters {
     connection: MongoDbConnection
   ) => Promise<ImageRepository>;
   createImageStorage?: (connection: MongoDbConnection) => ImageStorage;
+  createResultRepository?: (
+    connection: MongoDbConnection
+  ) => Promise<ResultRepository>;
+  createResultStorage?: (connection: MongoDbConnection) => ResultImageStorage;
 }
 
 export async function createServerDependencies(
@@ -74,11 +88,19 @@ export async function createServerDependencies(
   const imageStorage =
     adapters.createImageStorage?.(mongoConnection) ??
     createDefaultImageStorage(mongoConnection);
+  const resultRepository =
+    (await adapters.createResultRepository?.(mongoConnection)) ??
+    (await createDefaultResultRepository(mongoConnection));
+  const resultStorage =
+    adapters.createResultStorage?.(mongoConnection) ??
+    createDefaultResultStorage(mongoConnection);
 
   return {
     imageRepository,
     imageStorage,
     mongoConnection,
+    resultRepository,
+    resultStorage,
     roomRepository,
     tokenVerifier,
     app: createApp({
@@ -140,4 +162,20 @@ function createDefaultImageStorage(
   connection: MongoDbConnection
 ): ImageStorage {
   return createGridFsImageStorage(connection.db);
+}
+
+async function createDefaultResultRepository(
+  connection: MongoDbConnection
+): Promise<ResultRepository> {
+  const results = connection.db.collection<ResultDocument>("results");
+
+  await ensureResultIndexes(results);
+
+  return createMongoResultRepository(results);
+}
+
+function createDefaultResultStorage(
+  connection: MongoDbConnection
+): ResultImageStorage {
+  return createGridFsResultImageStorage(connection.db);
 }

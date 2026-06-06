@@ -356,3 +356,15 @@
 - 결과 완료 event는 `result-saved` `{ roomCode, roundId, roundIndex, result, createdAt }` 기준으로 정리했다.
 - 실패 code와 MVP 재시도 범위는 같은 프로세스 내 1회 best-effort로 정리했다.
 - Gallery/download, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.
+
+### 2026-06-06 PHASE-11-RESULT-SAVE-IMPLEMENTATION
+
+- Round 종료 후 result image 합성, GridFS 저장, `results` metadata repository, `result-saved` emit을 구현했다.
+- shared `ResultMetadata` contract를 추가했다.
+- `ResultRepository`와 in-memory/MongoDB 구현을 추가했다.
+- `ResultImageStorage`와 in-memory/GridFS `resultImages` storage 구현을 추가했다.
+- `ResultImageComposer` 계약과 deterministic PNG result composer를 추가했다.
+- `ResultSaveService`가 `roomCode + roundId` 기준 idempotency, 원본 image read, stroke batch 전달, result storage, metadata 저장을 처리한다.
+- `handleRoundTimerExpired`에서 `round-ended` 이후 result save를 best-effort로 trigger하고 성공 시 `result-saved`를 같은 Socket.IO room에 emit한다.
+- result save 실패는 다음 round 시작 또는 room `finished` 전이를 rollback하지 않는다.
+- Gallery/download API, Redis scheduler, durable job queue, multi-instance processing은 구현하지 않았다.

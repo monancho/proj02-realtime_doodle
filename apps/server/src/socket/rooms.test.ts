@@ -8,6 +8,7 @@ import type { Server, Socket } from "socket.io";
 import { describe, expect, it, vi } from "vitest";
 
 import { InMemoryImageRepository } from "../images/in-memory-image-repository";
+import { ResultSaveService } from "../results/service";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
 import {
   createSocketRoomName,
@@ -596,6 +597,11 @@ describe("room membership socket handlers", () => {
     const imageRepository = new InMemoryImageRepository();
     const io = createMockIo();
     const roundState = new RoundRuntimeStateStore();
+    const resultSaveService = createMockResultSaveService({
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0
+    });
     const activeRound = {
       roomCode: "ABC123",
       roundId: "round-1",
@@ -610,6 +616,7 @@ describe("room membership socket handlers", () => {
         repository,
         imageRepository,
         roundState,
+        resultSaveService,
         now: createClock([
           "2026-06-06T00:01:00.000Z",
           "2026-06-06T00:01:01.000Z"
@@ -628,6 +635,21 @@ describe("room membership socket handlers", () => {
       image: activeRound.image,
       endedAt: "2026-06-06T00:01:00.000Z"
     });
+    expect(resultSaveService.saveRoundResult).toHaveBeenCalledWith({
+      round: expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-1"
+      }),
+      strokes: []
+    });
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "result-saved",
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-1",
+        result: expect.objectContaining({ id: "result-round-1" })
+      })
+    );
     expect(io.emitToRoom).toHaveBeenCalledWith(
       "game-finished",
       expect.objectContaining({
@@ -654,6 +676,19 @@ describe("room membership socket handlers", () => {
     });
     const io = createMockIo();
     const roundState = new RoundRuntimeStateStore();
+    const recentStrokeBatches = new RecentStrokeBatchStore();
+    recentStrokeBatches.append({
+      roomCode: "ABC123",
+      roundId: "round-1",
+      stroke: createValidStroke(),
+      firebaseUid: "host-uid",
+      createdAt: "2026-06-06T00:00:30.000Z"
+    });
+    const resultSaveService = createMockResultSaveService({
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0
+    });
     const timerScheduler = createMockTimerScheduler();
     const activeRound = {
       roomCode: "ABC123",
@@ -668,7 +703,9 @@ describe("room membership socket handlers", () => {
         io,
         repository,
         imageRepository,
+        recentStrokeBatches,
         roundState,
+        resultSaveService,
         timerScheduler,
         roundIdGenerator: () => "round-2",
         now: createClock([
@@ -687,6 +724,18 @@ describe("room membership socket handlers", () => {
       currentRoundIndex: 1
     });
     expect(usedImage?.used).toBe(true);
+    expect(resultSaveService.saveRoundResult).toHaveBeenCalledWith({
+      round: expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-1"
+      }),
+      strokes: [
+        expect.objectContaining({
+          roomCode: "ABC123",
+          roundId: "round-1"
+        })
+      ]
+    });
     expect(io.emitToRoom).toHaveBeenCalledWith(
       "round-started",
       expect.objectContaining({
@@ -704,6 +753,55 @@ describe("room membership socket handlers", () => {
         roundId: "round-2",
         durationSec: 60
       })
+    );
+  });
+
+  it("continues round transition when result save fails", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })]
+    });
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [createImageMetadata({ id: "image-next" })]
+    });
+    const io = createMockIo();
+    const roundState = new RoundRuntimeStateStore();
+    const activeRound = {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: createImageMetadata({ id: "image-used" })
+    };
+    roundState.startRound(activeRound);
+
+    await handleRoundTimerExpired(
+      createTimerDependencies({
+        io,
+        repository,
+        imageRepository,
+        roundState,
+        resultSaveService: createMockResultSaveService(null),
+        roundIdGenerator: () => "round-2",
+        now: createClock([
+          "2026-06-06T00:01:00.000Z",
+          "2026-06-06T00:01:01.000Z"
+        ])
+      }),
+      activeRound
+    );
+
+    const room = await repository.findRoomByCode("ABC123");
+
+    expect(room).toMatchObject({
+      status: "playing",
+      currentRoundIndex: 1
+    });
+    expect(io.emitToRoom).not.toHaveBeenCalledWith(
+      "result-saved",
+      expect.anything()
+    );
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "round-started",
+      expect.objectContaining({ roundId: "round-2" })
     );
   });
 
@@ -886,6 +984,8 @@ function createRoundDependencies({
   socket,
   selectImage = (images: ImageMetadata[]) => images[0],
   roundState = new RoundRuntimeStateStore(),
+  recentStrokeBatches = new RecentStrokeBatchStore(),
+  resultSaveService = createMockResultSaveService(),
   timerScheduler = createMockTimerScheduler(),
   roundIdGenerator = () => "round-test",
   now = createClock(["2026-06-06T00:00:02.000Z"])
@@ -896,6 +996,8 @@ function createRoundDependencies({
   socket: Pick<Socket, "data" | "emit" | "join" | "leave">;
   selectImage?: (images: ImageMetadata[]) => ImageMetadata;
   roundState?: RoundRuntimeStateStore;
+  recentStrokeBatches?: RecentStrokeBatchStore;
+  resultSaveService?: Pick<ResultSaveService, "saveRoundResult">;
   timerScheduler?: ReturnType<typeof createMockTimerScheduler>;
   roundIdGenerator?: () => string;
   now?: () => Date;
@@ -906,6 +1008,8 @@ function createRoundDependencies({
     imageRepository,
     socket,
     selectImage,
+    recentStrokeBatches,
+    resultSaveService,
     roundState,
     timerScheduler,
     roundIdGenerator,
@@ -918,6 +1022,8 @@ function createTimerDependencies({
   repository,
   imageRepository,
   roundState = new RoundRuntimeStateStore(),
+  recentStrokeBatches = new RecentStrokeBatchStore(),
+  resultSaveService = createMockResultSaveService(),
   timerScheduler = createMockTimerScheduler(),
   selectImage = (images: ImageMetadata[]) => images[0],
   roundIdGenerator = () => "round-test",
@@ -927,6 +1033,8 @@ function createTimerDependencies({
   repository: InMemoryRoomRepository;
   imageRepository: InMemoryImageRepository;
   roundState?: RoundRuntimeStateStore;
+  recentStrokeBatches?: RecentStrokeBatchStore;
+  resultSaveService?: Pick<ResultSaveService, "saveRoundResult">;
   timerScheduler?: ReturnType<typeof createMockTimerScheduler>;
   selectImage?: (images: ImageMetadata[]) => ImageMetadata;
   roundIdGenerator?: () => string;
@@ -936,6 +1044,8 @@ function createTimerDependencies({
     io,
     repository,
     imageRepository,
+    recentStrokeBatches,
+    resultSaveService,
     roundState,
     timerScheduler,
     selectImage,
@@ -948,6 +1058,45 @@ function createMockTimerScheduler() {
   return {
     schedule: vi.fn(),
     clear: vi.fn()
+  };
+}
+
+function createMockResultSaveService(
+  payload:
+    | {
+        roomCode: string;
+        roundId: string;
+        roundIndex: number;
+      }
+    | null = null
+): Pick<
+  ResultSaveService,
+  "saveRoundResult"
+> {
+  return {
+    saveRoundResult: vi.fn().mockResolvedValue(
+      payload
+        ? {
+            ...payload,
+            result: {
+              id: `result-${payload.roundId}`,
+              roomCode: payload.roomCode,
+              roundId: payload.roundId,
+              roundIndex: payload.roundIndex,
+              sourceImageId: "image-used",
+              sourceImageFileId: "file-image-used",
+              resultFileId: "result-file-1",
+              thumbnailFileId: null,
+              mimeType: "image/png",
+              width: 1,
+              height: 1,
+              strokeCount: 0,
+              createdAt: "2026-06-06T00:01:00.000Z"
+            },
+            createdAt: "2026-06-06T00:01:01.000Z"
+          }
+        : null
+    )
   };
 }
 

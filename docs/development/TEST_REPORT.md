@@ -463,3 +463,25 @@
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.
 
+
+### 2026-06-06 PHASE-11-RESULT-SAVE-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `test`: 통과. 16 files, 71 tests.
+  - `git status --short`: result 구현/문서 변경 파일과 작업 전부터 존재한 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - `ResultSaveService`가 source image를 읽고 result image storage와 metadata repository에 저장하는지 검증.
+  - 같은 `roomCode + roundId`에 대해 idempotent하게 기존 result를 재사용하는지 검증.
+  - result save 실패가 throw되지 않고 `null`로 처리되는지 검증.
+  - `round-ended` 이후 `result-saved` emit과 stroke batch 전달 검증.
+  - result save 실패가 다음 round 전이를 막지 않는지 검증.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase/GridFS 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재하며 이번 작업에서는 수정, 삭제, commit 대상에 포함하지 않음.
+

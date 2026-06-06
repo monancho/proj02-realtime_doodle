@@ -7,6 +7,8 @@ import type { ServerEnv } from "./config/env";
 import type { MongoDbConnection } from "./db/mongodb";
 import { InMemoryImageRepository } from "./images/in-memory-image-repository";
 import { InMemoryImageStorage } from "./images/in-memory-image-storage";
+import { InMemoryResultRepository } from "./results/in-memory-result-repository";
+import { InMemoryResultImageStorage } from "./results/in-memory-result-storage";
 import { InMemoryRoomRepository } from "./rooms/in-memory-room-repository";
 import { InMemoryUserRepository } from "./users/in-memory-user-repository";
 
@@ -50,12 +52,16 @@ describe("createServerDependencies", () => {
     });
     const imageRepository = new InMemoryImageRepository();
     const imageStorage = new InMemoryImageStorage();
+    const resultRepository = new InMemoryResultRepository();
+    const resultStorage = new InMemoryResultImageStorage();
 
     const dependencies = await createServerDependencies(env, {
       connectDb: vi.fn().mockResolvedValue(mongoConnection),
       createVerifier: () => verifier,
       createImageRepository: vi.fn().mockResolvedValue(imageRepository),
       createImageStorage: () => imageStorage,
+      createResultRepository: vi.fn().mockResolvedValue(resultRepository),
+      createResultStorage: () => resultStorage,
       createRoomRepository: vi.fn().mockResolvedValue(roomRepository),
       createUserRepository: vi.fn().mockResolvedValue(userRepository)
     });
@@ -73,6 +79,8 @@ describe("createServerDependencies", () => {
     });
     expect(verifier.verifyIdToken).toHaveBeenCalledWith("test-token");
     expect(dependencies.mongoConnection).toBe(mongoConnection);
+    expect(dependencies.resultRepository).toBe(resultRepository);
+    expect(dependencies.resultStorage).toBe(resultStorage);
     expect(dependencies.tokenVerifier).toBe(verifier);
   });
 
@@ -94,12 +102,16 @@ describe("createServerDependencies", () => {
     });
     const imageRepository = new InMemoryImageRepository();
     const imageStorage = new InMemoryImageStorage();
+    const resultRepository = new InMemoryResultRepository();
+    const resultStorage = new InMemoryResultImageStorage();
 
     const dependencies = await createServerDependencies(env, {
       connectDb: vi.fn().mockResolvedValue(mongoConnection),
       createVerifier: () => verifier,
       createImageRepository: vi.fn().mockResolvedValue(imageRepository),
       createImageStorage: () => imageStorage,
+      createResultRepository: vi.fn().mockResolvedValue(resultRepository),
+      createResultStorage: () => resultStorage,
       createRoomRepository: vi.fn().mockResolvedValue(roomRepository),
       createUserRepository: vi.fn().mockResolvedValue(userRepository)
     });
