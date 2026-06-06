@@ -626,6 +626,28 @@
   - [ ] `방 입장` 클릭 시 방 코드 모달이 열리고 입장 성공 후 방 준비 화면으로 이동하는지 확인한다.
 - secret 출력 여부:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-06 PHASE-BE-GOOGLE-AUTH-PROVIDER-GUARD
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 18 files, 82 tests.
+  - `git status --short`: backend/shared/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - `verifyAuthToken()`이 `firebase.sign_in_provider === "google.com"` token을 기존 `AuthContext`로 매핑하는지 확인.
+  - Google provider가 아닌 token이 `AUTH_PROVIDER_UNSUPPORTED`로 거절되는지 확인.
+  - HTTP auth middleware가 non-Google provider token을 401과 안전한 error payload로 거절하는지 확인.
+  - Socket auth middleware가 non-Google provider token을 안전한 socket auth error로 거절하는지 확인.
+  - 기존 missing/expired token error 흐름 유지 확인.
+- 미실행:
+  - 실제 Firebase Admin 또는 실제 Google OAuth 연결 검증은 수행하지 않았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 - secret 출력 여부:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:

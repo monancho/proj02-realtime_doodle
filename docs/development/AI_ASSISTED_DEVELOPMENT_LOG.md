@@ -1242,3 +1242,25 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-06 PHASE-BE-GOOGLE-AUTH-PROVIDER-GUARD
+
+- Agent: `backend`
+- 목표: Firebase ID Token 인증 흐름에서 Google OAuth 로그인 사용자만 허용하도록 provider 검증 경계 추가.
+- 수행 내용:
+  - shared `AuthErrorCode`에 `AUTH_PROVIDER_UNSUPPORTED`를 추가했다.
+  - `VerifiedFirebaseToken`에 Firebase decoded token의 `firebase.sign_in_provider` claim을 포함했다.
+  - `verifyAuthToken()` 공통 경계에서 `google.com` provider만 허용하도록 검증했다.
+  - Firebase Admin verifier가 decoded token의 `firebase` claim을 전달하도록 수정했다.
+  - HTTP auth, Socket auth, token 단위 테스트에 Google provider 통과와 non-Google provider 거절 케이스를 추가했다.
+  - `DATABASE_API_SOCKET.md`와 `USER_FLOW.md`에 Google provider guard 정책을 문서화했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과.
+  - `git status --short`: backend/shared/docs 변경과 기존 미추적 `package-lock.json` 확인.
+- 의도적으로 제외:
+  - 프론트엔드 코드 변경.
+  - 실제 Firebase Admin/Google OAuth 연결 검증.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

@@ -177,6 +177,8 @@ MVP 초기 구현에서는 repository interface를 통해 동작하며, 실제 M
 Authorization: Bearer <Firebase ID Token>
 ```
 
+서버는 Firebase Admin SDK로 ID Token signature/project를 검증한 뒤 decoded token의 `firebase.sign_in_provider`가 `google.com`인지 확인한다. MVP에서는 Google OAuth 로그인 사용자만 HTTP API와 Socket 연결을 사용할 수 있다. provider raw payload, token, email, Firebase UID 값은 오류 메시지에 포함하지 않는다.
+
 검증 성공 시 서버 내부 request context는 shared `AuthContext`를 사용한다.
 
 ```ts
@@ -211,6 +213,7 @@ Authorization: Bearer <Firebase ID Token>
 | `AUTH_TOKEN_INVALID` | Firebase token 검증 실패 |
 | `AUTH_TOKEN_EXPIRED` | 만료된 token |
 | `AUTH_USER_DISABLED` | 비활성화된 Firebase 사용자 |
+| `AUTH_PROVIDER_UNSUPPORTED` | Google OAuth가 아닌 Firebase sign-in provider |
 | `AUTH_FORBIDDEN` | 인증은 되었으나 권한 없음 |
 
 ### Socket 인증
@@ -223,7 +226,7 @@ Socket.IO 연결은 다음 auth payload를 사용한다.
 }
 ```
 
-클라이언트는 `io(serverUrl, { auth: { token } })` 형태로 전달한다. query string token은 사용하지 않는다.
+클라이언트는 `io(serverUrl, { auth: { token } })` 형태로 전달한다. query string token은 사용하지 않는다. Socket auth middleware도 HTTP auth와 동일하게 Firebase ID Token 검증 후 `firebase.sign_in_provider === "google.com"`을 요구하며, 실패 시 `AUTH_PROVIDER_UNSUPPORTED`를 안전한 socket auth error로 전달한다.
 
 ## Socket.IO 이벤트
 

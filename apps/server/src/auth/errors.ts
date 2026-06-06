@@ -5,6 +5,7 @@ const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   AUTH_TOKEN_INVALID: "Authentication token is invalid.",
   AUTH_TOKEN_EXPIRED: "Authentication token has expired.",
   AUTH_USER_DISABLED: "User is disabled.",
+  AUTH_PROVIDER_UNSUPPORTED: "Only Google sign-in is supported.",
   AUTH_FORBIDDEN: "You do not have permission to perform this action."
 };
 

@@ -43,7 +43,10 @@ describe("createServerDependencies", () => {
       verifyIdToken: vi.fn().mockResolvedValue({
         uid: authContext.user.firebaseUid,
         email: authContext.user.email ?? undefined,
-        name: authContext.user.nickname ?? undefined
+        name: authContext.user.nickname ?? undefined,
+        firebase: {
+          sign_in_provider: "google.com"
+        }
       })
     };
     const userRepository = new InMemoryUserRepository();
@@ -93,7 +96,10 @@ describe("createServerDependencies", () => {
       verifyIdToken: vi.fn().mockResolvedValue({
         uid: authContext.user.firebaseUid,
         email: authContext.user.email ?? undefined,
-        name: authContext.user.nickname ?? undefined
+        name: authContext.user.nickname ?? undefined,
+        firebase: {
+          sign_in_provider: "google.com"
+        }
       })
     };
     const userRepository = new InMemoryUserRepository();

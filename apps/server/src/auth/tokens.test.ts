@@ -24,7 +24,10 @@ describe("verifyAuthToken", () => {
         name: "User",
         picture: "https://example.com/avatar.png",
         iat: 100,
-        exp: 200
+        exp: 200,
+        firebase: {
+          sign_in_provider: "google.com"
+        }
       })
     };
 
@@ -39,6 +42,22 @@ describe("verifyAuthToken", () => {
       tokenExpiresAt: 200
     });
     expect(verifier.verifyIdToken).toHaveBeenCalledWith("token");
+  });
+
+  it("rejects Firebase tokens from unsupported sign-in providers", async () => {
+    const verifier = {
+      verifyIdToken: vi.fn().mockResolvedValue({
+        uid: "firebase-uid",
+        firebase: {
+          sign_in_provider: "password"
+        }
+      })
+    };
+
+    await expect(verifyAuthToken("token", verifier)).rejects.toMatchObject({
+      code: "AUTH_PROVIDER_UNSUPPORTED",
+      message: "Only Google sign-in is supported."
+    });
   });
 
   it("maps verifier failures to auth errors without exposing token values", async () => {

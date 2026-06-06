@@ -71,4 +71,4 @@
 
 ## 와이어프레임 연결
 
-기본 화면 흐름은 `docs/design/assets/realtime-doodle-wireframe-overview.png`를 기준으로 한다. MVP 로그인은 별도 회원가입 화면 없이 Google 로그인으로 시작한다. 로그인 전에는 Google 로그인 진입만 노출하고, 로그인 후 로비에서 `방 만들기`와 `방 입장` 두 가지 CTA만 제공한다. 방 이름과 방 코드는 각각 모달에서 입력한다. 닉네임 변경과 로그아웃은 상단 오른쪽 프로필 메뉴에서 처리한다.
+기본 화면 흐름은 `docs/design/assets/realtime-doodle-wireframe-overview.png`를 기준으로 한다. MVP 로그인은 별도 회원가입 화면 없이 Google 로그인으로 시작한다. 백엔드도 Firebase decoded token의 Google provider를 확인해 Google OAuth 사용자가 아닌 token을 거절한다. 로그인 전에는 Google 로그인 진입만 노출하고, 로그인 후 로비에서 `방 만들기`와 `방 입장` 두 가지 CTA만 제공한다. 방 이름과 방 코드는 각각 모달에서 입력한다. 닉네임 변경과 로그아웃은 상단 오른쪽 프로필 메뉴에서 처리한다.

@@ -9,6 +9,9 @@ export interface VerifiedFirebaseToken {
   picture?: string;
   iat?: number;
   exp?: number;
+  firebase?: {
+    sign_in_provider?: string;
+  };
 }
 
 export interface TokenVerifier {
@@ -50,6 +53,10 @@ function mapDecodedTokenToAuthContext(
 ): AuthContext {
   if (!token.uid) {
     throw new AuthError("AUTH_TOKEN_INVALID");
+  }
+
+  if (token.firebase?.sign_in_provider !== "google.com") {
+    throw new AuthError("AUTH_PROVIDER_UNSUPPORTED");
   }
 
   const user: AuthenticatedUser = {

@@ -33,7 +33,8 @@ export function createFirebaseTokenVerifier(app: App): TokenVerifier {
         name: decoded.name,
         picture: decoded.picture,
         iat: decoded.iat,
-        exp: decoded.exp
+        exp: decoded.exp,
+        firebase: decoded.firebase
       };
     }
   };

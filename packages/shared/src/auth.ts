@@ -16,6 +16,7 @@ export type AuthErrorCode =
   | "AUTH_TOKEN_INVALID"
   | "AUTH_TOKEN_EXPIRED"
   | "AUTH_USER_DISABLED"
+  | "AUTH_PROVIDER_UNSUPPORTED"
   | "AUTH_FORBIDDEN";
 
 export interface AuthErrorResponse {

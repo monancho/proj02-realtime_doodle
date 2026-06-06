@@ -442,6 +442,16 @@
 - 방 이름과 방 코드는 로비에 상시 노출하지 않고 각각 모달에서 입력하도록 변경했다.
 - Google OAuth ID Token 기반 API 호출과 기존 Firebase Admin 백엔드 검증은 유지했다.
 - Socket, Drawing, Upload, Timer, Result 기능 코드는 변경하지 않았다.
+
+### 2026-06-06 PHASE-BE-GOOGLE-AUTH-PROVIDER-GUARD
+
+- Firebase ID Token 검증 후 decoded token의 `firebase.sign_in_provider`가 `google.com`인지 확인하는 provider guard를 추가했다.
+- provider guard는 `verifyAuthToken()` 공통 경계에 추가해 HTTP auth middleware와 Socket auth middleware가 같은 기준을 사용하도록 했다.
+- Google provider가 아닌 token은 `AUTH_PROVIDER_UNSUPPORTED`로 거절한다.
+- error message에는 token, email, Firebase UID, provider raw payload, secret 값을 포함하지 않는다.
+- Firebase Admin verifier는 decoded token의 `firebase` claim을 `VerifiedFirebaseToken`으로 전달하도록 보강했다.
+- `/api/users/me` user upsert contract와 Google nickname/avatarUrl 저장 흐름은 변경하지 않았다.
+- 실제 Firebase Admin 또는 실제 Google OAuth 연결 검증은 수행하지 않고 mock token verifier 기반 테스트로 검증했다.
 ### 2026-06-06 PHASE-FE-03-LOBBY-ROOM-FLOW
 
 - 로그인 전 방 생성/입장 action을 비활성화하고 안내 문구를 추가했다.
