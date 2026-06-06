@@ -67,6 +67,33 @@ export class InMemoryImageRepository implements ImageRepository {
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
       .map(cloneImage);
   }
+
+  public async listUnusedImagesByRoomCode(
+    roomCode: string
+  ): Promise<ImageMetadata[]> {
+    return [...this.imagesById.values()]
+      .filter((image) => image.roomCode === roomCode && !image.used)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map(cloneImage);
+  }
+
+  public async markImageUsed(imageId: string): Promise<ImageMetadata | null> {
+    const image = this.imagesById.get(imageId);
+
+    if (!image || image.used) {
+      return null;
+    }
+
+    const nextImage: ImageMetadata = {
+      ...image,
+      uploadedBy: { ...image.uploadedBy },
+      used: true
+    };
+
+    this.imagesById.set(imageId, nextImage);
+
+    return cloneImage(nextImage);
+  }
 }
 
 function cloneImage(image: ImageMetadata): ImageMetadata {

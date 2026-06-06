@@ -1357,3 +1357,44 @@ Upload 구현 이후 `round-started`는 `imageId` 단일 필드보다 `image: Im
 - Timer scheduling과 `round-ended` 자동 emit은 구현하지 않는다.
 - Result save는 구현하지 않는다.
 - multi-instance random coordination과 durable round recovery는 MVP 범위 밖이다.
+
+## Random Round Start 구현 기록
+
+이 섹션은 `PHASE-08-RANDOM-ROUND-START-IMPLEMENTATION`의 구현 결과 기준이다.
+
+### 구현된 event
+
+| Event | 구현 결과 |
+|---|---|
+| `start-game` | `{ roomCode: string }` payload를 검증하고 host 권한, room 상태, unused image를 확인 |
+| `round-started` | `{ roomCode, roundId, roundIndex, image, durationSec, startedAt }` payload를 같은 Socket.IO room에 emit |
+| `room-updated` | room status/currentRoundIndex 전이 후 `{ room: RoomDetail }` payload를 같은 Socket.IO room에 emit |
+| `socket-error` | 권한, 상태, 이미지 부족 실패를 code 중심으로 응답 |
+
+### 구현된 검증과 상태 전이
+
+- socket auth context가 없으면 `AUTH_TOKEN_MISSING`으로 거절한다.
+- invalid `{ roomCode }` payload는 `ROOM_PAYLOAD_INVALID`로 거절한다.
+- room이 없으면 `ROOM_NOT_FOUND`로 거절한다.
+- socket auth user가 room participant가 아니면 `ROOM_ACCESS_DENIED`로 거절한다.
+- host가 아니면 `ROOM_HOST_REQUIRED`로 거절한다.
+- room status가 `waiting`이 아니면 `ROOM_STATE_INVALID`로 거절한다.
+- `ImageRepository.listUnusedImagesByRoomCode(roomCode)`로 `used === false` 후보를 조회한다.
+- 후보 이미지가 없으면 `ROUND_IMAGE_NOT_FOUND`로 거절한다.
+- 선택된 image는 `ImageRepository.markImageUsed(imageId)`로 `used: true` 처리한다.
+- `RoomRepository.startGame(roomCode)`로 room status를 `playing`으로 전이하고 `currentRoundIndex`를 `0`으로 유지한다.
+
+### Repository 변경
+
+- `RoomRepository.startGame()` 계약을 추가했다.
+- `InMemoryRoomRepository.startGame()`을 구현했다.
+- `MongoRoomRepository.startGame()`은 `status: "waiting"` 조건부 update로 구현했다.
+- `ImageRepository.listUnusedImagesByRoomCode()` 계약을 추가했다.
+- `ImageRepository.markImageUsed()` 계약을 추가했다.
+- `InMemoryImageRepository`와 `MongoImageRepository`에 unused 조회/used 처리 구현을 추가했다.
+
+### 구현 제외 범위
+
+- Timer scheduling과 `round-ended` 자동 emit은 구현하지 않았다.
+- Result save는 구현하지 않았다.
+- multi-instance random coordination과 durable round recovery는 구현하지 않았다.

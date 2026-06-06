@@ -9,7 +9,8 @@ import { RoomDomainError } from "./errors";
 import type {
   CreateRoomInput,
   JoinRoomInput,
-  RoomRepository
+  RoomRepository,
+  StartGameInput
 } from "./repository";
 import { generateRoomCode, normalizeRoomCode, type RoomCodeGenerator } from "./room-code";
 
@@ -121,6 +122,33 @@ export class InMemoryRoomRepository implements RoomRepository {
         }
       ],
       updatedAt: now
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async startGame(input: StartGameInput): Promise<RoomDetail> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    if (room.status !== "waiting") {
+      throw new RoomDomainError(
+        "ROOM_STATE_INVALID",
+        "Only waiting rooms can be started."
+      );
+    }
+
+    const nextRoom = createRoomDetail({
+      ...room,
+      status: "playing",
+      currentRoundIndex: 0,
+      updatedAt: this.now().toISOString()
     });
 
     this.roomsByCode.set(normalizedRoomCode, nextRoom);

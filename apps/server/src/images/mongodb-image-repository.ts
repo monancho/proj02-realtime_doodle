@@ -93,6 +93,31 @@ class MongoImageRepository implements ImageRepository {
 
     return documents.map(mapImageDocument);
   }
+
+  public async listUnusedImagesByRoomCode(
+    roomCode: string
+  ): Promise<ImageMetadata[]> {
+    const documents = await this.collection
+      .find({ roomCode, used: false })
+      .sort({ createdAt: 1 })
+      .toArray();
+
+    return documents.map(mapImageDocument);
+  }
+
+  public async markImageUsed(imageId: string): Promise<ImageMetadata | null> {
+    if (!ObjectId.isValid(imageId)) {
+      return null;
+    }
+
+    const document = await this.collection.findOneAndUpdate(
+      { _id: new ObjectId(imageId), used: false },
+      { $set: { used: true } },
+      { returnDocument: "after" }
+    );
+
+    return document ? mapImageDocument(document) : null;
+  }
 }
 
 function mapImageDocument(document: ImageDocument): ImageMetadata {

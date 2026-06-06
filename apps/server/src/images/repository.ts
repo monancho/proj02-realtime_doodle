@@ -19,4 +19,6 @@ export interface ImageRepository {
   createImageMetadata(input: CreateImageMetadataInput): Promise<ImageMetadata>;
   findImageById(imageId: string): Promise<ImageMetadata | null>;
   listImagesByRoomCode(roomCode: string): Promise<ImageMetadata[]>;
+  listUnusedImagesByRoomCode(roomCode: string): Promise<ImageMetadata[]>;
+  markImageUsed(imageId: string): Promise<ImageMetadata | null>;
 }

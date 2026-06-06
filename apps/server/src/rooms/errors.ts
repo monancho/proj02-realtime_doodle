@@ -3,7 +3,8 @@ export type RoomErrorCode =
   | "ROOM_FULL"
   | "ROOM_ALREADY_STARTED"
   | "ROOM_CODE_COLLISION"
-  | "ROOM_ACCESS_DENIED";
+  | "ROOM_ACCESS_DENIED"
+  | "ROOM_STATE_INVALID";
 
 export class RoomDomainError extends Error {
   public constructor(
@@ -21,6 +22,7 @@ export function getRoomErrorHttpStatus(code: RoomErrorCode): number {
       return 404;
     case "ROOM_FULL":
     case "ROOM_ALREADY_STARTED":
+    case "ROOM_STATE_INVALID":
       return 409;
     case "ROOM_ACCESS_DENIED":
       return 403;

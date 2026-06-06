@@ -733,3 +733,35 @@
 - 다음 추천 작업:
   - `PHASE-08-RANDOM-ROUND-START-IMPLEMENTATION`
   - Image metadata repository 기반 미사용 이미지 선택, used 처리, `round-started` emit을 host 권한 검증 기반으로 구현.
+
+### 2026-06-06 PHASE-08-RANDOM-ROUND-START-IMPLEMENTATION
+
+- Agent: `backend`
+- 목표: Image metadata repository 기반 미사용 이미지 선택, used 처리, `round-started` emit을 host 권한 검증 기반으로 구현.
+- 수행 내용:
+  - Socket.IO `start-game` event 추가.
+  - socket auth context, room membership, host 권한, `waiting` status 검증 추가.
+  - `ImageRepository.listUnusedImagesByRoomCode()` 계약과 구현 추가.
+  - `ImageRepository.markImageUsed()` 계약과 구현 추가.
+  - `RoomRepository.startGame()` 계약과 in-memory/MongoDB 구현 추가.
+  - deterministic test가 가능하도록 image selector와 round id generator를 handler dependency로 분리.
+  - 성공 시 selected image를 `used: true`로 처리하고 `round-started` payload emit.
+  - room status/currentRoundIndex 변경 후 `room-updated` emit.
+  - socket handler 테스트 추가.
+  - DATABASE_API_SOCKET.md, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
+- 의도적으로 제외:
+  - Timer scheduling.
+  - `round-ended` 자동 emit.
+  - Result save.
+  - 실제 MongoDB/GridFS 연결 검증.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 15 files, 64 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 충돌/주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 건드리지 않음.
+- 다음 추천 작업:
+  - `PHASE-10-TIMER-ROUND-END-PLAN`
+  - Timer/round end 구현 전에 `round-ended`, 드로잉 차단, 다음 라운드 또는 finished 전이 기준을 문서화.

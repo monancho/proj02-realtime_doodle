@@ -17,8 +17,13 @@ export interface JoinRoomInput {
   participant: RoomActorInput;
 }
 
+export interface StartGameInput {
+  roomCode: string;
+}
+
 export interface RoomRepository {
   createRoom(input: CreateRoomInput): Promise<RoomDetail>;
   findRoomByCode(roomCode: string): Promise<RoomDetail | null>;
   joinRoom(input: JoinRoomInput): Promise<RoomDetail>;
+  startGame(input: StartGameInput): Promise<RoomDetail>;
 }

@@ -17,7 +17,8 @@ import { RoomDomainError } from "./errors";
 import type {
   CreateRoomInput,
   JoinRoomInput,
-  RoomRepository
+  RoomRepository,
+  StartGameInput
 } from "./repository";
 import { generateRoomCode, normalizeRoomCode, type RoomCodeGenerator } from "./room-code";
 
@@ -177,6 +178,36 @@ export class MongoRoomRepository implements RoomRepository {
     throw new RoomDomainError(
       "ROOM_CODE_COLLISION",
       "Room join failed because the room changed concurrently."
+    );
+  }
+
+  public async startGame(input: StartGameInput): Promise<RoomDetail> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const now = new Date();
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      { roomCode, status: "waiting" },
+      {
+        $set: {
+          status: "playing",
+          currentRoundIndex: 0,
+          updatedAt: now
+        }
+      },
+      { returnDocument: "after" }
+    );
+
+    if (updatedRoom) {
+      return mapRoomDocumentToDetail(updatedRoom);
+    }
+
+    const latestRoom = await this.collection.findOne({ roomCode });
+    if (!latestRoom) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    throw new RoomDomainError(
+      "ROOM_STATE_INVALID",
+      "Only waiting rooms can be started."
     );
   }
 }

@@ -16,12 +16,13 @@ if (!validation.ok) {
 const port = Number.parseInt(validation.env.PORT, 10);
 
 try {
-  const { app, mongoConnection, roomRepository, tokenVerifier } =
+  const { app, imageRepository, mongoConnection, roomRepository, tokenVerifier } =
     await createServerDependencies(validation.env);
   const server = await startHttpServer(app, port);
   const io = createSocketServer({
     env: validation.env,
     httpServer: server,
+    imageRepository,
     roomRepository,
     tokenVerifier
   });

@@ -1,6 +1,9 @@
-import type { AuthContext, RoomDetail } from "@doodle/shared";
+import { randomUUID } from "node:crypto";
+
+import type { AuthContext, ImageMetadata, RoomDetail } from "@doodle/shared";
 import type { Server, Socket } from "socket.io";
 
+import type { ImageRepository } from "../images/repository";
 import type { RoomRepository } from "../rooms/repository";
 import { normalizeRoomCode } from "../rooms/room-code";
 
@@ -18,9 +21,12 @@ export interface SocketErrorPayload {
     | "CHAT_MESSAGE_TOO_LONG"
     | "CHAT_PAYLOAD_INVALID"
     | "DRAW_PAYLOAD_INVALID"
+    | "ROOM_HOST_REQUIRED"
     | "ROOM_ACCESS_DENIED"
     | "ROOM_NOT_FOUND"
-    | "ROOM_PAYLOAD_INVALID";
+    | "ROOM_PAYLOAD_INVALID"
+    | "ROOM_STATE_INVALID"
+    | "ROUND_IMAGE_NOT_FOUND";
   message: string;
 }
 
@@ -69,6 +75,19 @@ export interface DrawStrokeBroadcastPayload extends DrawStrokePayload {
   createdAt: string;
 }
 
+export interface StartGamePayload {
+  roomCode: string;
+}
+
+export interface RoundStartedPayload {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+  image: ImageMetadata;
+  durationSec: number;
+  startedAt: string;
+}
+
 interface RoomEventDependencies {
   io: Pick<Server, "to">;
   repository: RoomRepository;
@@ -83,6 +102,13 @@ interface ChatEventDependencies extends RoomEventDependencies {
 interface DrawingEventDependencies extends RoomEventDependencies {
   now: () => Date;
   recentStrokeBatches: RecentStrokeBatchStore;
+}
+
+interface RoundEventDependencies extends RoomEventDependencies {
+  imageRepository: ImageRepository;
+  now: () => Date;
+  roundIdGenerator: () => string;
+  selectImage: (images: ImageMetadata[]) => ImageMetadata;
 }
 
 export class RecentChatMessageStore {
@@ -128,7 +154,8 @@ export class RecentStrokeBatchStore {
 
 export function registerRoomMembershipHandlers(
   io: Server,
-  repository: RoomRepository
+  repository: RoomRepository,
+  imageRepository: ImageRepository
 ): void {
   const recentMessages = new RecentChatMessageStore();
   const recentStrokeBatches = new RecentStrokeBatchStore();
@@ -163,6 +190,21 @@ export function registerRoomMembershipHandlers(
           socket,
           recentStrokeBatches,
           now: () => new Date()
+        },
+        payload
+      );
+    });
+
+    socket.on("start-game", (payload: unknown) => {
+      void handleStartGame(
+        {
+          io,
+          repository,
+          socket,
+          imageRepository,
+          now: () => new Date(),
+          roundIdGenerator: createRoundId,
+          selectImage: selectRandomImage
         },
         payload
       );
@@ -379,6 +421,104 @@ export async function handleDrawStroke(
     .emit("draw-stroke", strokeBatch);
 }
 
+export async function handleStartGame(
+  dependencies: RoundEventDependencies,
+  payload: unknown
+): Promise<void> {
+  const auth = getSocketAuth(dependencies.socket);
+  if (!auth) {
+    emitSocketError(dependencies.socket, {
+      code: "AUTH_TOKEN_MISSING",
+      message: "Authentication is required."
+    });
+    return;
+  }
+
+  const roomCode = parseRoomCode(payload);
+  if (!roomCode) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_PAYLOAD_INVALID",
+      message: "roomCode must be a non-empty string."
+    });
+    return;
+  }
+
+  const room = await dependencies.repository.findRoomByCode(roomCode);
+  if (!room) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_NOT_FOUND",
+      message: "Room was not found."
+    });
+    return;
+  }
+
+  const isParticipant = room.participants.some(
+    (participant) => participant.firebaseUid === auth.user.firebaseUid
+  );
+  if (!isParticipant) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_ACCESS_DENIED",
+      message: "Join the room before starting the game."
+    });
+    return;
+  }
+
+  if (room.hostUid !== auth.user.firebaseUid) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_HOST_REQUIRED",
+      message: "Only the room host can start the game."
+    });
+    return;
+  }
+
+  if (room.status !== "waiting") {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_STATE_INVALID",
+      message: "Only waiting rooms can be started."
+    });
+    return;
+  }
+
+  const unusedImages =
+    await dependencies.imageRepository.listUnusedImagesByRoomCode(room.roomCode);
+  if (unusedImages.length === 0) {
+    emitSocketError(dependencies.socket, {
+      code: "ROUND_IMAGE_NOT_FOUND",
+      message: "Upload at least one unused image before starting the game."
+    });
+    return;
+  }
+
+  const selectedCandidate = dependencies.selectImage(unusedImages);
+  const selectedImage =
+    await dependencies.imageRepository.markImageUsed(selectedCandidate.id);
+  if (!selectedImage) {
+    emitSocketError(dependencies.socket, {
+      code: "ROUND_IMAGE_NOT_FOUND",
+      message: "Selected image is no longer available."
+    });
+    return;
+  }
+
+  const startedRoom = await dependencies.repository.startGame({
+    roomCode: room.roomCode
+  });
+  const startedAt = dependencies.now().toISOString();
+  const payloadToEmit: RoundStartedPayload = {
+    roomCode: startedRoom.roomCode,
+    roundId: dependencies.roundIdGenerator(),
+    roundIndex: startedRoom.currentRoundIndex,
+    image: selectedImage,
+    durationSec: startedRoom.settings.roundDurationSec,
+    startedAt
+  };
+
+  dependencies.io
+    .to(createSocketRoomName(startedRoom.roomCode))
+    .emit("round-started", payloadToEmit);
+  emitRoomUpdated(dependencies.io, startedRoom);
+}
+
 export function createSocketRoomName(roomCode: string): string {
   return `${SOCKET_ROOM_PREFIX}${normalizeRoomCode(roomCode)}`;
 }
@@ -575,4 +715,12 @@ function isNumberInRange(
 
 function createStrokeBatchKey(roomCode: string, roundId: string): string {
   return `${normalizeRoomCode(roomCode)}:${roundId.trim()}`;
+}
+
+function selectRandomImage(images: ImageMetadata[]): ImageMetadata {
+  return images[Math.floor(Math.random() * images.length)] ?? images[0];
+}
+
+function createRoundId(): string {
+  return `round-${randomUUID()}`;
 }

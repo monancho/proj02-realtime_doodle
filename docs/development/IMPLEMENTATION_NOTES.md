@@ -305,3 +305,17 @@
 - `start-game`은 room participant이면서 host인 사용자만 요청할 수 있는 기준으로 정리했다.
 - 성공 시 room status는 `waiting -> playing`, `currentRoundIndex`는 `0` 기준으로 정리했다.
 - Timer, Result save는 구현하지 않았다.
+
+### 2026-06-06 PHASE-08-RANDOM-ROUND-START-IMPLEMENTATION
+
+- Socket.IO `start-game` event를 구현했다.
+- payload는 `{ roomCode: string }`를 사용하며 `roomCode`는 trim + uppercase normalize한다.
+- socket auth context, room membership, host 권한, `waiting` room 상태 검증을 추가했다.
+- `ImageRepository.listUnusedImagesByRoomCode(roomCode)`로 `used === false` image 후보를 조회한다.
+- 후보 이미지가 없으면 `ROUND_IMAGE_NOT_FOUND`로 응답한다.
+- deterministic test가 가능하도록 image selector와 round id generator를 handler dependency로 분리했다.
+- 선택된 image는 `ImageRepository.markImageUsed(imageId)`로 `used: true` 처리한다.
+- `RoomRepository.startGame()` 계약과 in-memory/MongoDB 구현을 추가해 room status를 `playing`으로 전이한다.
+- 성공 시 `round-started`를 같은 Socket.IO room `room:${roomCode}`에만 emit한다.
+- `round-started` payload는 `{ roomCode, roundId, roundIndex, image, durationSec, startedAt }`를 사용한다.
+- Timer scheduling, `round-ended` 자동 emit, Result save는 구현하지 않았다.

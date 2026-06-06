@@ -395,3 +395,21 @@
 - secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
 - 주의:
   - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
+
+### 2026-06-06 PHASE-08-RANDOM-ROUND-START-IMPLEMENTATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `git status --short`
+- 결과:
+  - `typecheck`: 통과.
+  - `test`: 통과. 15 files, 64 tests.
+  - `git status --short`: 변경 파일과 미추적 `package-lock.json` 확인.
+- 테스트 범위:
+  - host `start-game` 성공 시 unused image 선택, `used: true` 처리, room `playing` 전이, `round-started` emit 검증.
+  - auth context 없음, invalid payload, room not found, non-host, invalid room state, unused image 없음 error code 검증.
+- 미실행:
+  - `smoke:bootstrap`: 실제 MongoDB/Firebase/GridFS 연결 검증 범위가 아님.
+- secret 출력 여부: `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않음.
+- 주의:
+  - 작업 전부터 미추적 `package-lock.json`이 존재했으며 이번 작업에서는 수정하거나 commit 대상으로 포함하지 않음.
