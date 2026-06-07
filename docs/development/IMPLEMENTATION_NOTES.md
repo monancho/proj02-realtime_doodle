@@ -848,3 +848,9 @@
 - Google login button은 최종적으로 서비스 톤을 우선해 노란 hand-drawn CTA 스타일로 정리했다.
 - Google G SVG와 action text는 button boundary 안에 유지하되, button visual은 노란 배경, 굵은 ink border, 둥근 icon badge, Gaegu text로 조정했다.
 - 지나치게 공식 Material button처럼 겉도는 느낌을 줄이고 login 화면의 doodle visual language와 맞췄다.
+
+## 2026-06-07 - 게임 중 타이머바 progress 보정
+
+- 게임 중 상단 타이머바가 초 텍스트와 별도로 라운드 시작 시각 기준 250ms 주기로 progress를 재계산하도록 수정했다.
+- countdown 타이머 동작, backend/API/Socket 계약, 업로드/드로잉/결과 저장 흐름은 변경하지 않았다.
+

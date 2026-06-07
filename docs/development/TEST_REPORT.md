@@ -1650,3 +1650,10 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+## 2026-06-07 - 게임 중 타이머바 progress 보정 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- 미실행: 실제 2인 브라우저 플레이 수동 확인은 사용자가 로컬에서 이어서 확인 필요.
+

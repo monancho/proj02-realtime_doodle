@@ -2022,3 +2022,10 @@
   - backend/API/Socket/Firebase 계약 변경 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
   - `.env`, token, private key, MongoDB URI 출력 없음.
+
+## 2026-06-07 - In-game timer bar progress fix
+
+- 사용자 피드백: 게임 시작 전 countdown bar는 동작하지만 게임 중 timer bar progress가 움직이지 않는 것처럼 보임.
+- 조치: 프론트 TimerBarFixed에서 active round startedAt/durationSec 기준으로 progress를 250ms마다 재계산하도록 수정.
+- 검증: web typecheck/build 통과. 실제 브라우저 플레이 확인은 후속 수동 QA 필요.
+

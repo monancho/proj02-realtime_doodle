@@ -2269,11 +2269,23 @@ function TimerBar(props: TimerBarProps) {
 void TimerBar;
 
 function TimerBarFixed(props: TimerBarProps) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const totalRounds = Math.max(1, props.imageCount);
   let title = "라운드 대기";
   let meta = "사진이 준비되면 게임을 시작할 수 있습니다.";
   let progress = 0;
   let tone: "idle" | "starting" | "playing" | "ended" | "finished" = "idle";
+
+  useEffect(() => {
+    if (!props.activeRound || props.activeRound.endedAt || props.roundEnded || props.gameFinishedAt) {
+      return;
+    }
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => setNowMs(Date.now()), 250);
+
+    return () => window.clearInterval(intervalId);
+  }, [props.activeRound?.roundId, props.activeRound?.endedAt, props.roundEnded, props.gameFinishedAt]);
 
   if (props.gameStarting) {
     const remaining = props.countdownRemainingSec ?? props.gameStarting.countdownSec;
@@ -2295,11 +2307,15 @@ function TimerBarFixed(props: TimerBarProps) {
     progress = 100;
     tone = "ended";
   } else if (props.activeRound) {
-    const remaining = props.remainingSec ?? props.activeRound.durationSec;
+    const durationMs = props.activeRound.durationSec * 1000;
+    const startedAtMs = new Date(props.activeRound.startedAt).getTime();
+    const fallbackRemainingMs = (props.remainingSec ?? props.activeRound.durationSec) * 1000;
+    const remainingMs =
+      Number.isFinite(startedAtMs) && durationMs > 0 ? Math.max(0, durationMs - (nowMs - startedAtMs)) : fallbackRemainingMs;
+    const remaining = Math.ceil(remainingMs / 1000);
     title = `Round ${props.activeRound.roundIndex + 1} / ${totalRounds}`;
     meta = `${remaining}초 남음 · 현재 사진: ${props.activeRound.image.uploadedBy.nickname ?? "익명 참가자"}`;
-    progress =
-      props.activeRound.durationSec > 0 ? Math.min(100, Math.max(0, (remaining / props.activeRound.durationSec) * 100)) : 0;
+    progress = durationMs > 0 ? Math.min(100, Math.max(0, (remainingMs / durationMs) * 100)) : 0;
     tone = "playing";
   }
 
