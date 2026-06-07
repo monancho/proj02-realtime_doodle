@@ -2043,3 +2043,10 @@
 - 주요 변경: 공통 참가자 상태 배지, play 화면 공통 패널 적용, finished gallery polished layout 추가, responsive grid 보정.
 - 검증: web typecheck/build 통과. Browser preview 도구는 sandbox runtime 종료로 미실행 기록.
 
+
+## 2026-06-07 - Reference image game shell design pass
+
+- 사용자 요청: 게임 대기/진행/종료 참고 이미지 기준으로 디자인을 맞추고, 상단은 로비 헤더를 재사용.
+- 조치: CSS 중심으로 로비 헤더 스타일을 game shell 화면에도 확장하고, 참가자/채팅/중앙 패널 디자인을 reference image 방향으로 보정.
+- 검증: web typecheck/build 통과. 실제 브라우저 시각 확인은 후속 수동 QA 필요.
+

@@ -1671,3 +1671,10 @@
 - PASS: corepack pnpm --filter @doodle/web build
 - 미실행: in-app Browser preview 확인은 node/browser runtime이 sandbox 문제로 종료되어 수행하지 못했다. 실제 desktop/mobile 시각 QA는 로컬 브라우저에서 후속 확인 필요.
 
+
+## 2026-06-07 - 참고 이미지 기반 게임 shell 디자인 보정 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- 미실행: Browser preview 시각 QA는 이전 런타임 sandbox 문제로 자동 확인하지 못해, 실제 로컬 브라우저에서 room/play/gallery 확인 필요.
+
