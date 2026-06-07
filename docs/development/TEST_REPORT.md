@@ -683,6 +683,29 @@
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 
+### 2026-06-07 PHASE-FE-MANUAL-VISUAL-POLISH-FOLLOWUP
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `Invoke-WebRequest http://localhost:5173/?preview=login|lobby|room|play|gallery`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - preview URL 5종: 모두 HTTP 200 응답 확인.
+- Browser 시각 QA:
+  - Browser 도구 연결을 재시도했으나 Windows sandbox `spawn setup refresh` 문제로 node-backed browser runtime이 종료되었다.
+  - desktop/mobile screenshot 기반 확인은 완료하지 못했다.
+- 대체 점검/수정:
+  - CSS 기반으로 플레이 화면 grid 비율, canvas 최소 높이, drawing toolbar wrapping, chat form 버튼 폭, gallery card summary grid, mobile status strip padding을 보정했다.
+  - 기능 동작, Firebase auth, 백엔드 API, Socket 계약은 변경하지 않았다.
+- 미실행:
+  - 실제 desktop/mobile screenshot 육안 QA.
+  - 실제 Google 로그인 후 방 생성/입장/업로드/플레이 E2E 재검증.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
 ### 2026-06-06 PHASE-LOCAL-MANUAL-E2E-SMOKE
 
 - 실행 명령: `corepack pnpm --filter @doodle/server typecheck`

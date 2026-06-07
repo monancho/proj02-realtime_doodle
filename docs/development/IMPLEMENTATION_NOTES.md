@@ -702,3 +702,15 @@
 - 좁은 화면에서 chat input과 send button이 한 줄에 눌리지 않도록 mobile breakpoint에서 chat form을 단일 column으로 내린다.
 - Browser 런타임은 Windows sandbox 문제로 screenshot 확인을 완료하지 못했으며, 대체로 preview URL 응답, typecheck/build, 코드 기반 layout 점검을 수행했다.
 - 기능 동작, Firebase auth, API, Socket 계약은 변경하지 않았다.
+
+### 2026-06-07 PHASE-FE-MANUAL-VISUAL-POLISH-FOLLOWUP
+
+- dev-only preview mode를 기준으로 MVP 화면의 추가 시각 polish를 수행했다.
+- Browser 도구는 Windows sandbox `spawn setup refresh` 문제로 다시 연결되지 않아 screenshot 기반 점검은 수행하지 못했다.
+- 대체 검증으로 로컬 preview URL 5종의 HTTP 200 응답, TypeScript typecheck, production build를 확인했다.
+- 기능 동작, Firebase auth, 백엔드 API, Socket 계약은 변경하지 않고 CSS 레이아웃 안정화만 적용했다.
+- 플레이 화면은 중앙 canvas 영역을 우선하도록 desktop grid 비율을 조정하고, canvas 최소 높이를 viewport 기반으로 안정화했다.
+- drawing toolbar는 좁은 화면에서 버튼과 색상 swatch가 겹치지 않도록 wrapping과 mobile full-width 배치를 보정했다.
+- chat form은 버튼 최소 폭을 보장하고 mobile에서는 기존 단일 column 흐름을 유지했다.
+- gallery card는 결과 정보가 갤러리 카드처럼 읽히도록 내부 간격과 summary grid를 정리했다.
+- mobile status strip의 좌우 padding을 복구해 안내 문구가 카드 테두리에 붙지 않도록 했다.

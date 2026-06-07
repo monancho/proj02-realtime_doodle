@@ -1097,6 +1097,31 @@
   - `corepack pnpm --filter @doodle/web build`: 통과.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 PHASE-FE-MANUAL-VISUAL-POLISH-FOLLOWUP
+
+- Agent: `frontend`
+- 목표: dev-only preview mode와 로컬 preview 화면을 기준으로 MVP 화면의 시각 완성도를 추가 보정.
+- 수행 내용:
+  - Browser 도구 연결을 재시도했으나 Windows sandbox `spawn setup refresh` 문제로 screenshot 기반 desktop/mobile QA는 수행하지 못했다.
+  - 로컬 preview URL 5종이 HTTP 200을 반환하는지 확인했다.
+  - 플레이 화면 desktop grid 비율을 중앙 canvas 중심으로 재조정했다.
+  - canvas 최소 높이를 viewport 기반으로 안정화하고 canvas element가 레이아웃을 밀지 않도록 display/height를 명시했다.
+  - drawing toolbar의 wrapping과 mobile full-width 배치를 보정해 버튼과 색상 swatch 겹침 위험을 줄였다.
+  - chat form button 최소 폭과 gallery result card summary grid를 정리했다.
+  - mobile status strip padding을 복구해 상태 메시지 가독성을 개선했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `http://localhost:5173/?preview=login|lobby|room|play|gallery`: 각 200 응답 확인.
+- 의도적으로 제외:
+  - 기능 동작 변경.
+  - 백엔드 인증/API/Socket 계약 변경.
+  - Firebase auth 우회.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 충돌/주의:
   - 기존 미추적 `package-lock.json`은 건드리지 않았다.
   - `pnpm-lock.yaml`은 pnpm workspace 의존성 추가로 갱신되었다.
