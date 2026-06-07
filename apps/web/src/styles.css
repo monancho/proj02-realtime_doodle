@@ -1840,6 +1840,7 @@ button.lobby-cta-card {
   line-height: 1;
   box-shadow: 2px 3px 0 rgba(37, 33, 29, 0.12);
   transform: translate(8px, -28px) rotate(-2deg);
+  transition: left 90ms linear, top 90ms linear, color 120ms ease;
   white-space: nowrap;
 }
 

@@ -1841,3 +1841,10 @@
 - Fix: kept page doodle line appearance opaque like the earlier drawing feel.
 - Fix: retained the 1000 segment cap so older lines are removed as new drawing continues.
 - Fix: moved the page pencil cursor 8px left from the prior offset.
+
+## 2026-06-07 - Doodle dust and remote cursor smoothing validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Fix: login/lobby page doodle dust now uses the same black pen color instead of rainbow colors.
+- Fix: drawing now emits small dust particles while dragging, not only on pointer down.
+- Fix: remote cursor updates are sent a little more often and animated with CSS transition for smoother movement.

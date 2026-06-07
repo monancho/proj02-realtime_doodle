@@ -1656,6 +1656,7 @@ function DoodlePageCanvas() {
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const lineSegmentsRef = useRef<DoodleLineSegment[]>([]);
   const isDrawingRef = useRef(false);
+  const lastPageParticleAtRef = useRef(0);
   const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
   const [particles, setParticles] = useState<DoodleParticle[]>([]);
 
@@ -1716,6 +1717,7 @@ function DoodlePageCanvas() {
       if (isDrawingRef.current && lastPointRef.current) {
         appendLineSegment(lastPointRef.current, point);
         lastPointRef.current = point;
+        emitPageDrawingDust(point);
       }
     }
 
@@ -1754,6 +1756,16 @@ function DoodlePageCanvas() {
     redrawPageDoodles();
   }
 
+  function emitPageDrawingDust(point: { x: number; y: number }) {
+    const now = Date.now();
+    if (now - lastPageParticleAtRef.current < 70) {
+      return;
+    }
+
+    lastPageParticleAtRef.current = now;
+    burst(point, 3);
+  }
+
   function redrawPageDoodles() {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
@@ -1777,15 +1789,14 @@ function DoodlePageCanvas() {
     });
   }
 
-  function burst(point: { x: number; y: number }) {
-    const colors = ["#222222", "#f4b942", "#e85d75", "#4f9d69"];
-    const nextParticles = Array.from({ length: 8 }, (_, index) => ({
+  function burst(point: { x: number; y: number }, count = 8) {
+    const nextParticles = Array.from({ length: count }, (_, index) => ({
       id: `pad-${Date.now()}-${index}-${Math.random()}`,
       x: point.x,
       y: point.y,
-      dx: Math.cos((Math.PI * 2 * index) / 8) * (8 + Math.random() * 14),
-      dy: Math.sin((Math.PI * 2 * index) / 8) * (8 + Math.random() * 14),
-      color: colors[index % colors.length]
+      dx: Math.cos((Math.PI * 2 * index) / count) * (8 + Math.random() * 14),
+      dy: Math.sin((Math.PI * 2 * index) / count) * (8 + Math.random() * 14),
+      color: "#222222"
     }));
 
     setParticles((currentParticles) => [...currentParticles.slice(-20), ...nextParticles]);
@@ -2836,6 +2847,7 @@ function CanvasPanel(props: CanvasPanelProps) {
   const [drawingWidth, setDrawingWidth] = useState(drawingWidths[1]);
   const [particles, setParticles] = useState<DoodleParticle[]>([]);
   const lastCursorSentAtRef = useRef(0);
+  const lastCanvasParticleAtRef = useRef(0);
 
   useEffect(() => {
     if (!props.backgroundImageUrl) {
@@ -2916,6 +2928,7 @@ function CanvasPanel(props: CanvasPanelProps) {
       const stroke = createDrawStroke([previousPoint, point], drawingTool, drawingColor, drawingWidth);
       previewDraftStroke(event.currentTarget, backgroundImageRef.current, props.strokes, stroke);
       props.onDrawStroke(stroke);
+      emitCanvasDrawingDust(point);
     }
 
     lastSentPointRef.current = point;
@@ -2945,7 +2958,7 @@ function CanvasPanel(props: CanvasPanelProps) {
 
   function emitCursor(point: DrawPoint) {
     const now = Date.now();
-    if (now - lastCursorSentAtRef.current < 80) {
+    if (now - lastCursorSentAtRef.current < 50) {
       return;
     }
 
@@ -2959,13 +2972,23 @@ function CanvasPanel(props: CanvasPanelProps) {
     });
   }
 
-  function burstParticles(point: DrawPoint, color: string) {
-    const nextParticles = Array.from({ length: 10 }, (_, index) => ({
+  function emitCanvasDrawingDust(point: DrawPoint) {
+    const now = Date.now();
+    if (now - lastCanvasParticleAtRef.current < 70) {
+      return;
+    }
+
+    lastCanvasParticleAtRef.current = now;
+    burstParticles(point, drawingTool === "eraser" ? "#222222" : drawingColor, 3);
+  }
+
+  function burstParticles(point: DrawPoint, color: string, count = 10) {
+    const nextParticles = Array.from({ length: count }, (_, index) => ({
       id: `${Date.now()}-${index}-${Math.random()}`,
       x: point.x,
       y: point.y,
-      dx: Math.cos((Math.PI * 2 * index) / 10) * (10 + Math.random() * 18),
-      dy: Math.sin((Math.PI * 2 * index) / 10) * (10 + Math.random() * 18),
+      dx: Math.cos((Math.PI * 2 * index) / count) * (10 + Math.random() * 18),
+      dy: Math.sin((Math.PI * 2 * index) / count) * (10 + Math.random() * 18),
       color
     }));
 

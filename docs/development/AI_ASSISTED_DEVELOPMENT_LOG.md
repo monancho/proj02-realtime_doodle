@@ -2139,3 +2139,9 @@
 - Removed age-based alpha from page doodle redraw. The latest 1000 line segments remain opaque and older segments are dropped.
 - Moved the page pencil cursor 8px left from the previous offset.
 - Validation passed: web typecheck/build.
+
+## 2026-06-07 - Doodle dust and remote cursor smoothing
+- User feedback: login/lobby dust should match pen color, dust should appear during drawing, and peer cursors felt choppy.
+- Changed page doodle particles to black only, added throttled dust during page drawing and play canvas drawing.
+- Reduced cursor-move frontend throttle from 80ms to 50ms and added left/top transition for remote cursor overlays.
+- Validation passed: web typecheck/build.
