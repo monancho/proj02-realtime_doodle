@@ -2011,3 +2011,14 @@
 - MongoDB/GridFS live verification: 실제 MongoDB/GridFS 연결 검증은 수행하지 않았다. mock/in-memory 중심 테스트로 대체했다.
 - Safety check: cleanup logs/counts do not include raw fileId/ObjectId, URI, token, Firebase private key, or secret values.
 - `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
+
+## 2026-06-08 - Local Boot Cleanup Smoke
+
+- Scope: 서버 bootstrap cleanup wiring이 기존 bootstrap/Mongo 연결과 테스트를 깨지 않는지 검증했다.
+- `corepack pnpm --filter @doodle/server smoke:bootstrap`: PASS, server bootstrap and MongoDB connection succeeded.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 105 tests passed
+- Cleanup log safety check: 현재 bootstrap cleanup success log는 삭제 count summary만 기록하고, failure log는 고정 문구만 기록한다. raw fileId/ObjectId, MongoDB URI, token, Firebase private key, secret 값은 출력하지 않는다.
+- Live cleanup deletion QA: 실제 만료 `finished` room과 GridFS file/chunk 삭제는 테스트 데이터를 만들어야 하므로 이번 smoke에서는 수행하지 않았다. 배포 전 별도 수동 QA 또는 안전한 staging data로 확인이 필요하다.
+- `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.

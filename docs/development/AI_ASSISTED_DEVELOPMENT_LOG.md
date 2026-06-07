@@ -2278,3 +2278,12 @@
 - Reused existing image/result storage `deleteFile` contracts for GridFS deletion so tests can mock storage without a live MongoDB connection.
 - Updated Mongo room finish/reuse state to write `finishedAt`/`expiresAt` on finish and clear them on `prepare-next-game`.
 - Validation passed with server typecheck and test. `package-lock.json` remains untracked and unstaged.
+
+## 2026-06-08 - PHASE-LOCAL-BOOT-CLEANUP-SMOKE
+
+- Ran local server bootstrap smoke after room cleanup-on-boot implementation.
+- Verified bootstrap smoke succeeded without printing secrets.
+- Verified server typecheck and full server test suite passed.
+- Reviewed cleanup logging contract: success logs count-based summaries only, and failure logs a fixed safe startup-continuation message.
+- Documented remaining risk: actual expired-room/GridFS deletion should be validated with controlled staging/manual data before deployment confidence is claimed.
+- `package-lock.json` remains untracked and unstaged.
