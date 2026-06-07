@@ -1692,3 +1692,19 @@
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 좌우 패널 추가 시각 QA 보정 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- PASS: 로컬 preview HTTP 응답 확인
+  - http://localhost:5174/?preview=room -> 200
+  - http://localhost:5174/?preview=play -> 200
+  - http://localhost:5174/?preview=gallery -> 200
+- Browser 자동 시각 QA:
+  - in-app Browser 연결을 2회 시도했으나 Windows sandbox runtime 문제로 실패했다.
+  - 대체 검증으로 preview HTTP 응답, CSS diff 점검, typecheck/build를 수행했다.
+  - 실제 desktop/mobile 눈검수는 사용자의 로컬 브라우저에서 추가 확인이 필요하다.
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.

@@ -806,26 +806,26 @@ button:disabled {
 .gallery-layout > .chat-panel,
 .chat-card {
   display: grid;
-  grid-template-rows: auto minmax(260px, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   grid-column: 3;
   grid-row: 1 / span 2;
   min-width: 0;
-  min-height: min(68vh, 620px);
-  border: 1px solid rgba(34, 34, 34, 0.12);
+  min-height: clamp(520px, 68vh, 640px);
+  border: 1px solid rgba(34, 34, 34, 0.09);
   border-radius: 10px;
   background: var(--paper);
-  box-shadow: 0 10px 24px rgba(37, 33, 29, 0.055);
-  padding: 18px 14px;
+  box-shadow: 0 12px 28px rgba(37, 33, 29, 0.045);
+  padding: 20px 14px 14px;
 }
 
 .participants-card {
   min-width: 0;
-  min-height: min(68vh, 620px);
-  border: 1px solid rgba(34, 34, 34, 0.08);
+  min-height: clamp(520px, 68vh, 640px);
+  border: 1px solid rgba(34, 34, 34, 0.06);
   border-radius: 10px;
   background: var(--paper);
-  box-shadow: 0 10px 24px rgba(37, 33, 29, 0.045);
-  padding: 18px 12px;
+  box-shadow: 0 12px 28px rgba(37, 33, 29, 0.04);
+  padding: 20px 12px;
 }
 
 .participants-card .card-heading {
@@ -839,7 +839,8 @@ button:disabled {
 }
 
 .participants-card .card-heading h2 {
-  font-size: clamp(1.45rem, 2.1vw, 1.72rem);
+  font-size: clamp(1.42rem, 2vw, 1.68rem);
+  letter-spacing: 0;
 }
 
 .chat-card,
@@ -1504,10 +1505,10 @@ button.lobby-cta-card {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(34, 34, 34, 0.1);
-  min-height: 70px;
-  padding: 10px 0;
+  gap: 14px;
+  border-bottom: 1px solid rgba(34, 34, 34, 0.075);
+  min-height: 72px;
+  padding: 11px 2px;
 }
 
 .image-list li {
@@ -1540,7 +1541,7 @@ button.lobby-cta-card {
   width: 42px;
   height: 42px;
   place-items: center;
-  border: 2px solid var(--ink);
+  border: 1px solid rgba(34, 34, 34, 0.22);
   border-radius: 999px;
   background: var(--pink);
   color: #ffffff;
@@ -1554,7 +1555,7 @@ button.lobby-cta-card {
   flex: 0 0 auto;
   width: 42px;
   height: 42px;
-  border: 2px solid var(--ink);
+  border: 1px solid rgba(34, 34, 34, 0.22);
   border-radius: 999px;
   object-fit: cover;
 }
@@ -1597,12 +1598,12 @@ button.lobby-cta-card {
 .participant-list strong {
   flex: 0 0 auto;
   color: #247139;
-  border: 1px solid #b7dfbd;
+  border: 1px solid rgba(76, 166, 94, 0.26);
   border-radius: 8px;
   background: #dff0df;
   font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: 1rem;
-  padding: 5px 10px;
+  font-size: 0.96rem;
+  padding: 4px 9px;
 }
 
 .image-list strong {
@@ -1883,12 +1884,12 @@ button.lobby-cta-card {
 
 .chat-card .chat-list,
 .chat-panel .chat-list {
-  min-height: 360px;
+  min-height: 0;
   max-height: none;
   border: 0;
   border-radius: 0;
   background: transparent;
-  padding: 0;
+  padding: 8px 4px 16px;
 }
 
 .chat-card .chat-list:has(.empty-copy),
@@ -1911,10 +1912,10 @@ button.lobby-cta-card {
 .chat-panel .chat-list .empty-copy::before {
   content: "...";
   display: grid;
-  width: 72px;
-  height: 52px;
+  width: 74px;
+  height: 54px;
   place-items: center;
-  border: 3px solid #a5abb2;
+  border: 3px solid rgba(151, 158, 166, 0.9);
   border-radius: 18px;
   color: #a5abb2;
   font-family: "Gaegu", "Pretendard", sans-serif;
@@ -1929,6 +1930,31 @@ button.lobby-cta-card {
   color: #6b7280;
   font-size: 0.95rem;
   line-height: 1.8;
+}
+
+.chat-card .chat-form,
+.chat-panel .chat-form {
+  align-self: end;
+  margin-top: 0;
+  padding-top: 10px;
+}
+
+.chat-card .chat-form input,
+.chat-panel .chat-form input {
+  min-height: 44px;
+  border-color: rgba(34, 34, 34, 0.28);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.chat-card .chat-form .primary-button,
+.chat-panel .chat-form .primary-button {
+  min-height: 44px;
+  min-width: 82px;
+  box-shadow: 2px 2px 0 rgba(37, 33, 29, 0.14);
+}
+
+.chat-card .round-meter {
+  display: none;
 }
 
 .play-participants-card {
@@ -2268,6 +2294,19 @@ button.lobby-cta-card {
     grid-row: auto;
   }
 
+  .participants-card,
+  .room-layout > .chat-panel,
+  .play-layout > .chat-panel,
+  .gallery-layout > .chat-panel,
+  .play-layout > .chat-card {
+    min-height: auto;
+  }
+
+  .chat-card .chat-list,
+  .chat-panel .chat-list {
+    min-height: 260px;
+  }
+
   .summary-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2278,6 +2317,11 @@ button.lobby-cta-card {
 
   .chat-list {
     max-height: 240px;
+  }
+
+  .chat-card .chat-list,
+  .chat-panel .chat-list {
+    max-height: none;
   }
 }
 

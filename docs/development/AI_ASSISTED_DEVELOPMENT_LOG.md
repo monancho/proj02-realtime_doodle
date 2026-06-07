@@ -2058,3 +2058,11 @@
 - 범위 제한: 프론트 CSS-only 변경이며 backend/API/Socket/Firebase 계약은 변경하지 않았다.
 - 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.
 - 주의: 실제 브라우저 시각 QA는 사용자의 로컬 확인이 필요하다. `package-lock.json`은 기존 미추적 상태로 남겨두었다.
+
+## 2026-06-07 - Left/right panel visual QA follow-up
+
+- 사용자 피드백: 좌우 참가자/채팅 패널 완성도가 아직 낮고, 시각화 도구를 사용한 검증이 필요함.
+- 시도: 로컬 Vite preview `room/play/gallery` HTTP 응답은 200으로 확인했다. in-app Browser screenshot QA는 Windows sandbox runtime 문제로 2회 실패했다.
+- 조치: CSS 중심으로 참가자/채팅 패널의 높이, border, shadow, row spacing, empty state, input alignment, mobile min-height를 추가 보정했다.
+- 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.
+- 남은 확인: 실제 브라우저 desktop/mobile에서 참고 이미지와 육안 비교 필요.
