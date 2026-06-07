@@ -2035,3 +2035,16 @@
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
 - `corepack pnpm --filter @doodle/server typecheck`: PASS
 - `git status --short`: cleanup QA 문서 변경과 기존 미추적 `package-lock.json` 확인. `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-08 - Pre-Deployment Readiness Audit
+
+- Scope: Render 배포 전 backend/frontend/documentation readiness와 남은 수동 QA 항목을 정리했다.
+- Audit doc: `docs/development/PRE_DEPLOYMENT_READINESS_AUDIT.md`
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 105 tests passed
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Manual QA still required: real Google login, first-time nickname setup, room create/join/full-room, upload/replace/ready, two-account socket chat/drawing, spectator behavior, round/result/gallery/download, cleanup staging deletion QA.
+- User action required: Render service/env setup, frontend hosting, Firebase Google provider/authorized domains, MongoDB Atlas network access/user, deployed CORS origins.
+- `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
