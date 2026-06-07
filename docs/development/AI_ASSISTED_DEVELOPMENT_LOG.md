@@ -2159,3 +2159,9 @@
 - Added custom project-owned SVG line assets for future page-specific use: rectangle, rounded rectangle, and oval.
 - Kept the requested eraser dust behavior: eraser drawing particles now use white.
 - Validation passed: web typecheck/build.
+
+## 2026-06-07 - Login-only CSS handdrawn polish
+- Limited the handdrawn polish scope to the logged-out login screen only.
+- Did not apply SVG line overlays or doodle.css package styles.
+- Adjusted login title sizing/spacing and Google button radius/hover motion with CSS only.
+- Validation passed: web typecheck/build.

@@ -72,7 +72,7 @@ a {
 
 .login-panel {
   display: grid;
-  gap: clamp(12px, 2vh, 18px);
+  gap: clamp(13px, 2.2vh, 20px);
   width: min(760px, 100%);
   border: 0;
   border-radius: 0;
@@ -85,16 +85,17 @@ a {
 .login-brand {
   margin: 0 auto;
   font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: clamp(3.85rem, 7.2vw, 6rem);
+  font-size: clamp(3.75rem, 7vw, 5.85rem);
   font-weight: 900;
   letter-spacing: 0;
-  line-height: 0.9;
+  line-height: 0.92;
 }
 
 .login-panel h1 {
   max-width: none;
   margin-inline: auto;
-  font-size: clamp(2.75rem, 5.1vw, 4.35rem);
+  font-size: clamp(2.55rem, 4.85vw, 4.1rem);
+  line-height: 1.02;
 }
 
 .headline-stack {
@@ -122,7 +123,7 @@ a {
 
 .login-panel .hero-copy {
   max-width: 560px;
-  margin: 4px auto 10px;
+  margin: 2px auto 8px;
   color: #2f2b27;
   font-size: clamp(1rem, 1.45vw, 1.18rem);
   font-weight: 800;
@@ -391,7 +392,7 @@ h2 {
   height: 66px;
   overflow: hidden;
   border: 3px solid var(--ink);
-  border-radius: 10px;
+  border-radius: 14px 11px 15px 12px / 12px 15px 11px 14px;
   background-color: var(--yellow);
   background-image: none;
   color: var(--ink);
@@ -407,11 +408,13 @@ h2 {
   transition:
     background-color 218ms,
     border-color 218ms,
-    box-shadow 218ms;
+    box-shadow 218ms,
+    transform 160ms ease;
   user-select: none;
   vertical-align: middle;
   white-space: nowrap;
   box-shadow: 5px 5px 0 rgba(37, 33, 29, 0.18);
+  transform: rotate(-0.25deg);
 }
 
 .gsi-material-button .gsi-material-button-state {
@@ -479,7 +482,7 @@ h2 {
   box-shadow:
     4px 4px 0 rgba(37, 33, 29, 0.2),
     0 2px 8px rgba(37, 33, 29, 0.08);
-  transform: none;
+  transform: rotate(0deg) translateY(-1px);
 }
 
 .gsi-material-button:not(:disabled):hover .gsi-material-button-state {

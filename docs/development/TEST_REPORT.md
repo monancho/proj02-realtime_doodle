@@ -1863,3 +1863,9 @@
 - Note: doodle.css was not kept as a runtime dependency and no doodle.css package styles are applied.
 - Fix: added custom project-owned SVG line assets for future page-specific use only.
 - Fix: eraser drawing dust now uses white particles.
+
+## 2026-06-07 - Login-only CSS handdrawn polish validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Scope: login screen only; no lobby/room/play/gallery layout changes.
+- Note: SVG line overlays and doodle.css package styles were not applied.
