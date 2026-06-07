@@ -180,6 +180,7 @@ export function App() {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [nickname, setNickname] = useState("");
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
   const [roomTitle, setRoomTitle] = useState("우리 낙서방");
   const [joinCode, setJoinCode] = useState("");
   const [room, setRoom] = useState<RoomDetail | null>(null);
@@ -552,9 +553,10 @@ export function App() {
       setAuthUser(signedInUser);
       setFirebaseToken(idToken);
       setProfile(upsertedProfile);
-      setNickname(upsertedProfile.nickname ?? signedInUser.displayName ?? "");
+      setNickname(upsertedProfile.profileSetupCompletedAt ? upsertedProfile.nickname ?? "" : "");
       if (!upsertedProfile.profileSetupCompletedAt) {
         setActiveModal("nickname");
+        setNicknameError(null);
         setMessage("처음 시작하기 전에 사용할 닉네임을 설정해 주세요.");
         return;
       }
@@ -573,11 +575,14 @@ export function App() {
     const validatedNickname = validateNickname(nickname);
 
     if (validatedNickname.error) {
+      setNicknameError(validatedNickname.error);
       setMessage(validatedNickname.error);
       return;
     }
 
-    await runAction(async () => {
+    setNicknameError(null);
+    setIsBusy(true);
+    try {
       const updatedProfile = await api.upsertMe({
         nickname: validatedNickname.value,
         avatarUrl: authUser.photoURL || null
@@ -592,7 +597,13 @@ export function App() {
       }
       setActiveModal(null);
       setMessage(`${updatedProfile.nickname ?? "사용자"} 닉네임을 저장했습니다.`);
-    });
+    } catch (error) {
+      const safeError = formatError(error);
+      setNicknameError(safeError);
+      setMessage(safeError);
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function handleSignOut() {
@@ -605,6 +616,7 @@ export function App() {
       setProfile(null);
       setFirebaseToken("");
       setNickname("");
+      setNicknameError(null);
       setActiveModal(null);
       resetRoomState();
       setViewMode("lobby");
@@ -1303,10 +1315,14 @@ export function App() {
                 maxLength={12}
                 minLength={2}
                 value={nickname}
-                onChange={(event) => setNickname(event.target.value)}
+                onChange={(event) => {
+                  setNickname(event.target.value);
+                  setNicknameError(null);
+                }}
               />
             </label>
             <p className="form-hint">2자 이상 12자 이하로 입력해 주세요. 같은 닉네임은 사용할 수 없습니다.</p>
+            {nicknameError ? <p className="error-copy">{nicknameError}</p> : null}
             <button className="primary-button" disabled={isBusy} type="submit">
               <Save size={18} />
               저장
@@ -1935,7 +1951,7 @@ interface AppHeaderProps {
 }
 
 function AppHeader(props: AppHeaderProps) {
-  const displayName = props.profile?.nickname ?? props.authUser?.displayName ?? props.authUser?.email ?? "사용자";
+  const displayName = props.profile?.nickname ?? props.authUser?.email ?? "사용자";
   const avatarUrl = props.profile?.avatarUrl ?? props.authUser?.photoURL;
 
   return (

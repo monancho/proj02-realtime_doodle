@@ -986,3 +986,15 @@
 - API error mapping now handles `ROOM_PARTICIPANTS_FULL`, `USER_NICKNAME_REQUIRED`, `USER_NICKNAME_INVALID`, `USER_NICKNAME_DUPLICATE`, and `USER_AVATAR_URL_INVALID`.
 - Final `game-finished` now keeps the current round result modal visible for 5 seconds when a round result modal is active, then transitions to gallery and refreshes results.
 - Pending gallery transition is cleared on next round start and room reset to avoid stale delayed navigation.
+
+## 2026-06-07 - Frontend Nickname Modal Error Feedback
+
+- Added local `nicknameError` state so first-time profile setup and nickname duplicate/invalid errors are visible inside the nickname modal instead of only in the global message area.
+- The nickname modal clears the inline error as the user edits the input.
+- The profile setup, room full error mapping, and final round modal hold contracts remain unchanged.
+
+## 2026-06-07 - Google Display Name Nickname Prefill Fix
+
+- Removed Google displayName fallback from first-time nickname setup input.
+- The profile header now avoids Google displayName as nickname fallback until `profile.nickname` exists.
+- This prevents accidental submission of a duplicated Google displayName as a nickname, which produced `USER_NICKNAME_DUPLICATE` / HTTP 409.

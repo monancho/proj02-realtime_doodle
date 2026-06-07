@@ -1968,3 +1968,24 @@
 - Manual QA needed: 실제 Google 로그인 후 최초 nickname setup modal, duplicate nickname error, 4명 초과 room join error, round -> round 및 round -> finish modal 5초 유지 흐름을 브라우저에서 확인해야 한다.
 - `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-07 - Local Profile and Round Modal Manual QA Follow-up
+
+- Scope: 실제 Google login 수동 QA 전에 code-based flow를 재점검하고, nickname error가 modal 내부에 직접 보이지 않는 UX 결함을 수정했다.
+- Fix: nickname validation/API error를 `nicknameError`로 보관해 nickname setup modal 내부에 표시한다.
+- Fix: nickname input 변경 시 modal error를 즉시 clear한다.
+- QA check: `ROOM_PARTICIPANTS_FULL`는 frontend API error mapping으로 “방이 가득 찼습니다. 최대 4명까지 참여할 수 있어요.” 메시지를 반환한다.
+- QA check: final `game-finished`는 round result modal이 활성화된 경우 5초 후 gallery로 이동하는 delayed transition을 유지한다.
+- Not executed: 실제 Google login, duplicate nickname through live backend, 5명 입장, solo upload/start-game, 2+ image round-to-round flow는 사용자의 브라우저/계정 조작이 필요해 자동 수행하지 못했다.
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-07 - Google Display Name Nickname Prefill Fix
+
+- Issue: `/api/users/me` could return HTTP 409 when the first-time nickname modal was prefilled with Google displayName and the user submitted a duplicated nickname.
+- Fix: frontend no longer uses Google displayName as the initial nickname input value. If profile setup is incomplete, nickname input starts blank and requires explicit user entry.
+- Fix: header fallback no longer displays Google displayName when `profile.nickname` is missing; it falls back to email/user text until setup is complete.
+- Validation: `corepack pnpm --filter @doodle/web typecheck` PASS, `corepack pnpm --filter @doodle/web build` PASS.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI values were not printed.

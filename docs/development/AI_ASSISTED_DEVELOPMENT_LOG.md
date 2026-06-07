@@ -2245,3 +2245,18 @@
 - QA reviewed round-end modal flow in code: round-ended opens modal, result-saved fills preview, final game-finished holds modal for 5 seconds before gallery.
 - Browser visual QA could not run because the Browser runtime stopped with Windows sandbox `spawn setup refresh`; recorded the limitation in TEST_REPORT.
 - Validation passed with web typecheck/build. `package-lock.json` remains untracked and was not modified/staged.
+
+## 2026-06-07 - PHASE-LOCAL-PROFILE-ROUND-MODAL-MANUAL-QA
+
+- Reviewed profile setup and round-end modal flow before live manual QA.
+- Fixed frontend nickname modal feedback so invalid/duplicate nickname errors are shown directly in the modal.
+- Kept backend/API/Socket contracts unchanged.
+- Actual Google login, 4+ participant room full, solo play, and multi-round live checks still require user browser/account interaction.
+- Validation passed with web typecheck/build. `package-lock.json` remains untracked and was not modified/staged.
+
+## 2026-06-07 - Google Display Name Nickname Prefill Fix
+
+- Investigated HTTP 409 on `POST /api/users/me`.
+- Identified likely frontend cause: first-time nickname modal used Google displayName as the initial value, so saving could collide with an existing normalized nickname.
+- Updated frontend to require blank explicit nickname entry for incomplete profile setup and to avoid Google displayName as profile header fallback.
+- Validation passed with web typecheck/build.
