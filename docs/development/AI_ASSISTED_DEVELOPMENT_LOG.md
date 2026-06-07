@@ -2193,3 +2193,10 @@
 - This lets clients show the just-finished round result before moving to the next round or final gallery state.
 - Updated socket room tests to assert the post-round review timer behavior.
 - Validation passed: server typecheck/test.
+
+## 2026-06-07 - Round Result Modal UX
+
+- 라운드 종료 시 페이지를 갤러리로 즉시 전환하지 않고, 플레이 화면 위에 결과 저장/결과 preview 모달을 표시하도록 변경했다.
+- `round-ended` 수신 시 결과 모달을 열고, `result-saved` 수신 시 같은 모달에 저장된 결과 이미지를 반영한다.
+- 다음 라운드 시작 또는 게임 종료 이벤트가 오면 모달을 닫는다.
+- 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.

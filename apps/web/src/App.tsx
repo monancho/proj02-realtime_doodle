@@ -123,6 +123,11 @@ interface ResultSavedPayload {
   createdAt: string;
 }
 
+interface RoundResultModalState {
+  round: RoundEndedPayload;
+  result: ResultMetadata | null;
+}
+
 interface GameStartingPayload {
   roomCode: string;
   countdownSec: number;
@@ -199,6 +204,7 @@ export function App() {
   const [gameStarting, setGameStarting] = useState<GameStartingPayload | null>(null);
   const [countdownRemainingSec, setCountdownRemainingSec] = useState<number | null>(null);
   const [roundEnded, setRoundEnded] = useState<RoundEndedPayload | null>(null);
+  const [roundResultModal, setRoundResultModal] = useState<RoundResultModalState | null>(null);
   const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>("idle");
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
@@ -276,6 +282,7 @@ export function App() {
         setActiveRound(null);
         setActiveRoundImageUrl(null);
         setRoundEnded(null);
+        setRoundResultModal(null);
         setGameFinishedAt(null);
         setResultSaveStatus("idle");
         setDrawStrokes([]);
@@ -339,6 +346,7 @@ export function App() {
       setRemainingMs(payload.durationSec * 1000);
       setActiveRound({ ...payload, endedAt: null });
       setRoundEnded(null);
+      setRoundResultModal(null);
       setGameFinishedAt(null);
       setResultSaveStatus("idle");
       setDrawStrokes([]);
@@ -349,6 +357,7 @@ export function App() {
 
     socket.on("round-ended", (payload: RoundEndedPayload) => {
       setRoundEnded(payload);
+      setRoundResultModal({ round: payload, result: null });
       setActiveRound((currentRound) =>
         currentRound && currentRound.roundId === payload.roundId ? { ...currentRound, endedAt: payload.endedAt } : currentRound
       );
@@ -364,8 +373,12 @@ export function App() {
       setNextResultCursor(null);
       setResourceState((current) => ({ ...current, results: "ready" }));
       setResultSaveStatus("saved");
+      setRoundResultModal((currentModal) =>
+        currentModal && currentModal.round.roundId === payload.roundId
+          ? { ...currentModal, result: payload.result }
+          : currentModal
+      );
       setRemoteCursors({});
-      setViewMode("gallery");
       setMessage(`Round ${payload.roundIndex + 1} 결과가 저장되었습니다.`);
     });
 
@@ -373,6 +386,7 @@ export function App() {
       setRoom(payload.room);
       setGameStarting(null);
       setCountdownRemainingSec(null);
+      setRoundResultModal(null);
       setGameFinishedAt(payload.finishedAt);
       setResultSaveStatus("saved");
       setViewMode("gallery");
@@ -1144,12 +1158,14 @@ export function App() {
           remainingSec={remainingSec}
           room={room}
           roundEnded={roundEnded}
+          roundResultModal={roundResultModal}
           resultSaveStatus={resultSaveStatus}
           socketError={socketError}
           socketStatus={socketStatus}
           onChatDraftChange={setChatDraft}
           onCursorMove={handleCursorMove}
           onDrawStroke={handleDrawStroke}
+          onLoadResultPreview={loadResultPreview}
           onSendMessage={handleSendMessage}
         />
       ) : null}
@@ -1339,12 +1355,14 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           remainingSec={83}
           room={mockPlayingRoom}
           roundEnded={null}
+          roundResultModal={null}
           resultSaveStatus="idle"
           socketError={null}
           socketStatus="connected"
           onChatDraftChange={noopString}
           onCursorMove={noop}
           onDrawStroke={noopDrawStroke}
+          onLoadResultPreview={loadMockPreviewBlob}
           onSendMessage={preventSubmit}
         />
       ) : null}
@@ -2337,6 +2355,7 @@ interface PlayViewProps {
   activeRound: ActiveRound | null;
   activeRoundImageUrl: string | null;
   roundEnded: RoundEndedPayload | null;
+  roundResultModal: RoundResultModalState | null;
   resultSaveStatus: ResultSaveStatus;
   gameFinishedAt: string | null;
   remainingMs: number | null;
@@ -2348,6 +2367,7 @@ interface PlayViewProps {
   onChatDraftChange: (value: string) => void;
   onCursorMove: (cursor: CanvasCursorUpdate) => void;
   onDrawStroke: (stroke: DrawStroke) => void;
+  onLoadResultPreview: (resultId: string) => Promise<Blob>;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
@@ -2377,6 +2397,14 @@ function PlayView(props: PlayViewProps) {
 
   return (
     <section className="play-layout">
+      {props.roundResultModal ? (
+        <RoundResultModal
+          loadPreview={props.onLoadResultPreview}
+          result={props.roundResultModal.result}
+          resultSaveStatus={props.resultSaveStatus}
+          round={props.roundResultModal.round}
+        />
+      ) : null}
       <TimerBarFixed
         activeRound={props.activeRound}
         countdownRemainingSec={props.countdownRemainingSec}
@@ -2538,6 +2566,39 @@ function CountdownModal({ countdownSec, remainingSec }: { countdownSec: number; 
         <div className="countdown-progress" aria-hidden="true">
           <i style={{ width: `${progress}%` }} />
         </div>
+      </section>
+    </div>
+  );
+}
+
+function RoundResultModal({
+  loadPreview,
+  result,
+  resultSaveStatus,
+  round
+}: {
+  loadPreview: (resultId: string) => Promise<Blob>;
+  result: ResultMetadata | null;
+  resultSaveStatus: ResultSaveStatus;
+  round: RoundEndedPayload;
+}) {
+  return (
+    <div className="round-result-backdrop" role="status" aria-live="polite" aria-label="라운드 결과">
+      <section className="round-result-modal">
+        <p className="round-result-kicker">Round {round.roundIndex + 1} 종료</p>
+        <h2>{result ? "이번 라운드 결과" : "결과 저장 중"}</h2>
+        <div className="round-result-preview">
+          {result ? (
+            <ResultPreviewImage resultId={result.id} loadPreview={loadPreview} />
+          ) : (
+            <span>저장 중...</span>
+          )}
+        </div>
+        <p>
+          {resultSaveStatus === "saved"
+            ? "잠시 후 다음 라운드로 이어집니다."
+            : "방금 그린 낙서를 결과 이미지로 저장하고 있습니다."}
+        </p>
       </section>
     </div>
   );
