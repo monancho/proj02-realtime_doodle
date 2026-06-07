@@ -2121,3 +2121,21 @@
 - Frontend: added dev/runtime local scratch pad on login/lobby, canvas powder particles, cursor throttling, and remote cursor overlay on the play canvas.
 - Validation passed: server typecheck/test and web typecheck/build.
 - Notes: real two-browser cursor visual QA is still needed. package-lock.json remains untracked and untouched.
+
+## 2026-06-07 - Full-page doodle overlay correction
+- User clarified that login/lobby should become drawable memo-like pages, not contain a separate scratch pad.
+- Changed DoodleScratchPad into a fixed DoodlePageCanvas overlay and removed the inline scratch-pad placement.
+- Added CSS to keep the overlay out of layout flow and disable text selection on login/lobby, while preserving input selection.
+- Validation passed: web typecheck/build.
+
+## 2026-06-07 - Page doodle cursor alignment and line cap
+- User feedback: pencil cursor needed a slight offset from the real pointer tip, and local lobby/login doodles should not accumulate forever.
+- Changed page doodles from immediate canvas strokes to a 1000 segment history with redraw and oldest-line fading.
+- Adjusted page pencil cursor CSS offset so the icon floats slightly above/right of the native cursor tip.
+- Validation passed: web typecheck/build.
+
+## 2026-06-07 - Page doodle line cap correction
+- User clarified that line count should be capped without making strokes transparent or changing the earlier drawing feel.
+- Removed age-based alpha from page doodle redraw. The latest 1000 line segments remain opaque and older segments are dropped.
+- Moved the page pencil cursor 8px left from the previous offset.
+- Validation passed: web typecheck/build.

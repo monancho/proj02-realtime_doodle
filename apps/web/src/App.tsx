@@ -1605,6 +1605,7 @@ interface LoggedOutViewProps {
 function LoggedOutView(props: LoggedOutViewProps) {
   return (
     <main className="login-shell">
+      <DoodlePageCanvas />
       <section className="login-panel" aria-labelledby="login-title">
         <p className="eyebrow">Realtime Doodle Relay</p>
         <div className="login-brand">DOODLE</div>
@@ -1645,28 +1646,115 @@ function LoggedOutView(props: LoggedOutViewProps) {
             <span className="sr-only">Google로 로그인</span>
           </div>
         </button>
-        <DoodleScratchPad />
       </section>
     </main>
   );
 }
 
-function DoodleScratchPad() {
+function DoodlePageCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const lineSegmentsRef = useRef<DoodleLineSegment[]>([]);
+  const isDrawingRef = useRef(false);
   const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
   const [particles, setParticles] = useState<DoodleParticle[]>([]);
 
-  function getPoint(event: PointerEvent<HTMLCanvasElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
+  useEffect(() => {
+    const canvasElement = canvasRef.current;
+
+    if (!canvasElement) {
+      return;
+    }
+
+    function resizeCanvas() {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        return;
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+      canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      canvas.getContext("2d")?.scale(dpr, dpr);
+      redrawPageDoodles();
+    }
+
+    function isDrawableTarget(event: globalThis.PointerEvent) {
+      const target = event.target;
+      return target instanceof Element && Boolean(target.closest(".login-shell, .lobby-page"));
+    }
+
+    function getWindowPoint(event: globalThis.PointerEvent) {
+      return {
+        x: Math.min(1, Math.max(0, event.clientX / Math.max(1, window.innerWidth))),
+        y: Math.min(1, Math.max(0, event.clientY / Math.max(1, window.innerHeight)))
+      };
+    }
+
+    function handlePointerDown(event: globalThis.PointerEvent) {
+      if (!isDrawableTarget(event)) {
+        return;
+      }
+
+      const point = getWindowPoint(event);
+      isDrawingRef.current = true;
+      lastPointRef.current = point;
+      setCursorPoint(point);
+      burst(point);
+    }
+
+    function handlePointerMove(event: globalThis.PointerEvent) {
+      if (!isDrawableTarget(event)) {
+        return;
+      }
+
+      const point = getWindowPoint(event);
+      setCursorPoint(point);
+
+      if (isDrawingRef.current && lastPointRef.current) {
+        appendLineSegment(lastPointRef.current, point);
+        lastPointRef.current = point;
+      }
+    }
+
+    function handlePointerUp() {
+      isDrawingRef.current = false;
+      lastPointRef.current = null;
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", handlePointerUp);
+    document.addEventListener("pointercancel", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+      document.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, []);
+
+  function getCanvasSize() {
+    const canvas = canvasRef.current;
 
     return {
-      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
-      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
+      width: canvas ? canvas.width / (window.devicePixelRatio || 1) : window.innerWidth,
+      height: canvas ? canvas.height / (window.devicePixelRatio || 1) : window.innerHeight
     };
   }
 
-  function drawLine(from: { x: number; y: number }, to: { x: number; y: number }) {
+  function appendLineSegment(from: { x: number; y: number }, to: { x: number; y: number }) {
+    lineSegmentsRef.current = [...lineSegmentsRef.current, { from, to }].slice(-1000);
+    redrawPageDoodles();
+  }
+
+  function redrawPageDoodles() {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
 
@@ -1676,12 +1764,17 @@ function DoodleScratchPad() {
 
     context.lineCap = "round";
     context.lineJoin = "round";
-    context.strokeStyle = "#222222";
     context.lineWidth = 5;
-    context.beginPath();
-    context.moveTo(from.x * canvas.width, from.y * canvas.height);
-    context.lineTo(to.x * canvas.width, to.y * canvas.height);
-    context.stroke();
+    const size = getCanvasSize();
+    context.clearRect(0, 0, size.width, size.height);
+
+    lineSegmentsRef.current.forEach((segment) => {
+      context.strokeStyle = "#222222";
+      context.beginPath();
+      context.moveTo(segment.from.x * size.width, segment.from.y * size.height);
+      context.lineTo(segment.to.x * size.width, segment.to.y * size.height);
+      context.stroke();
+    });
   }
 
   function burst(point: { x: number; y: number }) {
@@ -1706,37 +1799,11 @@ function DoodleScratchPad() {
   }
 
   return (
-    <div className="doodle-scratch-pad" aria-label="doodle scratch pad">
-      <canvas
-        ref={canvasRef}
-        width={480}
-        height={180}
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          const point = getPoint(event);
-          lastPointRef.current = point;
-          setCursorPoint(point);
-          burst(point);
-        }}
-        onPointerMove={(event) => {
-          const point = getPoint(event);
-          setCursorPoint(point);
-
-          if (lastPointRef.current) {
-            drawLine(lastPointRef.current, point);
-            lastPointRef.current = point;
-          }
-        }}
-        onPointerUp={() => {
-          lastPointRef.current = null;
-        }}
-        onPointerCancel={() => {
-          lastPointRef.current = null;
-        }}
-      />
+    <div className="doodle-page-canvas" aria-hidden="true">
+      <canvas ref={canvasRef} />
       {cursorPoint ? (
         <span
-          className="scratch-cursor"
+          className="page-pencil-cursor"
           style={{ left: `${cursorPoint.x * 100}%`, top: `${cursorPoint.y * 100}%` }}
           aria-hidden="true"
         >
@@ -1806,6 +1873,7 @@ interface LobbyViewProps {
 function LobbyView(props: LobbyViewProps) {
   return (
     <section className="lobby-page" aria-label="로비">
+      <DoodlePageCanvas />
       <div className="lobby-copy-panel">
         <p className="lobby-kicker">Realtime Doodle Relay</p>
         <div className="headline-stack">
@@ -1819,7 +1887,6 @@ function LobbyView(props: LobbyViewProps) {
         <p>
           방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
         </p>
-        <DoodleScratchPad />
       </div>
 
       <div className="lobby-cta-stack">
@@ -2751,6 +2818,11 @@ interface DoodleParticle {
   dx: number;
   dy: number;
   color: string;
+}
+
+interface DoodleLineSegment {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
 }
 
 function CanvasPanel(props: CanvasPanelProps) {

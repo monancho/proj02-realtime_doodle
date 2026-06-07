@@ -1819,3 +1819,25 @@
 - Manual QA still needed: two-browser remote cursor visual position/frequency during real play.
 - Security: .env, token, Firebase private key, MongoDB URI were not printed.
 - package-lock.json was not modified, deleted, or committed.
+
+## 2026-06-07 - Full-page doodle overlay follow-up validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Fix: replaced the small scratch-pad UI with a fixed full-page doodle overlay for login/lobby screens.
+- Fix: the overlay no longer participates in layout, so it should not enlarge the login/lobby page.
+- Fix: login/lobby text selection is disabled while inputs remain selectable.
+- Manual QA still needed: confirm pointer stroke position visually matches the cursor on the actual local browser.
+
+## 2026-06-07 - Full-page doodle cursor alignment and line cap validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Fix: page pencil cursor offset was moved slightly above/right of the real pointer tip.
+- Fix: login/lobby page doodles now keep the latest 1000 line segments and fade older segments when the cap is reached.
+- Manual QA still needed: verify visual cursor offset on the local browser against the real pointer.
+
+## 2026-06-07 - Full-page doodle line cap correction validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Fix: kept page doodle line appearance opaque like the earlier drawing feel.
+- Fix: retained the 1000 segment cap so older lines are removed as new drawing continues.
+- Fix: moved the page pencil cursor 8px left from the prior offset.
