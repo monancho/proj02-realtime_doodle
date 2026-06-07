@@ -1201,3 +1201,24 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-07 OVERALL-UI-UX-VISUAL-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+- 자동 점검/수정:
+  - 전체 CSS token, card, button, status, room, upload, canvas, chat, gallery 스타일을 정리했다.
+  - card rotation과 과한 장식성을 줄여 레이아웃 깨짐 가능성을 낮췄다.
+  - authenticated hero 영역을 compact하게 줄여 주요 작업 화면이 더 빨리 보이게 했다.
+  - 업로드 이미지 목록은 작은 marker가 있는 metadata card 형태로 정리했다.
+  - canvas/drawing toolbar/chat/gallery의 border/radius/shadow를 통일했다.
+- 미실행:
+  - 실제 브라우저 시각 QA는 로컬 서버 실행 후 수동 확인이 필요하다.
+  - Google 로그인 이후 방 생성/업로드/드로잉/결과 화면의 실제 사용자 플로우 시각 확인은 수동 QA로 남았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

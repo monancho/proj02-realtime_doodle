@@ -1579,3 +1579,27 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 OVERALL-UI-UX-VISUAL-POLISH
+
+- Agent: `frontend`
+- 목표: 전체 레이아웃과 UI/UX를 다시 점검해 과한 손그림 장식으로 인한 산만함과 깨짐 가능성을 줄임.
+- 수행 내용:
+  - 기능 동작은 변경하지 않고 CSS 중심으로 시각 polish를 적용했다.
+  - paper/card rotation을 제거하고 shadow, border, radius를 더 일관된 값으로 정리했다.
+  - 색상 토큰을 더 부드러운 paper/post-it palette로 조정했다.
+  - body grid background와 hero 영역을 줄여 작업 화면의 시각 집중도를 높였다.
+  - sticky header, status strip, button hover, profile popover 스타일을 정돈했다.
+  - 업로드 이미지 목록의 과한 가짜 thumbnail 느낌을 줄이고 metadata card로 정리했다.
+  - canvas, drawing toolbar, chat, gallery, modal의 border/radius/shadow를 통일했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 의도적으로 제외:
+  - 기능 동작 변경.
+  - backend/API/Socket 계약 변경.
+  - 실제 브라우저 수동 시각 QA.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

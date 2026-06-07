@@ -666,3 +666,16 @@
 - 결과 PNG 합성도 같은 정책을 따르도록 서버 result composer의 eraser 처리를 SVG mask 기반으로 변경했다.
 - `전체 지우기`는 별도 동기화 이벤트와 결과 저장 계약이 필요하므로 이번 MVP polish에서는 제외했다.
 - 레이아웃은 중간 화면에서 play 3열이 깨지지 않도록 1180px 이하에서 단일 column으로 내려가게 보강했다.
+
+### 2026-06-07 OVERALL-UI-UX-VISUAL-POLISH
+
+- 기능 동작 변경 없이 `apps/web/src/styles.css` 중심으로 전체 시각 밀도와 레이아웃 안정성을 정리했다.
+- 기존의 과한 card rotation, 강한 shadow, 거친 border 조합을 줄이고 더 차분한 paper UI로 조정했다.
+- 색상 토큰을 부드러운 notebook/post-it 계열로 재정리하고 body background grid를 더 은은하게 조정했다.
+- authenticated 화면의 hero 영역을 compact하게 줄여 실제 작업 영역이 더 빨리 보이게 했다.
+- header를 sticky paper bar로 정리하고 profile/menu가 좁은 화면에서 덜 깨지도록 유지했다.
+- status strip은 강한 상하선 대신 dashed paper notice로 바꿔 화면 전체 톤과 맞췄다.
+- 버튼 hover 회전을 제거하고 이동/그림자 중심으로 정리해 산만함을 줄였다.
+- 업로드 이미지 목록은 가짜 큰 thumbnail 느낌을 줄이고 작은 이미지 marker가 있는 metadata card로 정리했다.
+- canvas, drawing toolbar, chat list, gallery card의 radius/border/shadow를 통일했다.
+- chat form은 input/button 2열 구조로 정리하고 좁은 화면에서는 기존 responsive 흐름을 유지한다.
