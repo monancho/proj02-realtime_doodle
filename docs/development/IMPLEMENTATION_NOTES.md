@@ -998,3 +998,13 @@
 - Removed Google displayName fallback from first-time nickname setup input.
 - The profile header now avoids Google displayName as nickname fallback until `profile.nickname` exists.
 - This prevents accidental submission of a duplicated Google displayName as a nickname, which produced `USER_NICKNAME_DUPLICATE` / HTTP 409.
+
+## 2026-06-08 - Room Cleanup On Boot Plan
+
+- 구현 전 정책으로 서버 시작 시 오래된 finished room cleanup을 1회 best-effort로 실행하는 방향을 정리했다.
+- MVP 기본 보관 기간은 `finishedAt` 기준 24시간이며, 구현 시 `expiresAt` 저장을 권장한다.
+- cleanup 대상은 만료된 finished room과 연결된 `rooms`, `images`, `results`, `originalImages.files/chunks`, `resultImages.files/chunks`로 제한한다.
+- cleanup 실패는 서버 부팅을 막지 않고 warning/count 중심 로그만 남긴다.
+- 로그에는 secret, URI, token, raw fileId/ObjectId, raw room document를 남기지 않는다.
+- Render 재시작 특성을 고려해 게임 종료 즉시 삭제가 아니라 `finishedAt`/`expiresAt` 기준 삭제로 정리했다.
+- Redis scheduler, durable queue, external cron은 MVP 범위에서 제외했다.

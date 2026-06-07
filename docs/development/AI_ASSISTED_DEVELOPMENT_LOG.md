@@ -2260,3 +2260,12 @@
 - Identified likely frontend cause: first-time nickname modal used Google displayName as the initial value, so saving could collide with an existing normalized nickname.
 - Updated frontend to require blank explicit nickname entry for incomplete profile setup and to avoid Google displayName as profile header fallback.
 - Validation passed with web typecheck/build.
+
+## 2026-06-08 - Room Cleanup On Boot Plan
+
+- Documented a pre-implementation cleanup policy for old finished rooms in Render deployment.
+- Cleanup should run once on server startup after MongoDB/repository wiring and must not block boot on failure.
+- Default MVP retention is 24 hours after `finishedAt`; `expiresAt` is recommended for future implementation.
+- Cleanup targets include room, image metadata, result metadata, and original/result GridFS file/chunk collections.
+- Logs must use counts and safe summaries only, excluding secrets, URIs, tokens, raw file ids, and raw documents.
+- Implementation remains pending as a separate backend phase.

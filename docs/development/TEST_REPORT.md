@@ -1989,3 +1989,15 @@
 - Fix: header fallback no longer displays Google displayName when `profile.nickname` is missing; it falls back to email/user text until setup is complete.
 - Validation: `corepack pnpm --filter @doodle/web typecheck` PASS, `corepack pnpm --filter @doodle/web build` PASS.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI values were not printed.
+
+## 2026-06-08 - Room Cleanup On Boot Plan
+
+- Scope: 구현 없이 Render boot cleanup 정책을 문서화했다.
+- Policy check: cleanup은 서버 시작 시 1회 best-effort로 실행하며 실패해도 서버 부팅을 막지 않는다.
+- Policy check: 삭제 대상은 보관 기간이 지난 `finished` room과 연결된 images/results/GridFS metadata/chunks로 제한한다.
+- Policy check: 기본 보관 기간은 `finishedAt` 기준 24시간이며 `expiresAt` 기반 삭제를 권장한다.
+- Not implemented: cleanup service, repository methods, GridFS deletion code, env override는 아직 구현하지 않았다.
+- Validation pending: `corepack pnpm --filter @doodle/server typecheck` 실행 예정.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `git status --short`: 문서 변경 5개와 기존 미추적 `package-lock.json` 확인. `package-lock.json`은 수정/삭제/commit하지 않았다.
