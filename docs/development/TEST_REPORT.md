@@ -1585,3 +1585,68 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 GOOGLE-SIGN-IN-BUTTON-BRANDING-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - Google login button을 공식 branding guideline 방향의 흰색 button + Google G SVG + 명확한 action text로 조정했다.
+  - Firebase auth flow와 popup handler는 변경하지 않았다.
+- 미실행/제외:
+  - 실제 브라우저 screenshot 검증은 사용자의 로컬 수동 확인이 필요하다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 GSI-MATERIAL-BUTTON-SNIPPET-ALIGNMENT
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - Google login button을 사용자가 제공한 `gsi-material-button` 구조와 스타일 기준으로 교체했다.
+  - Firebase popup sign-in handler는 변경하지 않았다.
+- 미실행/제외:
+  - 실제 브라우저 screenshot 검증은 사용자의 로컬 수동 확인이 필요하다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 GSI-BUTTON-HYBRID-CTA-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - Google button markup은 `gsi-material-button` 구조를 유지한다.
+  - 기존 CTA 느낌을 위해 size/radius/shadow를 조정했다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 DOODLE-STYLED-GOOGLE-LOGIN-BUTTON
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - Google G icon과 login action text는 유지했다.
+  - button visual은 사용자 참고 이미지와 기존 CTA 톤에 맞춰 노란 hand-drawn style로 조정했다.
+- 미실행/제외:
+  - 실제 브라우저 screenshot 검증은 사용자의 로컬 수동 확인이 필요하다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.

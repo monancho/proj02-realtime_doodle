@@ -1956,3 +1956,69 @@
   - backend/API/Socket/Firebase 계약 변경 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
   - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 GOOGLE-SIGN-IN-BUTTON-BRANDING-POLISH
+
+- Agent: `qa-frontend`
+- 목표: Google login button을 Google Identity branding guideline 방향으로 조정했다.
+- 수행 내용:
+  - 임시 문자 `G` 표시를 제거하고 Google G SVG 컴포넌트를 추가했다.
+  - `.google-button`을 흰 배경, 회색 border, Roboto/Arial 14px text, 18px icon으로 조정했다.
+  - hover/active state를 Google button 톤에 맞게 옅은 배경 변화 중심으로 바꿨다.
+  - Firebase auth/API/Socket 동작은 변경하지 않았다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 GSI-MATERIAL-BUTTON-SNIPPET-ALIGNMENT
+
+- Agent: `qa-frontend`
+- 목표: Google login button을 사용자가 제공한 Google GSI material button snippet에 맞췄다.
+- 수행 내용:
+  - login button JSX를 `gsi-material-button` 구조로 교체했다.
+  - Google 48x48 SVG icon path를 button 내부에 배치했다.
+  - `.gsi-material-button` CSS를 snippet 기준으로 추가하고 기존 `.google-button`/`.google-mark` 스타일을 제거했다.
+  - Firebase auth flow는 변경하지 않았다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 GSI-BUTTON-HYBRID-CTA-POLISH
+
+- Agent: `qa-frontend`
+- 목표: 사용자가 제공한 Google button guide 구조를 유지하면서 기존 CTA 느낌을 일부 복원했다.
+- 수행 내용:
+  - `gsi-material-button` width/height/radius를 기존 버튼에 가까운 크기로 조정했다.
+  - 기본 shadow와 hover shadow를 서비스 톤에 맞게 조정했다.
+  - Google G SVG, content wrapper, action text 구조는 유지했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 DOODLE-STYLED-GOOGLE-LOGIN-BUTTON
+
+- Agent: `qa-frontend`
+- 목표: Google login button을 공식 snippet 구조에서 서비스의 hand-drawn CTA visual로 다시 정리했다.
+- 수행 내용:
+  - `gsi-material-button` markup과 Google G SVG는 유지했다.
+  - visual은 노란 배경, ink border, icon badge, Gaegu text, hand-drawn shadow로 조정했다.
+  - mobile button height/icon size를 별도 보정했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.

@@ -301,29 +301,109 @@ h2 {
   border-radius: 6px;
 }
 
-.google-button {
-  gap: 18px;
+.gsi-material-button {
+  appearance: none;
   justify-self: center;
-  width: min(100%, 480px);
-  min-height: 62px;
-  border-width: 3px;
+  width: min(100%, 520px);
+  max-width: 520px;
+  min-width: min-content;
+  height: 66px;
+  overflow: hidden;
+  border: 3px solid var(--ink);
   border-radius: 10px;
-  background: linear-gradient(180deg, #ffe79b, var(--yellow));
-  font-size: clamp(1.12rem, 2vw, 1.42rem);
+  background-color: var(--yellow);
+  background-image: none;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.25px;
+  outline: none;
+  padding: 0 clamp(18px, 4vw, 40px);
+  position: relative;
+  text-align: center;
+  transition:
+    background-color 218ms,
+    border-color 218ms,
+    box-shadow 218ms;
+  user-select: none;
+  vertical-align: middle;
+  white-space: nowrap;
   box-shadow: 5px 5px 0 rgba(37, 33, 29, 0.18);
 }
 
-.google-mark {
+.gsi-material-button .gsi-material-button-state {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 218ms;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  display: flex;
+  align-items: center;
+  flex-flow: row nowrap;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-icon {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  margin-right: 20px;
   place-items: center;
   border: 2px solid var(--ink);
   border-radius: 999px;
-  background: #fffefa;
-  color: #d94b38;
-  font-family: "Pretendard", sans-serif;
+  background: #ffffff;
+}
+
+.gsi-material-button .gsi-material-button-icon svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  flex: 0 1 auto;
+  overflow: hidden;
+  font-family: "Gaegu", "Pretendard", sans-serif;
   font-weight: 900;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button:disabled {
+  border-color: #1f1f1f1f;
+  background-color: #ffffff61;
+  cursor: default;
+}
+
+.gsi-material-button:disabled .gsi-material-button-contents,
+.gsi-material-button:disabled .gsi-material-button-icon {
+  opacity: 38%;
+}
+
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
+.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 12%;
+}
+
+.gsi-material-button:not(:disabled):hover {
+  box-shadow:
+    4px 4px 0 rgba(37, 33, 29, 0.2),
+    0 2px 8px rgba(37, 33, 29, 0.08);
+  transform: none;
+}
+
+.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 8%;
 }
 
 label {
@@ -1880,14 +1960,22 @@ button.lobby-cta-card {
     font-size: 1rem;
   }
 
-  .google-button {
-    min-height: 58px;
-    font-size: 1.08rem;
+  .gsi-material-button {
+    height: 58px;
+    padding: 0 16px;
+    font-size: 1.35rem;
   }
 
-  .google-mark {
-    width: 34px;
-    height: 34px;
+  .gsi-material-button .gsi-material-button-icon {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    margin-right: 14px;
+  }
+
+  .gsi-material-button .gsi-material-button-icon svg {
+    width: 21px;
+    height: 21px;
   }
 
   .app-header {

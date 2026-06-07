@@ -824,3 +824,27 @@
 - frameless login 화면 기준으로 전체 typography scale을 조금 낮춰 headline/button 비율을 안정화했다.
 - Google login button 폭/높이/font-size/box-shadow를 줄이고, icon과 text 사이 gap을 늘렸다.
 - mobile에서 login headline, Google button, Google mark 크기를 별도로 낮춰 좁은 화면에서 답답함을 줄였다.
+
+### 2026-06-07 GOOGLE-SIGN-IN-BUTTON-BRANDING-POLISH
+
+- Google Identity branding guideline 방향에 맞춰 login button을 흰 배경, 회색 테두리, Google G SVG, Roboto/Arial 계열 14px text로 조정했다.
+- 기존 손그림 노란 Google button 스타일은 제거하고, 주변 login 화면의 doodle 스타일과 버튼 자체 branding을 분리했다.
+- Google icon은 button boundary와 action text 안에서만 표시되도록 유지했다.
+
+### 2026-06-07 GSI-MATERIAL-BUTTON-SNIPPET-ALIGNMENT
+
+- 사용자가 제공한 Google `gsi-material-button` HTML/CSS snippet 구조에 맞춰 login button markup과 CSS를 재정렬했다.
+- button 내부에 `gsi-material-button-state`, `gsi-material-button-content-wrapper`, `gsi-material-button-icon`, `gsi-material-button-contents` 구조를 적용했다.
+- Google G icon은 48x48 viewBox SVG path를 사용하고, button boundary와 action text 안에 배치했다.
+- 기존 손그림/노란 button style과 mobile override는 제거했다.
+
+### 2026-06-07 GSI-BUTTON-HYBRID-CTA-POLISH
+
+- Google `gsi-material-button` 구조와 Google G icon은 유지하되, 서비스의 기존 CTA 느낌을 살리기 위해 button width/height/radius/shadow를 조정했다.
+- button 자체는 흰 배경과 Google icon/action text 구조를 유지하고, 주변 doodle UI와 어울리도록 가벼운 shadow를 추가했다.
+
+### 2026-06-07 DOODLE-STYLED-GOOGLE-LOGIN-BUTTON
+
+- Google login button은 최종적으로 서비스 톤을 우선해 노란 hand-drawn CTA 스타일로 정리했다.
+- Google G SVG와 action text는 button boundary 안에 유지하되, button visual은 노란 배경, 굵은 ink border, 둥근 icon badge, Gaegu text로 조정했다.
+- 지나치게 공식 Material button처럼 겉도는 느낌을 줄이고 login 화면의 doodle visual language와 맞췄다.
