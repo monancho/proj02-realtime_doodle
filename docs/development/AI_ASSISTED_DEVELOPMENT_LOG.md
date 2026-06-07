@@ -2316,3 +2316,13 @@
 - Reduced round-end modal “saving” friction and fixed invite-code copy hover jump.
 - Validation passed: server typecheck/test and web typecheck/build.
 - `package-lock.json` remains untracked and unstaged.
+
+## 2026-06-08 - PHASE-DEPLOY-SINGLE-RENDER-SERVICE-IMPLEMENTATION
+
+- Implemented single Render Web Service support by letting Express serve `apps/web/dist` when production bootstrap provides a static frontend root.
+- Added SPA fallback safeguards so `/api/*`, `/health`, and `/socket.io/*` are not swallowed by frontend routing.
+- Added server tests for static asset serving, SPA fallback, health preservation, and API fallback exclusion.
+- Updated frontend API/Socket URL defaults for same-origin production fallback while preserving local split dev defaults.
+- Documented Render single-service commands, frontend/backend env expectations, and rollback to the previous 2-service deployment model.
+- Validation passed: server typecheck/test and web typecheck/build.
+- `package-lock.json` remains untracked and unstaged.

@@ -1,7 +1,12 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
 import type { AuthErrorResponse } from "@doodle/shared";
 import express, {
   type ErrorRequestHandler,
   type Express,
+  type NextFunction,
+  type Request,
   type RequestHandler
 } from "express";
 
@@ -44,6 +49,7 @@ export interface AppDependencies {
   resultStorage?: ResultImageStorage;
   roomRepository?: RoomRepository;
   roomUpdatePublisher?: RoomUpdatePublisher;
+  staticFrontendRoot?: string;
   userRepository?: UserRepository;
 }
 
@@ -145,9 +151,54 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     })
   );
 
+  mountStaticFrontend(app, dependencies.staticFrontendRoot);
+
   app.use(createSafeErrorHandler());
 
   return app;
+}
+
+function mountStaticFrontend(app: Express, staticFrontendRoot?: string): void {
+  if (!staticFrontendRoot || !existsSync(staticFrontendRoot)) {
+    return;
+  }
+
+  const indexPath = join(staticFrontendRoot, "index.html");
+
+  if (!existsSync(indexPath)) {
+    return;
+  }
+
+  app.use(express.static(staticFrontendRoot));
+  app.use((request: Request, response, next: NextFunction) => {
+    if (!shouldServeFrontendFallback(request)) {
+      next();
+      return;
+    }
+
+    response.sendFile(indexPath);
+  });
+}
+
+function shouldServeFrontendFallback(request: Request): boolean {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return false;
+  }
+
+  if (request.path === "/health") {
+    return false;
+  }
+
+  if (
+    request.path.startsWith("/api/") ||
+    request.path === "/api" ||
+    request.path.startsWith("/socket.io/") ||
+    request.path === "/socket.io"
+  ) {
+    return false;
+  }
+
+  return Boolean(request.accepts("html"));
 }
 
 function createMissingAuthMiddleware(): RequestHandler {

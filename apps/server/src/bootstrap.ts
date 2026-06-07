@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import type { Server } from "node:http";
+import { join } from "node:path";
 
 import { createApp } from "./app";
 import {
@@ -144,6 +145,10 @@ export async function createServerDependencies(
       resultStorage,
       roomRepository,
       roomUpdatePublisher,
+      staticFrontendRoot:
+        env.NODE_ENV === "production"
+          ? join(process.cwd(), "apps", "web", "dist")
+          : undefined,
       userRepository
     })
   };

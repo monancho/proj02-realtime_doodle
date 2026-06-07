@@ -1,3 +1,7 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
@@ -63,3 +67,49 @@ describe("HTTP CORS", () => {
     );
   });
 });
+
+describe("Static frontend serving", () => {
+  it("serves frontend assets and SPA fallback without intercepting health or API routes", async () => {
+    const staticFrontendRoot = await createStaticFrontendFixture();
+
+    try {
+      const app = createApp({ staticFrontendRoot });
+
+      const indexResponse = await request(app)
+        .get("/room/ABC123")
+        .set("Accept", "text/html")
+        .expect(200);
+      expect(indexResponse.text).toContain("<title>Doodle</title>");
+
+      const assetResponse = await request(app)
+        .get("/assets/app.js")
+        .expect(200);
+      expect(assetResponse.text).toContain("console.log");
+
+      const healthResponse = await request(app).get("/health").expect(200);
+      expect(healthResponse.body.service).toBe("realtime-doodle-relay-server");
+
+      const apiResponse = await request(app)
+        .get("/api/not-found")
+        .set("Accept", "text/html")
+        .expect(404);
+      expect(apiResponse.text).not.toContain("<title>Doodle</title>");
+    } finally {
+      await rm(staticFrontendRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+async function createStaticFrontendFixture(): Promise<string> {
+  const root = await mkdtemp(join(tmpdir(), "doodle-web-dist-"));
+  const assetsRoot = join(root, "assets");
+
+  await writeFile(
+    join(root, "index.html"),
+    "<!doctype html><html><head><title>Doodle</title></head><body><div id=\"root\"></div></body></html>"
+  );
+  await mkdir(assetsRoot);
+  await writeFile(join(assetsRoot, "app.js"), "console.log('doodle');");
+
+  return root;
+}

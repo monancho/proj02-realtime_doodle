@@ -62,3 +62,27 @@ corepack pnpm --filter @doodle/server smoke:bootstrap
 - 같은 로컬 네트워크에서 `mongodb+srv://`가 계속 실패하면 standard connection string 사용을 유지한다.
 - DNS 설정을 변경하거나 네트워크 환경이 바뀌면 `mongodb+srv://` 재검증은 가능하지만 필수는 아니다.
 - standard connection string도 username/password/full URI를 채팅, 로그, 문서에 기록하지 않는다.
+
+### Render 2-service deployment CORS and localhost build env issue
+
+- Phase: deployment manual QA
+- Symptoms:
+  - Frontend Static Site called `http://localhost:4000/api/users/me` after deployment.
+  - After updating frontend API URL, browser still blocked `https://<backend>.onrender.com/api/users/me` from `https://<frontend>.onrender.com` with missing `Access-Control-Allow-Origin`.
+  - Google popup also printed Cross-Origin-Opener-Policy warnings, but those were not the primary failure.
+- Cause:
+  - Vite `VITE_API_BASE_URL` and `VITE_SOCKET_URL` are build-time values. If they are left as localhost, the deployed frontend keeps calling localhost until the frontend is rebuilt.
+  - Backend HTTP CORS uses `CLIENT_URL`; Socket.IO CORS uses `SOCKET_CORS_ORIGIN`. If the deployed frontend URL is missing, uses `http`, has a trailing slash mismatch, or the backend was not restarted/redeployed, preflight is rejected.
+  - Render build command with `corepack enable` can fail on read-only filesystem while trying to unlink `/usr/bin/pnpm`.
+- Fix checklist:
+  - Frontend env: `VITE_API_BASE_URL=https://<backend>.onrender.com` and `VITE_SOCKET_URL=https://<backend>.onrender.com`.
+  - Rebuild frontend after changing any `VITE_*` env value. Prefer Clear build cache & deploy when debugging stale assets.
+  - Backend env: `CLIENT_URL=https://<frontend>.onrender.com` and `SOCKET_CORS_ORIGIN=https://<frontend>.onrender.com`.
+  - Restart/redeploy backend after changing backend env values.
+  - Do not include a trailing `/` in origin values.
+  - Render build command should omit `corepack enable`; use `corepack pnpm ...` directly.
+- Longer-term mitigation:
+  - Consider a single Render Web Service where Express serves the Vite `apps/web/dist` output. See `docs/development/SINGLE_RENDER_SERVICE_PLAN.md`.
+- Secret handling:
+  - Do not paste `.env`, private keys, MongoDB URI, tokens, or service account values into chat/logs/docs.
+  - If a private key or MongoDB credential is exposed, rotate it before production use.

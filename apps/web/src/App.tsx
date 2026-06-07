@@ -146,8 +146,8 @@ interface UploadPreview {
 
 type ResultSaveStatus = "idle" | "saving" | "saved";
 
-const defaultApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
-const defaultSocketUrl = import.meta.env.VITE_SOCKET_URL ?? defaultApiBaseUrl;
+const defaultApiBaseUrl = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
+const defaultSocketUrl = resolveSocketUrl(import.meta.env.VITE_SOCKET_URL, defaultApiBaseUrl);
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxImageSizeBytes = 10 * 1024 * 1024;
 const maxChatMessageLength = 200;
@@ -168,6 +168,30 @@ const initialResourceErrors: ResourceErrors = {
   images: null,
   results: null
 };
+
+function resolveApiBaseUrl(value: string | undefined): string {
+  const trimmedValue = value?.trim();
+
+  if (trimmedValue) {
+    return trimmedValue;
+  }
+
+  return import.meta.env.DEV ? "http://localhost:4000" : "";
+}
+
+function resolveSocketUrl(value: string | undefined, apiBaseUrl: string): string {
+  const trimmedValue = value?.trim();
+
+  if (trimmedValue) {
+    return trimmedValue;
+  }
+
+  if (apiBaseUrl) {
+    return apiBaseUrl;
+  }
+
+  return typeof window === "undefined" ? "" : window.location.origin;
+}
 
 export function App() {
   const previewMode = getPreviewMode();

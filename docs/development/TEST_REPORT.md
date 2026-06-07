@@ -2065,3 +2065,20 @@
 - Manual QA still required: 실제 두 계정에서 상대방 참가자 이름이 설정 nickname으로 보이는지, 4인 초과/관전자 흐름, 다음 라운드 전환 체감은 사용자의 브라우저 조작으로 확인이 필요하다.
 - `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-08 - Single Render Service Implementation
+
+- Scope: Express backend가 Vite frontend build output을 함께 serve할 수 있도록 단일 Render Web Service 구조를 구현했다.
+- Backend: `staticFrontendRoot`가 있고 dist/index.html이 존재할 때 정적 frontend 파일을 serve한다.
+- Backend: SPA fallback은 `/api`, `/health`, `/socket.io`와 충돌하지 않는다.
+- Backend: production bootstrap은 `apps/web/dist`를 static root로 연결한다.
+- Frontend: `VITE_API_BASE_URL`이 비어 있으면 production에서 same-origin relative API를 사용하고, dev에서는 기존 `http://localhost:4000`을 유지한다.
+- Frontend: `VITE_SOCKET_URL`이 비어 있으면 API base URL 또는 current origin을 사용한다.
+- Render docs: 단일 Web Service build/start command와 2서비스 rollback 기준을 문서화했다.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 107 tests passed
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Live deployment QA: Render single-service deployment and real Google/Socket flow must still be verified manually after push/deploy.
+- `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
