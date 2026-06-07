@@ -200,6 +200,11 @@ export function App() {
       }),
     [activeToken]
   );
+  const loadImagePreview = useMemo(() => (imageId: string) => api.downloadImage(imageId), [api]);
+  const loadResultPreview = useMemo(
+    () => (resultId: string) => api.downloadResult(resultId).then((download) => download.blob),
+    [api]
+  );
 
   useEffect(() => {
     if (!room || !activeToken.trim()) {
@@ -270,7 +275,7 @@ export function App() {
       setGameStarting(payload);
       setCountdownRemainingSec(payload.countdownSec);
       clearUploadPreview();
-      setViewMode("play");
+      setViewMode("room");
       setMessage(`${payload.countdownSec}초 후 게임이 시작됩니다.`);
     });
 
@@ -1024,6 +1029,8 @@ export function App() {
           isCurrentUserSpectator={isCurrentUserSpectator}
           myUploadedImage={myUploadedImage}
           uploadedImagePreviewUrl={uploadedImagePreviewUrl}
+          countdownRemainingSec={countdownRemainingSec}
+          gameStarting={gameStarting}
           readyParticipantCount={readyParticipantCount}
           uploadPreview={uploadPreview}
           uploadError={uploadError}
@@ -1031,6 +1038,7 @@ export function App() {
           chatMessages={chatMessages}
           socketError={socketError}
           socketStatus={socketStatus}
+          onLoadImagePreview={loadImagePreview}
           onCancelUploadPreview={clearUploadPreview}
           onChatDraftChange={setChatDraft}
           onCopyRoomCode={() => void handleCopyRoomCode()}
@@ -1076,6 +1084,7 @@ export function App() {
           error={resourceErrors.results}
           isCurrentUserHost={isCurrentUserHost}
           onDownload={(resultId) => void handleDownloadResult(resultId)}
+          onLoadResultPreview={loadResultPreview}
           onLoadMore={() => void handleLoadResults(nextResultCursor)}
           onPrepareNextGame={handlePrepareNextGame}
           onRefresh={() => void handleLoadResults(null)}
@@ -1190,6 +1199,8 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           isCurrentUserSpectator={false}
           myUploadedImage={mockImages[0]}
           uploadedImagePreviewUrl={mockRoundImageUrl}
+          countdownRemainingSec={null}
+          gameStarting={null}
           readyParticipantCount={mockRoom.participants.length}
           uploadPreview={null}
           uploadError={null}
@@ -1197,6 +1208,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           chatMessages={mockChatMessages}
           socketError={null}
           socketStatus="connected"
+          onLoadImagePreview={loadMockPreviewBlob}
           onCancelUploadPreview={noop}
           onChatDraftChange={noopString}
           onCopyRoomCode={noop}
@@ -1242,6 +1254,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           error={null}
           isCurrentUserHost={true}
           onDownload={noopString}
+          onLoadResultPreview={loadMockPreviewBlob}
           onLoadMore={noop}
           onPrepareNextGame={noop}
           onRefresh={noop}
@@ -1466,6 +1479,7 @@ const noop = () => undefined;
 const noopString = (_value: string) => undefined;
 const noopSelectFile = (_file: File | null) => undefined;
 const noopDrawStroke = (_stroke: DrawStroke) => undefined;
+const loadMockPreviewBlob = async () => fetch(mockRoundImageUrl).then((response) => response.blob());
 const preventSubmit = (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault();
 };
@@ -1595,6 +1609,8 @@ interface RoomViewProps {
   isBusy: boolean;
   myUploadedImage: ImageMetadata | null;
   uploadedImagePreviewUrl: string | null;
+  countdownRemainingSec: number | null;
+  gameStarting: GameStartingPayload | null;
   readyParticipantCount: number;
   resourceState: ResourceState;
   resourceErrors: ResourceErrors;
@@ -1604,6 +1620,7 @@ interface RoomViewProps {
   chatDraft: string;
   socketStatus: "idle" | "connecting" | "connected" | "error";
   socketError: string | null;
+  onLoadImagePreview: (imageId: string) => Promise<Blob>;
   onCancelUploadPreview: () => void;
   onChatDraftChange: (value: string) => void;
   onCopyRoomCode: () => void;
@@ -1646,6 +1663,18 @@ function RoomView(props: RoomViewProps) {
 
   return (
     <section className="room-layout">
+      {props.gameStarting ? (
+        <TimerBarFixed
+          activeRound={null}
+          countdownRemainingSec={props.countdownRemainingSec}
+          gameFinishedAt={null}
+          gameStarting={props.gameStarting}
+          imageCount={props.images.length}
+          remainingSec={null}
+          resultSaveStatus="idle"
+          roundEnded={null}
+        />
+      ) : null}
       <div className="paper-card room-summary">
         <div className="card-heading">
           <Users size={20} />
@@ -1774,7 +1803,12 @@ function RoomView(props: RoomViewProps) {
           </section>
         ) : null}
         {props.uploadError ? <p className="error-copy">{props.uploadError}</p> : null}
-        <ImageList error={props.resourceErrors.images} images={props.images} state={props.resourceState.images} />
+        <ImageList
+          error={props.resourceErrors.images}
+          images={props.images}
+          state={props.resourceState.images}
+          onLoadPreview={props.onLoadImagePreview}
+        />
       </div>
 
       <ParticipantPanel
@@ -1835,7 +1869,17 @@ function getStartHelpText({
     : "모든 참가자가 준비되었습니다. 방장이 시작하면 자동으로 그리기 화면으로 이동합니다.";
 }
 
-function ImageList({ error, images, state }: { error: string | null; images: ImageMetadata[]; state: LoadState }) {
+function ImageList({
+  error,
+  images,
+  state,
+  onLoadPreview
+}: {
+  error: string | null;
+  images: ImageMetadata[];
+  state: LoadState;
+  onLoadPreview: (imageId: string) => Promise<Blob>;
+}) {
   if (state === "loading") {
     return <p className="state-copy">이미지 목록을 불러오는 중입니다.</p>;
   }
@@ -1852,6 +1896,7 @@ function ImageList({ error, images, state }: { error: string | null; images: Ima
     <ul className="image-list">
       {images.map((image) => (
         <li key={image.id}>
+          <ImagePreviewThumb imageId={image.id} loadPreview={onLoadPreview} />
           <span>
             {image.originalName}
             <small>{formatBytes(image.size)}</small>
@@ -1860,6 +1905,57 @@ function ImageList({ error, images, state }: { error: string | null; images: Ima
         </li>
       ))}
     </ul>
+  );
+}
+
+function ImagePreviewThumb({
+  imageId,
+  loadPreview
+}: {
+  imageId: string;
+  loadPreview: (imageId: string) => Promise<Blob>;
+}) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    let nextUrl: string | null = null;
+
+    loadPreview(imageId)
+      .then((blob) => {
+        if (isCancelled) {
+          return;
+        }
+
+        nextUrl = URL.createObjectURL(blob);
+        setPreviewUrl((currentUrl) => {
+          if (currentUrl) {
+            URL.revokeObjectURL(currentUrl);
+          }
+
+          return nextUrl;
+        });
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setPreviewUrl(null);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      if (nextUrl) {
+        URL.revokeObjectURL(nextUrl);
+      }
+    };
+  }, [imageId, loadPreview]);
+
+  return previewUrl ? (
+    <img className="image-list-thumb" alt="" src={previewUrl} />
+  ) : (
+    <span className="image-list-thumb placeholder" aria-hidden="true">
+      <ImagePlus size={18} />
+    </span>
   );
 }
 
@@ -1946,7 +2042,7 @@ function PlayView(props: PlayViewProps) {
 
   return (
     <section className="play-layout">
-      <TimerBar
+      <TimerBarFixed
         activeRound={props.activeRound}
         countdownRemainingSec={props.countdownRemainingSec}
         gameFinishedAt={props.gameFinishedAt}
@@ -2068,6 +2164,56 @@ function TimerBar(props: TimerBarProps) {
 
   return (
     <section className={`timer-bar ${tone}`} aria-label="?쇱슫????대㉧">
+      <div>
+        <strong>{title}</strong>
+        <span>{meta}</span>
+      </div>
+      <div className="timer-progress" aria-hidden="true">
+        <span style={{ width: `${progress}%` }} />
+      </div>
+    </section>
+  );
+}
+
+void TimerBar;
+
+function TimerBarFixed(props: TimerBarProps) {
+  const totalRounds = Math.max(1, props.imageCount);
+  let title = "라운드 대기";
+  let meta = "사진이 준비되면 게임을 시작할 수 있습니다.";
+  let progress = 0;
+  let tone: "idle" | "starting" | "playing" | "ended" | "finished" = "idle";
+
+  if (props.gameStarting) {
+    const remaining = props.countdownRemainingSec ?? props.gameStarting.countdownSec;
+    title = `${remaining}초 후 시작`;
+    meta = "카운트다운 중에는 이미지를 바꿀 수 없고 채팅은 계속할 수 있습니다.";
+    progress =
+      props.gameStarting.countdownSec > 0
+        ? Math.min(100, Math.max(0, (remaining / props.gameStarting.countdownSec) * 100))
+        : 100;
+    tone = "starting";
+  } else if (props.gameFinishedAt) {
+    title = "게임 종료";
+    meta = "결과 갤러리에서 이미지를 확인하고 다운로드할 수 있습니다.";
+    progress = 100;
+    tone = "finished";
+  } else if (props.roundEnded) {
+    title = `Round ${props.roundEnded.roundIndex + 1} 종료`;
+    meta = props.resultSaveStatus === "saved" ? "결과 저장이 완료되었습니다." : "결과를 저장하는 중입니다.";
+    progress = 100;
+    tone = "ended";
+  } else if (props.activeRound) {
+    const remaining = props.remainingSec ?? props.activeRound.durationSec;
+    title = `Round ${props.activeRound.roundIndex + 1} / ${totalRounds}`;
+    meta = `${remaining}초 남음 · 현재 사진: ${props.activeRound.image.uploadedBy.nickname ?? "익명 참가자"}`;
+    progress =
+      props.activeRound.durationSec > 0 ? Math.min(100, Math.max(0, (remaining / props.activeRound.durationSec) * 100)) : 0;
+    tone = "playing";
+  }
+
+  return (
+    <section className={`timer-bar ${tone}`} aria-label="라운드 타이머">
       <div>
         <strong>{title}</strong>
         <span>{meta}</span>
@@ -2405,6 +2551,7 @@ interface GalleryViewProps {
   state: LoadState;
   error: string | null;
   onPrepareNextGame: () => void;
+  onLoadResultPreview: (resultId: string) => Promise<Blob>;
   onLoadMore: () => void;
   onRefresh: () => void;
   onDownload: (resultId: string) => void;
@@ -2467,6 +2614,7 @@ function GalleryView(props: GalleryViewProps) {
         {props.results.map((result) => (
           <article className="paper-card result-card" key={result.id}>
             <div className="result-preview">
+              <ResultPreviewImage resultId={result.id} loadPreview={props.onLoadResultPreview} />
               <RoughDecoration className="rough-result" seed={result.roundIndex + 61} variant="result" />
               <span>Round {result.roundIndex + 1}</span>
             </div>
@@ -2494,6 +2642,51 @@ function GalleryView(props: GalleryViewProps) {
       </section>
     </>
   );
+}
+
+function ResultPreviewImage({
+  resultId,
+  loadPreview
+}: {
+  resultId: string;
+  loadPreview: (resultId: string) => Promise<Blob>;
+}) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    let nextUrl: string | null = null;
+
+    loadPreview(resultId)
+      .then((blob) => {
+        if (isCancelled) {
+          return;
+        }
+
+        nextUrl = URL.createObjectURL(blob);
+        setPreviewUrl((currentUrl) => {
+          if (currentUrl) {
+            URL.revokeObjectURL(currentUrl);
+          }
+
+          return nextUrl;
+        });
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setPreviewUrl(null);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      if (nextUrl) {
+        URL.revokeObjectURL(nextUrl);
+      }
+    };
+  }, [resultId, loadPreview]);
+
+  return previewUrl ? <img className="result-preview-image" alt="" src={previewUrl} /> : null;
 }
 
 interface TabButtonProps {

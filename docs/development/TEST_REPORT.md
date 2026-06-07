@@ -1388,3 +1388,31 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외한다.
+
+### 2026-06-07 PHASE-LOCAL-E2E-BUGFIX-FROM-MANUAL-QA
+
+- 사용자 수동 QA 피드백:
+  - 5초 countdown은 play 화면이 아니라 대기실에서 보여야 한다.
+  - 상단 timer bar의 초는 바뀌지만 progress bar 움직임이 눈에 띄지 않는다.
+  - timer bar가 있으므로 채팅창 위의 중복 timer/round status card는 제거해도 된다.
+  - 대기실에서 상대가 업로드한 사진도 preview로 볼 수 있어야 한다.
+  - gallery 결과 카드에서도 실제 결과 이미지 preview가 보여야 한다.
+  - 대기실 채팅과 timer bar의 한글이 깨져 보인다.
+- 수정 내용:
+  - `game-starting` 수신 시 play로 즉시 이동하지 않고 room/waiting 화면에 남아 countdown timer bar를 표시하도록 수정했다.
+  - timer bar는 정상 한글을 사용하는 새 렌더링 경로로 전환하고, progress는 남은 시간 비율 기준으로 줄어들도록 수정했다.
+  - play chat card 안의 중복 round status card를 숨겼다.
+  - chat heading/input/button/empty state는 CSS 보정으로 정상 한글이 보이도록 했다.
+  - room image list에 GridFS image blob 기반 thumbnail preview를 추가했다.
+  - gallery result card에 result download blob 기반 preview image를 추가했다.
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 미실행:
+  - backend 코드는 변경하지 않아 server test/typecheck는 이번 수정에서 재실행하지 않았다.
+  - 실제 2인 Google 로그인 수동 QA는 사용자가 다시 확인해야 한다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외한다.

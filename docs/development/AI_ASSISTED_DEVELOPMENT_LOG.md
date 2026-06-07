@@ -1771,3 +1771,26 @@
   - 앱 기능 코드는 변경하지 않았다.
   - `.env`, token, private key, MongoDB URI 출력 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
+
+### 2026-06-07 PHASE-LOCAL-E2E-BUGFIX-FROM-MANUAL-QA
+
+- Agent: `qa-frontend`
+- 목표: 사용자의 실제 로컬 QA 피드백을 바탕으로 countdown, timer bar, preview, 깨진 한글 UI를 최소 수정한다.
+- 수행 내용:
+  - `game-starting` 수신 시 play 화면으로 바로 이동하지 않고 room 화면에 남아 5초 countdown을 표시하도록 했다.
+  - room 화면에서도 `TimerBarFixed`를 표시해 대기실 countdown UX를 제공했다.
+  - timer bar의 사용자 노출 한글을 정상 문자열로 교체한 새 렌더링 경로를 사용했다.
+  - timer bar progress는 남은 시간 비율 기준으로 줄어드는 방식으로 변경했다.
+  - play chat card의 중복 round status card를 숨겼다.
+  - chat card의 heading/input/button/empty state 한글 깨짐은 CSS 표시 보정으로 정상화했다.
+  - room image list에 다른 참가자의 업로드 이미지 thumbnail preview를 추가했다.
+  - gallery result card에 result image preview를 추가했다.
+  - preview blob loader는 memoized function으로 전달해 반복 렌더링 시 불필요한 thumbnail refetch를 줄였다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend 코드 변경 없음.
+  - backend test/typecheck는 이번 frontend-only 수정에서 재실행하지 않았다.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
