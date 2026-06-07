@@ -694,3 +694,11 @@
 - preview branch는 실제 Firebase auth, API request, Socket connection hooks보다 먼저 return하므로 외부 요청을 실행하지 않는다.
 - preview 화면의 button action은 no-op 또는 submit prevent로 처리한다.
 - 백엔드 인증/API/Socket 동작은 변경하지 않았다.
+
+### 2026-06-07 PHASE-FE-PREVIEW-VISUAL-QA-ITERATION
+
+- preview mode 기반 시각 QA 반복을 위해 preview 화면 전환 링크를 추가했다.
+- preview 화면 상단에서 `login`, `lobby`, `room`, `play`, `gallery`로 바로 이동할 수 있다.
+- 좁은 화면에서 chat input과 send button이 한 줄에 눌리지 않도록 mobile breakpoint에서 chat form을 단일 column으로 내린다.
+- Browser 런타임은 Windows sandbox 문제로 screenshot 확인을 완료하지 못했으며, 대체로 preview URL 응답, typecheck/build, 코드 기반 layout 점검을 수행했다.
+- 기능 동작, Firebase auth, API, Socket 계약은 변경하지 않았다.

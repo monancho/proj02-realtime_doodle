@@ -1629,3 +1629,25 @@
   - Browser 런타임 연결은 Windows sandbox `spawn setup refresh` 실패로 완료하지 못했다.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 PHASE-FE-PREVIEW-VISUAL-QA-ITERATION
+
+- Agent: `frontend`
+- 목표: dev-only UI preview mode를 기반으로 주요 화면의 시각 QA 반복성을 높이고, 발견된 레이아웃 리스크를 최소 수정.
+- 수행 내용:
+  - Browser 도구 연결을 재시도했으나 Windows sandbox `spawn setup refresh` 실패로 screenshot 확인을 완료하지 못했다.
+  - preview URL 5종이 로컬 dev server에서 HTTP 200을 반환하는지 확인했다.
+  - preview 화면 전환 링크를 추가해 `login`, `lobby`, `room`, `play`, `gallery` 화면을 브라우저에서 바로 이동할 수 있게 했다.
+  - mobile/narrow viewport에서 chat form이 과하게 눌리지 않도록 560px 이하에서 input/button을 단일 column으로 전환했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `http://localhost:5173/?preview=login|lobby|room|play|gallery`: 각 200 응답 확인.
+- 의도적으로 제외:
+  - 기능 동작 변경.
+  - 백엔드 인증/API/Socket 계약 변경.
+  - Firebase auth 우회.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

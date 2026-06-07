@@ -311,6 +311,14 @@ textarea {
   padding: 0 14px;
 }
 
+.preview-tabs {
+  margin-top: 10px;
+}
+
+.preview-tabs .tab-button {
+  min-height: 38px;
+}
+
 .tab-button.active,
 .primary-button {
   background: linear-gradient(180deg, #ffeaa7, var(--yellow));
@@ -1314,6 +1322,14 @@ button:disabled {
     align-items: flex-start;
     flex-direction: column;
     padding: 10px 0;
+  }
+
+  .chat-form {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-form .primary-button {
+    width: 100%;
   }
 
   .drawing-toolbar,

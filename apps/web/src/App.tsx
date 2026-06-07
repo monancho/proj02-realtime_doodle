@@ -981,7 +981,6 @@ export function App() {
 function PreviewApp({ mode }: { mode: PreviewMode }) {
   const currentFirebaseUid = mockProfile.firebaseUid;
   const viewMode: ViewMode = mode === "play" || mode === "gallery" ? mode : mode === "room" ? "room" : "lobby";
-  const room = mode === "lobby" ? null : mockRoom;
   const activeRound = mode === "play" ? mockActiveRound : null;
 
   if (mode === "login") {
@@ -1009,16 +1008,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
         </div>
       </section>
 
-      {room ? (
-        <nav className="mode-tabs" aria-label="Preview 화면 전환">
-          <TabButton isActive={viewMode === "lobby"} onClick={noop} icon={<LogIn size={18} />}>
-            로비
-          </TabButton>
-          <TabButton isActive={viewMode === "room"} onClick={noop} icon={<Users size={18} />}>
-            방 준비
-          </TabButton>
-        </nav>
-      ) : null}
+      <PreviewSwitcher activeMode={mode} />
 
       <section className="status-strip" aria-live="polite">
         <span>{getPreviewMessage(mode)}</span>
@@ -1086,6 +1076,30 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
         />
       ) : null}
     </main>
+  );
+}
+
+function PreviewSwitcher({ activeMode }: { activeMode: PreviewMode }) {
+  const items: Array<{ mode: PreviewMode; label: string }> = [
+    { mode: "login", label: "로그인" },
+    { mode: "lobby", label: "로비" },
+    { mode: "room", label: "방 준비" },
+    { mode: "play", label: "드로잉" },
+    { mode: "gallery", label: "갤러리" }
+  ];
+
+  return (
+    <nav className="mode-tabs preview-tabs" aria-label="Preview 화면 전환">
+      {items.map((item) => (
+        <a
+          className={activeMode === item.mode ? "tab-button active" : "tab-button"}
+          href={`?preview=${item.mode}`}
+          key={item.mode}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
   );
 }
 

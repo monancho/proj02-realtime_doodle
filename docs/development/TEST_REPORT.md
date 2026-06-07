@@ -1246,3 +1246,26 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-07 PHASE-FE-PREVIEW-VISUAL-QA-ITERATION
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `Invoke-WebRequest http://localhost:5173/?preview=login|lobby|room|play|gallery`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - preview URL 5종: 모두 HTTP 200 응답 확인.
+- Browser 시각 QA:
+  - Browser 도구 연결을 재시도했으나 Windows sandbox `spawn setup refresh` 실패로 node-backed browser runtime이 종료되었다.
+  - screenshot 기반 desktop/mobile 시각 QA는 완료하지 못했다.
+- 대체 점검/수정:
+  - preview 화면 전환 링크를 추가해 화면별 QA 반복성을 높였다.
+  - 560px 이하에서 chat form을 단일 column으로 전환해 mobile/narrow viewport 가로 압축 위험을 줄였다.
+  - CSS/JSX 코드 기준으로 기능 동작, API/Socket, Firebase auth 흐름이 변경되지 않았음을 확인했다.
+- 미실행:
+  - 실제 desktop/mobile screenshot 확인은 Browser 런타임 복구 후 수행해야 한다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
