@@ -1819,3 +1819,21 @@
   - 실제 Google 계정 2개 기반 수동 QA는 사용자가 다시 확인해야 한다.
   - `.env`, token, private key, MongoDB URI 출력 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
+
+### 2026-06-07 PHASE-FE-LOBBY-HANDDRAWN-UX-REFINE
+
+- Agent: `frontend`
+- 목표: 로그인 후 로비를 참고 이미지 기반 손그림 랜딩 + 즉시 입장 패널 구조로 개선했다.
+- 수행 내용:
+  - `LobbyView` props에 inline join form state/submit handler를 연결했다.
+  - lobby 화면을 좌측 intro copy, 우측 create/join CTA stack, 하단 dashed notice 구조로 변경했다.
+  - join CTA 안에 roomCode input과 submit button을 제공해 일반 UI에서 join modal 버튼 의존도를 제거했다.
+  - CSS에 `lobby-page`, `lobby-copy-panel`, `lobby-cta-card`, `lobby-join-form`, `lobby-notice`, `sr-only` 스타일을 추가했다.
+  - 모바일에서는 CTA와 form이 1단으로 쌓이도록 responsive 보정을 추가했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.

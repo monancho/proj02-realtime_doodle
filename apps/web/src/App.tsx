@@ -1009,8 +1009,10 @@ export function App() {
       {viewMode === "lobby" ? (
         <LobbyView
           isBusy={isBusy}
+          joinCode={joinCode}
+          onJoinCodeChange={(value) => setJoinCode(normalizeRoomCode(value))}
+          onJoinRoomSubmit={handleJoinRoom}
           onOpenCreateRoom={() => setActiveModal("create-room")}
-          onOpenJoinRoom={() => setActiveModal("join-room")}
         />
       ) : null}
 
@@ -1182,7 +1184,15 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
         <span className="preview-badge">dev preview</span>
       </section>
 
-      {viewMode === "lobby" ? <LobbyView isBusy={false} onOpenCreateRoom={noop} onOpenJoinRoom={noop} /> : null}
+      {viewMode === "lobby" ? (
+        <LobbyView
+          isBusy={false}
+          joinCode="ABC123"
+          onJoinCodeChange={noopString}
+          onJoinRoomSubmit={preventSubmit}
+          onOpenCreateRoom={noop}
+        />
+      ) : null}
 
       {viewMode === "room" ? (
         <RoomView
@@ -1549,28 +1559,67 @@ function AppHeader(props: AppHeaderProps) {
 
 interface LobbyViewProps {
   isBusy: boolean;
+  joinCode: string;
+  onJoinCodeChange: (value: string) => void;
+  onJoinRoomSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenCreateRoom: () => void;
-  onOpenJoinRoom: () => void;
 }
 
 function LobbyView(props: LobbyViewProps) {
   return (
-    <section className="lobby-actions">
-      <button className="paper-card lobby-action-button" disabled={props.isBusy} onClick={props.onOpenCreateRoom} type="button">
-        <div className="card-heading">
-          <Plus size={24} />
-          <h2>방 만들기</h2>
-        </div>
-        <p>새 방을 만들고 초대 코드를 공유합니다.</p>
-      </button>
+    <section className="lobby-page" aria-label="로비">
+      <div className="lobby-copy-panel">
+        <p className="lobby-kicker">Realtime Doodle Relay</p>
+        <h2>같이 그리고, 같이 망치고, 같이 저장하기</h2>
+        <span className="lobby-marker-line" aria-hidden="true" />
+        <p>
+          방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
+        </p>
+      </div>
 
-      <button className="paper-card lobby-action-button" disabled={props.isBusy} onClick={props.onOpenJoinRoom} type="button">
-        <div className="card-heading">
-          <LogIn size={24} />
-          <h2>방 입장</h2>
-        </div>
-        <p>받은 방 코드로 대기실에 들어갑니다.</p>
-      </button>
+      <div className="lobby-cta-stack">
+        <button className="paper-card lobby-cta-card" disabled={props.isBusy} onClick={props.onOpenCreateRoom} type="button">
+          <span className="lobby-icon-bubble lobby-icon-bubble--yellow" aria-hidden="true">
+            <Plus size={34} />
+          </span>
+          <div>
+            <h2>방 만들기</h2>
+            <p>새 방을 만들고 초대 코드를 공유합니다.</p>
+          </div>
+        </button>
+
+        <form className="paper-card lobby-cta-card lobby-join-card" onSubmit={props.onJoinRoomSubmit}>
+          <div className="lobby-card-heading">
+            <span className="lobby-icon-bubble lobby-icon-bubble--green" aria-hidden="true">
+              <LogIn size={32} />
+            </span>
+            <div>
+              <h2>방 입장</h2>
+              <p>초대 코드를 입력해 대기실에 들어갑니다.</p>
+            </div>
+          </div>
+          <div className="lobby-join-form">
+            <label className="sr-only" htmlFor="inline-room-code">
+              초대 코드
+            </label>
+            <input
+              id="inline-room-code"
+              maxLength={6}
+              onChange={(event) => props.onJoinCodeChange(event.target.value)}
+              placeholder="초대 코드를 입력하세요"
+              value={props.joinCode}
+            />
+            <button className="primary-button" disabled={props.isBusy || props.joinCode.trim().length === 0} type="submit">
+              입장하기
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <aside className="lobby-notice" aria-label="로비 안내">
+        <span className="notice-icon">i</span>
+        <span>방 정보는 새로 고침 시 갱신됩니다. 문제가 생기면 페이지를 새로고침해주세요.</span>
+      </aside>
     </section>
   );
 }

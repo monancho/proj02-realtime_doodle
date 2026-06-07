@@ -764,3 +764,14 @@
 - frontend는 spectator에게 drawing toolbar를 숨기고, play participant panel에서 참여자와 대기자/관전자를 구분한다.
 - 대기실 채팅은 정상 한글 렌더링 컴포넌트로 교체했다.
 - result preview는 원본 비율을 유지하는 contain 방식으로 표시한다.
+
+### 2026-06-07 PHASE-FE-LOBBY-HANDDRAWN-UX-REFINE
+
+- 로그인 후 lobby 화면을 참고 이미지에 맞춰 좌측 서비스 소개 + 우측 CTA 카드 구조로 재정리했다.
+- 좌측에는 `Realtime Doodle Relay`, `같이 그리고, 같이 망치고, 같이 저장하기`, 방 생성/초대 코드/이미지 업로드/실시간 낙서 설명을 배치했다.
+- 우측에는 큰 `방 만들기` 카드와 inline `방 입장` 카드를 배치했다.
+- `방 만들기`는 기존 create room modal 흐름을 유지한다.
+- `방 입장`은 lobby 카드 안에서 roomCode input과 `입장하기` 버튼으로 바로 submit한다.
+- 일반 lobby UI에서 join room modal 호출 버튼은 제거했다. modal 코드와 기존 handler는 다른 계약을 깨지 않도록 유지했다.
+- 상단 logo/profile menu, 기존 room/play/gallery 기능, Firebase/API/Socket 계약은 변경하지 않았다.
+- 하단 dashed notice strip과 모바일 1단 responsive layout을 추가했다.

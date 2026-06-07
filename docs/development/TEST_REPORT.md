@@ -1451,3 +1451,17 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외한다.
+
+### 2026-06-07 PHASE-FE-LOBBY-HANDDRAWN-UX-REFINE
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 미실행/제외:
+  - backend 코드는 변경하지 않아 server test/typecheck는 이번 frontend-only 작업에서 실행하지 않았다.
+  - 실제 Google 로그인 기반 시각 QA는 사용자의 로컬 수동 확인이 필요하다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
