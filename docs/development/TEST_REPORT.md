@@ -1869,3 +1869,10 @@
 - PASS: corepack pnpm --filter @doodle/web build
 - Scope: login screen only; no lobby/room/play/gallery layout changes.
 - Note: SVG line overlays and doodle.css package styles were not applied.
+
+## 2026-06-07 - Visible Google login button handdrawn polish validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Scope: login Google button CSS only; no lobby/room/play/gallery changes.
+- Note: SVG line overlays and doodle.css package styles were not applied.
+- Correction: the Google icon ring remains circular; the visible handdrawn asymmetry is applied to the button body.

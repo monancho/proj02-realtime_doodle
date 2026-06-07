@@ -2165,3 +2165,11 @@
 - Did not apply SVG line overlays or doodle.css package styles.
 - Adjusted login title sizing/spacing and Google button radius/hover motion with CSS only.
 - Validation passed: web typecheck/build.
+
+## 2026-06-07 - Visible Google login button handdrawn polish
+- Limited the change to the logged-out Google login button CSS only.
+- Kept the yellow button background and Google login behavior unchanged.
+- Made the handdrawn styling more visible through a thicker ink border, stronger paper shadow, irregular border radius, and irregular Google icon ring.
+- Did not use SVG line overlays or doodle.css package styles.
+- Validation passed: web typecheck/build.
+- Correction: the Google icon ring was kept as a regular circle; the visible asymmetry is applied to the button body itself.
