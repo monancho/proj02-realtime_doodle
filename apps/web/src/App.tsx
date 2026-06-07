@@ -980,6 +980,7 @@ export function App() {
       <AppHeader
         authUser={authUser}
         profile={profile}
+        onReturnToLobby={viewMode !== "lobby" ? () => setViewMode("lobby") : undefined}
         onOpenNickname={() => setActiveModal("nickname")}
         onSignOut={() => void handleSignOut()}
       />
@@ -995,19 +996,6 @@ export function App() {
             </p>
           </div>
         </section>
-      ) : null}
-
-      {room && viewMode !== "lobby" ? (
-        <nav className="mode-tabs" aria-label="방 화면 전환">
-          <TabButton isActive={false} onClick={() => setViewMode("lobby")} icon={<LogIn size={18} />}>
-            로비
-          </TabButton>
-          {room.status === "waiting" && !isCurrentUserSpectator ? (
-            <TabButton isActive={viewMode === "room"} onClick={() => setViewMode("room")} icon={<Users size={18} />}>
-              방 준비
-            </TabButton>
-          ) : null}
-        </nav>
       ) : null}
 
       {viewMode !== "lobby" ? (
@@ -1588,6 +1576,7 @@ function LoggedOutView(props: LoggedOutViewProps) {
 interface AppHeaderProps {
   authUser: User | null;
   profile: UserProfile | null;
+  onReturnToLobby?: () => void;
   onOpenNickname: () => void;
   onSignOut: () => void;
 }
@@ -1599,20 +1588,28 @@ function AppHeader(props: AppHeaderProps) {
   return (
     <header className="app-header">
       <strong>DOODLE</strong>
-      <div className="profile-menu">
-        <button className="profile-button" type="button">
-          {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{displayName.slice(0, 1)}</span>}
-          <strong>{displayName}</strong>
-        </button>
-        <div className="profile-popover" role="menu">
-          <button onClick={props.onOpenNickname} role="menuitem" type="button">
-            <Save size={16} />
-            닉네임 변경
+      <div className="header-actions">
+        {props.onReturnToLobby ? (
+          <button className="header-lobby-button" onClick={props.onReturnToLobby} type="button">
+            <LogIn size={17} />
+            로비
           </button>
-          <button onClick={props.onSignOut} role="menuitem" type="button">
-            <LogOut size={16} />
-            로그아웃
+        ) : null}
+        <div className="profile-menu">
+          <button className="profile-button" type="button">
+            {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{displayName.slice(0, 1)}</span>}
+            <strong>{displayName}</strong>
           </button>
+          <div className="profile-popover" role="menu">
+            <button onClick={props.onOpenNickname} role="menuitem" type="button">
+              <Save size={16} />
+              닉네임 변경
+            </button>
+            <button onClick={props.onSignOut} role="menuitem" type="button">
+              <LogOut size={16} />
+              로그아웃
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -1766,20 +1763,6 @@ function RoomView(props: RoomViewProps) {
     !props.canUseRoomActions ||
     !props.areAllParticipantsReady ||
     props.room?.status !== "waiting";
-  const readyFirebaseUids = new Set(props.images.map((image) => image.uploadedBy.firebaseUid));
-  const pendingParticipants =
-    props.room?.participants.filter(
-      (participant) => participant.isSpectator !== true && !readyFirebaseUids.has(participant.firebaseUid)
-    ) ?? [];
-  const pendingNames = pendingParticipants.map((participant) => participant.nickname ?? "익명 참가자").join(", ");
-  const startHelpText = getStartHelpText({
-    areAllParticipantsReady: props.areAllParticipantsReady,
-    canUseRoomActions: props.canUseRoomActions,
-    isBusy: props.isBusy,
-    isCurrentUserHost: props.isCurrentUserHost,
-    pendingNames,
-    roomStatus: props.room?.status ?? null
-  });
 
   return (
     <section className="room-layout">
@@ -1814,46 +1797,6 @@ function RoomView(props: RoomViewProps) {
             복사
           </button>
         </div>
-        <dl className="summary-list">
-          <div>
-            <dt>상태</dt>
-            <dd>{props.room?.status ?? "방 선택 전"}</dd>
-          </div>
-          <div>
-            <dt>참가자</dt>
-            <dd>{props.room?.participantCount ?? 0}/4명</dd>
-          </div>
-          <div>
-            <dt>이미지</dt>
-            <dd>{props.images.length}개</dd>
-          </div>
-          <div>
-            <dt>준비</dt>
-            <dd>
-              {props.readyParticipantCount}/{props.room?.participants.length ?? 0}명
-            </dd>
-          </div>
-        </dl>
-        {props.isCurrentUserHost ? (
-          <div className="room-action-row">
-            <button className="primary-button start-button" disabled={startDisabled} onClick={props.onStartGame} type="button">
-              <Play size={18} />
-              시작하기
-            </button>
-            <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
-              <RefreshCw size={18} />
-              새로고침
-            </button>
-          </div>
-        ) : (
-          <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
-            <RefreshCw size={18} />
-            새로고침
-          </button>
-        )}
-        {props.room ? (
-          <p className={props.areAllParticipantsReady ? "state-copy" : "notice-copy"}>{startHelpText}</p>
-        ) : null}
       </div>
 
       <div className="paper-card upload-card">
@@ -1929,6 +1872,23 @@ function RoomView(props: RoomViewProps) {
           onLoadPreview={props.onLoadImagePreview}
         />
       </div>
+      {props.isCurrentUserHost ? (
+        <div className="room-action-row">
+          <button className="primary-button start-button" disabled={startDisabled} onClick={props.onStartGame} type="button">
+            <Play size={18} />
+            시작하기
+          </button>
+          <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
+            <RefreshCw size={18} />
+            새로고침
+          </button>
+        </div>
+      ) : (
+        <button className="icon-button" disabled={!props.canUseRoomActions || props.isBusy} onClick={props.onRefreshRoom} type="button">
+          <RefreshCw size={18} />
+          새로고침
+        </button>
+      )}
       </div>
       <ChatPanelFixed
         chatDraft={props.chatDraft}
@@ -1943,44 +1903,6 @@ function RoomView(props: RoomViewProps) {
   );
 }
 
-function getStartHelpText({
-  areAllParticipantsReady,
-  canUseRoomActions,
-  isBusy,
-  isCurrentUserHost,
-  pendingNames,
-  roomStatus
-}: {
-  areAllParticipantsReady: boolean;
-  canUseRoomActions: boolean;
-  isBusy: boolean;
-  isCurrentUserHost: boolean;
-  pendingNames: string;
-  roomStatus: RoomDetail["status"] | null;
-}) {
-  if (!canUseRoomActions) {
-    return "방 정보를 불러오는 중입니다.";
-  }
-
-  if (isBusy) {
-    return "요청을 처리하는 중입니다. 잠시만 기다려 주세요.";
-  }
-
-  if (roomStatus !== "waiting") {
-    return "이미 게임이 시작되었거나 종료된 방입니다.";
-  }
-
-  if (!areAllParticipantsReady) {
-    return pendingNames
-      ? `아직 준비 안 된 참가자: ${pendingNames}`
-      : "참가자마다 이미지 1장을 업로드하면 시작할 수 있습니다.";
-  }
-
-  return isCurrentUserHost
-    ? "모든 참가자가 준비되었습니다. 시작하면 바로 그리기 화면으로 이동합니다."
-    : "모든 참가자가 준비되었습니다. 방장이 시작하면 자동으로 그리기 화면으로 이동합니다.";
-}
-
 function ImageList({
   error,
   images,
@@ -1992,6 +1914,8 @@ function ImageList({
   state: LoadState;
   onLoadPreview: (imageId: string) => Promise<Blob>;
 }) {
+  const imageSlots = Array.from({ length: 4 }, (_, index) => images[index] ?? null);
+
   if (state === "loading") {
     return <p className="state-copy">이미지 목록을 불러오는 중입니다.</p>;
   }
@@ -2000,20 +1924,26 @@ function ImageList({
     return <p className="error-copy">{error ?? "이미지 목록을 불러오지 못했습니다."}</p>;
   }
 
-  if (images.length === 0) {
-    return <p className="empty-copy">아직 업로드된 이미지가 없습니다.</p>;
-  }
-
   return (
     <ul className="image-list">
-      {images.map((image) => (
-        <li key={image.id}>
-          <ImagePreviewThumb imageId={image.id} loadPreview={onLoadPreview} />
-          <span>
-            {image.originalName}
-            <small>{formatBytes(image.size)}</small>
-          </span>
-          <strong>{image.used ? "사용됨" : "대기 중"}</strong>
+      {imageSlots.map((image, index) => (
+        <li className={image ? undefined : "empty-image-slot"} key={image?.id ?? `empty-${index}`}>
+          {image ? (
+            <>
+              <ImagePreviewThumb imageId={image.id} loadPreview={onLoadPreview} />
+              <span>
+                {image.originalName}
+                <small>{formatBytes(image.size)}</small>
+                <small>{image.uploadedBy.nickname ?? "익명 참가자"} 업로드</small>
+              </span>
+            </>
+          ) : (
+            <div className="image-slot-placeholder" aria-label={`빈 이미지 슬롯 ${index + 1}`}>
+              <div className="image-list-thumb placeholder">
+                <ImagePlus size={22} />
+              </div>
+            </div>
+          )}
         </li>
       ))}
     </ul>
@@ -3065,22 +2995,6 @@ function ResultPreviewImage({
   }, [resultId, loadPreview]);
 
   return previewUrl ? <img className="result-preview-image" alt="" src={previewUrl} /> : null;
-}
-
-interface TabButtonProps {
-  children: string;
-  icon: ReactNode;
-  isActive: boolean;
-  onClick: () => void;
-}
-
-function TabButton(props: TabButtonProps) {
-  return (
-    <button className={props.isActive ? "tab-button active" : "tab-button"} onClick={props.onClick} type="button">
-      {props.icon}
-      {props.children}
-    </button>
-  );
 }
 
 function formatError(error: unknown): string {

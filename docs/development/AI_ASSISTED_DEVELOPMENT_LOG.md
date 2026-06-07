@@ -2080,3 +2080,16 @@
 - 조치: RoomView에서 room-code RoughDecoration을 제거하고, game-starting inline timer를 CountdownModal로 교체했다. CSS에서 room-summary/upload-card 외곽 프레임, 테이프 pseudo, rough badge 영향 범위를 제거하고 중앙 폭/초대코드/업로드/이미지 그리드를 보정했다.
 - 참가 최대 인원: backend 계약은 변경하지 않고 frontend 표기만 `n/4명`으로 반영했다. 실제 maxPlayers 4 제한은 후속 backend 작업으로 분리해야 한다.
 - 검증: web typecheck/build 통과, room preview HTTP 200 확인.
+
+## 2026-06-07 - Waiting panel order and fixed image slots
+
+- 사용자 피드백: 제공 이미지와 같은 순서로 배치하고 이미지에 없는 요소는 제외, 4명 기준 이미지 슬롯 공간은 미리 확보하되 빈 슬롯 텍스트/테두리 장식은 최소화 필요.
+- 조치: RoomView에서 summary/help text를 제거하고 action row를 이미지 슬롯 아래로 이동했다. ImageList는 항상 4개 슬롯을 렌더하고 빈 슬롯은 연한 ImagePlus 아이콘만 표시한다.
+- 추가 보정: room-main grid row를 상단에 붙도록 수정했다.
+- 검증: web typecheck/build 통과, room preview HTTP 200 확인.
+
+## 2026-06-07 - Header navigation spacing follow-up
+
+- 사용자 피드백: 네비게이션바와 아래 패널 사이 간격이 어색하고, `로비`/`방 준비` 설명성 탭은 제거하는 편이 좋음.
+- 조치: 실제 앱의 `mode-tabs`를 제거하고, `로비` 이동을 AppHeader의 오른쪽 액션 버튼으로 옮겼다. 헤더와 게임 shell 사이 margin도 줄였다.
+- 검증: web typecheck/build 통과, room preview HTTP 200 확인.

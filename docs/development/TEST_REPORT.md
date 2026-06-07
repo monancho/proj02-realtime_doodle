@@ -1744,3 +1744,30 @@
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 대기 패널 순서/4슬롯 보정 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- PASS: http://localhost:5174/?preview=room -> 200
+- 확인 범위:
+  - 중앙 대기 패널에서 참고 이미지에 없는 summary/status/help text 제거
+  - 이미지 목록 4개 슬롯 고정 렌더링
+  - 빈 슬롯 텍스트 제거 및 연한 이미지 아이콘만 표시
+  - 중앙 패널 상단 정렬 보정
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 헤더/대기 패널 간격 정리 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- PASS: http://localhost:5174/?preview=room -> 200
+- 확인 범위:
+  - 실제 앱의 헤더 아래 mode-tabs 제거
+  - 로비 이동 버튼을 헤더 액션으로 이동
+  - 헤더와 패널 사이 margin 축소
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
