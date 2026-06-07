@@ -2082,3 +2082,12 @@
 - Live deployment QA: Render single-service deployment and real Google/Socket flow must still be verified manually after push/deploy.
 - `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-08 - Render Single-Service Static Root Fix
+
+- Fixed Render single-service root 404 caused by `process.cwd()` being `apps/server` under `pnpm --filter @doodle/server start`.
+- Added `resolveStaticFrontendRoot` to find `apps/web/dist` from monorepo root and package cwd layouts.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 108 tests passed
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Live Render redeploy still required after push.

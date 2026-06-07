@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { existsSync } from "node:fs";
 import type { Server } from "node:http";
 import { join } from "node:path";
 
@@ -145,13 +146,27 @@ export async function createServerDependencies(
       resultStorage,
       roomRepository,
       roomUpdatePublisher,
-      staticFrontendRoot:
-        env.NODE_ENV === "production"
-          ? join(process.cwd(), "apps", "web", "dist")
-          : undefined,
+      staticFrontendRoot: resolveStaticFrontendRoot(env.NODE_ENV),
       userRepository
     })
   };
+}
+
+export function resolveStaticFrontendRoot(
+  nodeEnv: string,
+  cwd = process.cwd()
+): string | undefined {
+  if (nodeEnv !== "production") {
+    return undefined;
+  }
+
+  const candidatePaths = [
+    join(cwd, "apps", "web", "dist"),
+    join(cwd, "..", "web", "dist"),
+    join(cwd, "..", "..", "apps", "web", "dist")
+  ];
+
+  return candidatePaths.find((candidatePath) => existsSync(candidatePath)) ?? candidatePaths[0];
 }
 
 export async function startHttpServer(

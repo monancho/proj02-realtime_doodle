@@ -2326,3 +2326,10 @@
 - Documented Render single-service commands, frontend/backend env expectations, and rollback to the previous 2-service deployment model.
 - Validation passed: server typecheck/test and web typecheck/build.
 - `package-lock.json` remains untracked and unstaged.
+
+## 2026-06-08 - Render Single-Service Static Root Fix
+
+- Investigated `GET /` returning 404 after single-service deploy while backend started successfully.
+- Root cause was static frontend path resolution under Render/pnpm filtered package cwd.
+- Added production static root resolver that supports monorepo root and `apps/server` cwd layouts.
+- Added regression coverage in bootstrap tests.

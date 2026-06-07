@@ -86,3 +86,11 @@ corepack pnpm --filter @doodle/server smoke:bootstrap
 - Secret handling:
   - Do not paste `.env`, private keys, MongoDB URI, tokens, or service account values into chat/logs/docs.
   - If a private key or MongoDB credential is exposed, rotate it before production use.
+
+### Render single-service root 404 after successful backend start
+
+- Phase: single Render Web Service deployment QA
+- Symptom: `/health` can be served by the backend, but `GET /` returns Render/Express 404 instead of the Vite frontend.
+- Cause: Render starts the package script from the filtered package directory (`apps/server`). A static path based only on `process.cwd()/apps/web/dist` points to `apps/server/apps/web/dist`, so Express cannot find `index.html`.
+- Fix: Resolve frontend dist from multiple likely working directories: monorepo root, `apps/server`, and nested fallback candidates. The valid `apps/web/dist` path is mounted when it exists.
+- Verification: Added tests for resolving static frontend root from both monorepo root and `apps/server` cwd.

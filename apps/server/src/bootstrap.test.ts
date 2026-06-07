@@ -1,8 +1,12 @@
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import type { AuthContext } from "@doodle/shared";
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 
-import { createServerDependencies } from "./bootstrap";
+import { createServerDependencies, resolveStaticFrontendRoot } from "./bootstrap";
 import type { ServerEnv } from "./config/env";
 import type { MongoDbConnection } from "./db/mongodb";
 import { InMemoryImageRepository } from "./images/in-memory-image-repository";
@@ -192,6 +196,25 @@ describe("createServerDependencies", () => {
     );
 
     warnSpy.mockRestore();
+  });
+});
+
+describe("resolveStaticFrontendRoot", () => {
+  it("finds web dist from monorepo root or apps/server cwd in production", async () => {
+    const root = await mkdtemp(join(tmpdir(), "doodle-root-"));
+
+    try {
+      const webDist = join(root, "apps", "web", "dist");
+      const serverCwd = join(root, "apps", "server");
+      await mkdir(webDist, { recursive: true });
+      await mkdir(serverCwd, { recursive: true });
+
+      expect(resolveStaticFrontendRoot("production", root)).toBe(webDist);
+      expect(resolveStaticFrontendRoot("production", serverCwd)).toBe(webDist);
+      expect(resolveStaticFrontendRoot("development", serverCwd)).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
 
