@@ -211,7 +211,7 @@ describe("resolveStaticFrontendRoot", () => {
 
       expect(resolveStaticFrontendRoot("production", root)).toBe(webDist);
       expect(resolveStaticFrontendRoot("production", serverCwd)).toBe(webDist);
-      expect(resolveStaticFrontendRoot("development", serverCwd)).toBeUndefined();
+      expect(resolveStaticFrontendRoot("development", serverCwd)).toBe(webDist);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

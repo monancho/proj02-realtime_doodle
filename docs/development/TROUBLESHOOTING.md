@@ -94,3 +94,9 @@ corepack pnpm --filter @doodle/server smoke:bootstrap
 - Cause: Render starts the package script from the filtered package directory (`apps/server`). A static path based only on `process.cwd()/apps/web/dist` points to `apps/server/apps/web/dist`, so Express cannot find `index.html`.
 - Fix: Resolve frontend dist from multiple likely working directories: monorepo root, `apps/server`, and nested fallback candidates. The valid `apps/web/dist` path is mounted when it exists.
 - Verification: Added tests for resolving static frontend root from both monorepo root and `apps/server` cwd.
+
+### Render root 404 when NODE_ENV is not production
+
+- Symptom: single Web Service deployment starts backend successfully, but `GET /` still returns 404.
+- Cause: static frontend serving was initially gated by `NODE_ENV=production`. If Render env was missing or not applied, the existing `apps/web/dist` output was ignored.
+- Fix: static frontend root resolution now serves an existing `apps/web/dist` regardless of `NODE_ENV`; when dist is missing, non-production remains disabled and production still returns the expected candidate path.

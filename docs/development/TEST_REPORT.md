@@ -2091,3 +2091,11 @@
 - `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 108 tests passed
 - `corepack pnpm --filter @doodle/web build`: PASS
 - Live Render redeploy still required after push.
+
+## 2026-06-08 - Render Static Serving Env Gate Fix
+
+- Adjusted static frontend root resolution so existing `apps/web/dist` is served even if `NODE_ENV` is not set to production on Render.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 108 tests passed
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Live Render redeploy still required after push.

@@ -2333,3 +2333,9 @@
 - Root cause was static frontend path resolution under Render/pnpm filtered package cwd.
 - Added production static root resolver that supports monorepo root and `apps/server` cwd layouts.
 - Added regression coverage in bootstrap tests.
+
+## 2026-06-08 - Render Static Serving Env Gate Fix
+
+- Made static frontend serving robust when Render `NODE_ENV` is missing or not applied.
+- Resolver now returns an existing `apps/web/dist` in both production and non-production; local split dev remains unchanged when dist is absent.
+- Validation passed with server typecheck/test and web build.

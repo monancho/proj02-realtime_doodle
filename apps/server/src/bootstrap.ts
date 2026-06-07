@@ -156,17 +156,20 @@ export function resolveStaticFrontendRoot(
   nodeEnv: string,
   cwd = process.cwd()
 ): string | undefined {
-  if (nodeEnv !== "production") {
-    return undefined;
-  }
-
   const candidatePaths = [
     join(cwd, "apps", "web", "dist"),
     join(cwd, "..", "web", "dist"),
     join(cwd, "..", "..", "apps", "web", "dist")
   ];
+  const existingPath = candidatePaths.find((candidatePath) =>
+    existsSync(candidatePath)
+  );
 
-  return candidatePaths.find((candidatePath) => existsSync(candidatePath)) ?? candidatePaths[0];
+  if (existingPath) {
+    return existingPath;
+  }
+
+  return nodeEnv === "production" ? candidatePaths[0] : undefined;
 }
 
 export async function startHttpServer(
