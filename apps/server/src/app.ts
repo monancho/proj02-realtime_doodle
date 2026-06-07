@@ -84,13 +84,14 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     dependencies.resultRepository ?? new InMemoryResultRepository();
   const resultStorage =
     dependencies.resultStorage ?? new InMemoryResultImageStorage();
+  const userRepository =
+    dependencies.userRepository ?? new InMemoryUserRepository();
 
   app.use(
     "/api/users",
     createUserRouter({
       authMiddleware,
-      repository:
-        dependencies.userRepository ?? new InMemoryUserRepository()
+      repository: userRepository
     })
   );
 
@@ -139,7 +140,8 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     "/api/rooms",
     createRoomRouter({
       authMiddleware,
-      repository: roomRepository
+      repository: roomRepository,
+      userRepository
     })
   );
 

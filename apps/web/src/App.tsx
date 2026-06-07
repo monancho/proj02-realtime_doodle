@@ -17,7 +17,7 @@ import {
 import { FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { ImageMetadata, ListRoomResultsResponse, ResultMetadata, RoomDetail, UserProfile } from "@doodle/shared";
-import type { User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { io, type Socket } from "socket.io-client";
 import { ApiClientError, createApiClient, normalizeRoomCode } from "./api/client";
 import { createFirebaseClient } from "./auth/firebase";
@@ -259,6 +259,52 @@ export function App() {
   );
 
   useEffect(() => {
+    let isCancelled = false;
+    const firebase = createFirebaseClient();
+    const unsubscribe = onAuthStateChanged(firebase.auth, (currentUser) => {
+      if (!currentUser) {
+        if (!isCancelled) {
+          setAuthUser(null);
+          setFirebaseToken("");
+          setProfile(null);
+        }
+        return;
+      }
+
+      void (async () => {
+        try {
+          const idToken = await currentUser.getIdToken();
+          const authenticatedApi = createApiClient({
+            baseUrl: defaultApiBaseUrl,
+            getToken: () => idToken
+          });
+          const restoredProfile = await authenticatedApi.upsertMe({
+            avatarUrl: currentUser.photoURL || null
+          });
+
+          if (isCancelled) {
+            return;
+          }
+
+          setAuthUser(currentUser);
+          setFirebaseToken(idToken);
+          setProfile(restoredProfile);
+          setNickname(restoredProfile.profileSetupCompletedAt ? restoredProfile.nickname ?? "" : "");
+        } catch (error) {
+          if (!isCancelled) {
+            setMessage(formatError(error));
+          }
+        }
+      })();
+    });
+
+    return () => {
+      isCancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!room || !activeToken.trim()) {
       disconnectSocket();
       return;
@@ -386,7 +432,7 @@ export function App() {
         currentRound && currentRound.roundId === payload.roundId ? { ...currentRound, endedAt: payload.endedAt } : currentRound
       );
       setResultSaveStatus("saving");
-      setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다. 결과를 저장하는 중입니다.`);
+      setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다. 잠시 후 다음 화면으로 이어집니다.`);
     });
 
     socket.on("result-saved", (payload: ResultSavedPayload) => {
@@ -1138,6 +1184,11 @@ export function App() {
       <AppHeader
         authUser={authUser}
         profile={profile}
+        onGoLobby={() => {
+          resetRoomState();
+          setViewMode("lobby");
+          setMessage("로비로 돌아왔습니다.");
+        }}
         onOpenNickname={() => setActiveModal("nickname")}
         onSignOut={() => void handleSignOut()}
       />
@@ -1182,6 +1233,7 @@ export function App() {
           resourceErrors={resourceErrors}
           resourceState={resourceState}
           room={room}
+          profile={profile}
           areAllParticipantsReady={areAllParticipantsReady}
           currentFirebaseUid={currentFirebaseUid}
           isCurrentUserHost={isCurrentUserHost}
@@ -1222,6 +1274,7 @@ export function App() {
           imageCount={activeImages.length}
           images={activeImages}
           currentFirebaseUid={currentFirebaseUid}
+          profile={profile}
           isCurrentUserSpectator={isCurrentUserSpectator}
           gameStarting={gameStarting}
           remainingMs={remainingMs}
@@ -1247,6 +1300,7 @@ export function App() {
           currentFirebaseUid={currentFirebaseUid}
           images={activeImages}
           isBusy={isBusy}
+          profile={profile}
           nextCursor={nextResultCursor}
           results={results}
           room={room}
@@ -1350,7 +1404,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
 
   return (
     <main className="app-shell preview-shell">
-      <AppHeader authUser={mockAuthUser} profile={mockProfile} onOpenNickname={noop} onSignOut={noop} />
+      <AppHeader authUser={mockAuthUser} profile={mockProfile} onGoLobby={noop} onOpenNickname={noop} onSignOut={noop} />
 
       {viewMode !== "lobby" ? (
         <section className="intro-panel" aria-labelledby="app-title">
@@ -1394,6 +1448,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           resourceErrors={initialResourceErrors}
           resourceState={readyResourceState}
           room={mockRoom}
+          profile={mockProfile}
           areAllParticipantsReady={areAllParticipantsReady}
           currentFirebaseUid={currentFirebaseUid}
           isCurrentUserHost={isCurrentUserHost}
@@ -1433,6 +1488,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           gameFinishedAt={null}
           imageCount={mockImages.length}
           images={mockImages}
+          profile={mockProfile}
           currentFirebaseUid={currentFirebaseUid}
           isCurrentUserSpectator={false}
           gameStarting={null}
@@ -1459,6 +1515,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           currentFirebaseUid={currentFirebaseUid}
           images={mockImages}
           isBusy={false}
+          profile={mockProfile}
           nextCursor={null}
           results={mockResults}
           room={mockPlayingRoom}
@@ -1946,6 +2003,7 @@ function DoodlePageCanvas() {
 interface AppHeaderProps {
   authUser: User | null;
   profile: UserProfile | null;
+  onGoLobby: () => void;
   onOpenNickname: () => void;
   onSignOut: () => void;
 }
@@ -1956,7 +2014,9 @@ function AppHeader(props: AppHeaderProps) {
 
   return (
     <header className="app-header">
-      <strong>DOODLE</strong>
+      <button className="logo-button" onClick={props.onGoLobby} type="button" aria-label="로비로 이동">
+        DOODLE
+      </button>
       <div className="profile-menu">
         <button className="profile-button" type="button">
           {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{displayName.slice(0, 1)}</span>}
@@ -2082,6 +2142,7 @@ function Modal(props: ModalProps) {
 interface RoomViewProps {
   room: RoomDetail | null;
   images: ImageMetadata[];
+  profile: UserProfile | null;
   activeRoomCode: string;
   areAllParticipantsReady: boolean;
   canUseRoomActions: boolean;
@@ -2138,6 +2199,7 @@ function RoomView(props: RoomViewProps) {
         currentFirebaseUid={props.currentFirebaseUid}
         error={props.resourceErrors.participants}
         images={props.images}
+        profile={props.profile}
         room={props.room}
         state={props.resourceState.participants}
         variant="waiting"
@@ -2370,6 +2432,7 @@ function ParticipantPanel({
   currentFirebaseUid,
   error,
   images,
+  profile,
   room,
   state,
   variant = "waiting"
@@ -2377,11 +2440,24 @@ function ParticipantPanel({
   currentFirebaseUid: string | null;
   error: string | null;
   images: ImageMetadata[];
+  profile: UserProfile | null;
   room: RoomDetail | null;
   state: LoadState;
   variant?: "waiting" | "playing" | "finished";
 }) {
   const uploadedFirebaseUids = new Set(images.map((image) => image.uploadedBy.firebaseUid));
+  const displayParticipants =
+    room?.participants.map((participant) => {
+      if (participant.firebaseUid !== currentFirebaseUid || !profile) {
+        return participant;
+      }
+
+      return {
+        ...participant,
+        avatarUrl: profile.avatarUrl ?? participant.avatarUrl,
+        nickname: profile.nickname ?? participant.nickname
+      };
+    }) ?? [];
   const getParticipantBadge = (participant: RoomDetail["participants"][number]) => {
     if (participant.isSpectator) {
       return "관전 중";
@@ -2406,9 +2482,9 @@ function ParticipantPanel({
       </div>
       {state === "loading" ? <p className="state-copy">참가자 목록을 불러오는 중입니다.</p> : null}
       {state === "error" ? <p className="error-copy">{error ?? "참가자 목록을 불러오지 못했습니다."}</p> : null}
-      {state !== "loading" && state !== "error" && room && room.participants.length > 0 ? (
+      {state !== "loading" && state !== "error" && displayParticipants.length > 0 ? (
         <ul className="participant-list">
-          {room.participants.map((participant) => (
+          {displayParticipants.map((participant) => (
             <li key={participant.firebaseUid}>
               {participant.avatarUrl ? (
                 <img alt="" className="participant-avatar" src={participant.avatarUrl} />
@@ -2425,7 +2501,7 @@ function ParticipantPanel({
           ))}
         </ul>
       ) : null}
-      {state !== "loading" && state !== "error" && (!room || room.participants.length === 0) ? (
+      {state !== "loading" && state !== "error" && displayParticipants.length === 0 ? (
         <p className="empty-copy">아직 참가자가 없습니다.</p>
       ) : null}
     </aside>
@@ -2436,6 +2512,7 @@ interface PlayViewProps {
   room: RoomDetail | null;
   imageCount: number;
   images: ImageMetadata[];
+  profile: UserProfile | null;
   currentFirebaseUid: string | null;
   socketStatus: "idle" | "connecting" | "connected" | "error";
   socketError: string | null;
@@ -2510,6 +2587,7 @@ function PlayView(props: PlayViewProps) {
         currentFirebaseUid={props.currentFirebaseUid}
         error={null}
         images={props.images}
+        profile={props.profile}
         room={props.room}
         state="ready"
         variant="playing"
@@ -2678,18 +2756,18 @@ function RoundResultModal({
     <div className="round-result-backdrop" role="status" aria-live="polite" aria-label="라운드 결과">
       <section className="round-result-modal">
         <p className="round-result-kicker">Round {round.roundIndex + 1} 종료</p>
-        <h2>{result ? "이번 라운드 결과" : "결과 저장 중"}</h2>
+        <h2>{result ? "이번 라운드 결과" : "라운드가 끝났어요"}</h2>
         <div className="round-result-preview">
           {result ? (
             <ResultPreviewImage resultId={result.id} loadPreview={loadPreview} />
           ) : (
-            <span>저장 중...</span>
+            <span>결과를 준비하고 있어요</span>
           )}
         </div>
         <p>
           {resultSaveStatus === "saved"
             ? "잠시 후 다음 라운드로 이어집니다."
-            : "방금 그린 낙서를 결과 이미지로 저장하고 있습니다."}
+            : "잠시 후 다음 라운드로 자연스럽게 이어집니다."}
         </p>
       </section>
     </div>
@@ -3273,6 +3351,7 @@ interface GalleryViewProps {
   chatDraft: string;
   currentFirebaseUid: string | null;
   images: ImageMetadata[];
+  profile: UserProfile | null;
   results: ResultMetadata[];
   room: RoomDetail | null;
   nextCursor: string | null;
@@ -3404,6 +3483,7 @@ function GalleryViewPolished(props: GalleryViewProps) {
         currentFirebaseUid={props.currentFirebaseUid}
         error={null}
         images={props.images}
+        profile={props.profile}
         room={props.room}
         state="ready"
         variant="finished"

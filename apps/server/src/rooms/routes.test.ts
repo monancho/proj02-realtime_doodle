@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createApp } from "../app";
 import type { AuthenticatedRequest } from "../auth/http";
+import { InMemoryUserRepository } from "../users/in-memory-user-repository";
 import { InMemoryRoomRepository } from "./in-memory-room-repository";
 
 const hostAuthContext: AuthContext = {
@@ -46,7 +47,8 @@ describe("Room routes", () => {
     });
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(hostAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(hostAuthContext)
     });
 
     const response = await request(app)
@@ -84,7 +86,8 @@ describe("Room routes", () => {
     });
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(hostAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(hostAuthContext)
     });
 
     const response = await request(app).post("/api/rooms").send({}).expect(201);
@@ -99,6 +102,41 @@ describe("Room routes", () => {
     });
   });
 
+  it("uses stored profile nickname instead of Firebase token display name", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "NICK01",
+      now: () => new Date("2026-06-06T00:00:00.000Z")
+    });
+    const userRepository = new InMemoryUserRepository();
+    await userRepository.upsertByFirebaseUid({
+      firebaseUid: "host-uid",
+      email: "host@example.com",
+      nickname: "Doodle Nick",
+      nicknameNormalized: "doodle nick",
+      avatarUrl: "https://example.com/doodle.png",
+      profileSetupCompletedAt: "2026-06-06T00:00:00.000Z"
+    });
+    const app = createApp({
+      authMiddleware: createStubAuthMiddleware({
+        user: {
+          ...hostAuthContext.user,
+          nickname: "Google Real Name",
+          avatarUrl: "https://example.com/google.png"
+        }
+      }),
+      roomRepository: repository,
+      userRepository
+    });
+
+    const response = await request(app).post("/api/rooms").send({}).expect(201);
+
+    expect(response.body.room.participants[0]).toMatchObject({
+      firebaseUid: "host-uid",
+      nickname: "Doodle Nick",
+      avatarUrl: "https://example.com/doodle.png"
+    });
+  });
+
   it("clamps requested maxPlayers to the MVP maximum", async () => {
     const repository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "MAX444",
@@ -106,7 +144,8 @@ describe("Room routes", () => {
     });
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(hostAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(hostAuthContext)
     });
 
     const response = await request(app)
@@ -134,7 +173,8 @@ describe("Room routes", () => {
     });
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(guestAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(guestAuthContext)
     });
 
     const response = await request(app).get("/api/rooms/abc123").expect(200);
@@ -164,7 +204,8 @@ describe("Room routes", () => {
     });
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(guestAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(guestAuthContext)
     });
 
     const response = await request(app)
@@ -189,7 +230,8 @@ describe("Room routes", () => {
     const repository = new InMemoryRoomRepository();
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(guestAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(guestAuthContext)
     });
 
     const getResponse = await request(app).get("/api/rooms/NONE01").expect(404);
@@ -227,7 +269,8 @@ describe("Room routes", () => {
     });
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(guestAuthContext),
-      roomRepository: repository
+      roomRepository: repository,
+      userRepository: createProfileRepository(guestAuthContext)
     });
 
     const response = await request(app)
@@ -241,7 +284,8 @@ describe("Room routes", () => {
   it("returns 401 when auth context is missing", async () => {
     const app = createApp({
       authMiddleware: createStubAuthMiddleware(undefined),
-      roomRepository: new InMemoryRoomRepository()
+      roomRepository: new InMemoryRoomRepository(),
+      userRepository: new InMemoryUserRepository()
     });
 
     const response = await request(app).post("/api/rooms").send({}).expect(401);
@@ -257,4 +301,21 @@ describe("Room routes", () => {
 
 function createClock(values: string[]): () => Date {
   return () => new Date(values.shift() ?? "2026-06-06T00:00:59.000Z");
+}
+
+function createProfileRepository(...contexts: AuthContext[]): InMemoryUserRepository {
+  const repository = new InMemoryUserRepository();
+
+  for (const context of contexts) {
+    void repository.upsertByFirebaseUid({
+      firebaseUid: context.user.firebaseUid,
+      email: context.user.email,
+      nickname: context.user.nickname,
+      nicknameNormalized: context.user.nickname?.toLowerCase() ?? null,
+      avatarUrl: context.user.avatarUrl,
+      profileSetupCompletedAt: context.user.nickname ? "2026-06-06T00:00:00.000Z" : null
+    });
+  }
+
+  return repository;
 }

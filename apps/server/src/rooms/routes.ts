@@ -11,6 +11,7 @@ import { Router, type RequestHandler } from "express";
 import type { AuthenticatedRequest } from "../auth/http";
 import { getRoomErrorHttpStatus, RoomDomainError } from "./errors";
 import type { RoomRepository } from "./repository";
+import type { UserRepository } from "../users/repository";
 
 const DEFAULT_ROOM_TITLE = "Untitled Room";
 const DEFAULT_ROOM_SETTINGS: RoomSettings = {
@@ -23,11 +24,13 @@ const MAX_ROOM_PLAYERS = 4;
 export interface RoomRouterDependencies {
   authMiddleware: RequestHandler;
   repository: RoomRepository;
+  userRepository: UserRepository;
 }
 
 export function createRoomRouter({
   authMiddleware,
-  repository
+  repository,
+  userRepository
 }: RoomRouterDependencies): Router {
   const router = Router();
 
@@ -42,11 +45,15 @@ export function createRoomRouter({
 
       const body = parseCreateRoomRequest(request.body);
       const authUser = authenticatedRequest.auth.user;
+      const participantProfile = await getStoredParticipantProfile(
+        userRepository,
+        authUser.firebaseUid
+      );
       const room = await repository.createRoom({
         host: {
           firebaseUid: authUser.firebaseUid,
-          nickname: authUser.nickname,
-          avatarUrl: authUser.avatarUrl
+          nickname: participantProfile.nickname,
+          avatarUrl: participantProfile.avatarUrl
         },
         title: body.title ?? DEFAULT_ROOM_TITLE,
         settings: {
@@ -100,12 +107,16 @@ export function createRoomRouter({
         }
 
         const authUser = authenticatedRequest.auth.user;
+        const participantProfile = await getStoredParticipantProfile(
+          userRepository,
+          authUser.firebaseUid
+        );
         const room = await repository.joinRoom({
           roomCode: getRouteParam(request.params.roomCode),
           participant: {
             firebaseUid: authUser.firebaseUid,
-            nickname: authUser.nickname,
-            avatarUrl: authUser.avatarUrl
+            nickname: participantProfile.nickname,
+            avatarUrl: participantProfile.avatarUrl
           }
         });
         const payload: JoinRoomResponse = { room };
@@ -118,6 +129,18 @@ export function createRoomRouter({
   );
 
   return router;
+}
+
+async function getStoredParticipantProfile(
+  userRepository: UserRepository,
+  firebaseUid: string
+): Promise<{ nickname: string | null; avatarUrl: string | null }> {
+  const profile = await userRepository.findByFirebaseUid(firebaseUid);
+
+  return {
+    nickname: profile?.nickname ?? null,
+    avatarUrl: profile?.avatarUrl ?? null
+  };
 }
 
 function parseCreateRoomRequest(value: unknown): CreateRoomRequest {

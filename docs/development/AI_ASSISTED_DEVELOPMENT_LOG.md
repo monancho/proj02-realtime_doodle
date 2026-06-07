@@ -2305,3 +2305,14 @@
 - Included cleanup staging QA as a required pre-deployment manual check.
 - Documented user-owned external setup tasks for Render, Firebase, MongoDB Atlas, and deployed CORS origins.
 - No app code was changed. `package-lock.json` remains untracked and unstaged.
+
+## 2026-06-08 - Pre-Deployment UX Fixes and Participant Nickname Source
+
+- Fixed room participant display source so HTTP room create/join uses stored user profile nickname/avatarUrl instead of Firebase token display name.
+- Shared the same `UserRepository` instance between `/api/users` and `/api/rooms` wiring.
+- Added regression coverage for token display name differing from stored nickname.
+- Added frontend auth state restoration on page refresh through Firebase `onAuthStateChanged` and `/api/users/me` profile reload.
+- Made the header `DOODLE` logo act as a lobby return action while keeping the visual treatment logo-like rather than button-like.
+- Reduced round-end modal “saving” friction and fixed invite-code copy hover jump.
+- Validation passed: server typecheck/test and web typecheck/build.
+- `package-lock.json` remains untracked and unstaged.

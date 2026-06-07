@@ -204,11 +204,19 @@ a {
   backdrop-filter: blur(8px);
 }
 
-.app-header > strong {
+.logo-button {
   flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
   font-family: "Gaegu", "Pretendard", sans-serif;
   font-size: 1.8rem;
+  font-weight: 900;
   line-height: 1;
+  padding: 0;
+  box-shadow: none;
+  appearance: none;
 }
 
 .app-shell:has(.lobby-page),
@@ -233,19 +241,19 @@ a {
   backdrop-filter: none;
 }
 
-.app-shell:has(.lobby-page) .app-header > strong,
-.app-shell:has(.room-layout) .app-header > strong,
-.app-shell:has(.play-layout) .app-header > strong,
-.app-shell:has(.gallery-layout) .app-header > strong {
+.app-shell:has(.lobby-page) .logo-button,
+.app-shell:has(.room-layout) .logo-button,
+.app-shell:has(.play-layout) .logo-button,
+.app-shell:has(.gallery-layout) .logo-button {
   position: relative;
   font-size: clamp(2.6rem, 4.4vw, 3.6rem);
   font-weight: 900;
 }
 
-.app-shell:has(.lobby-page) .app-header > strong::after,
-.app-shell:has(.room-layout) .app-header > strong::after,
-.app-shell:has(.play-layout) .app-header > strong::after,
-.app-shell:has(.gallery-layout) .app-header > strong::after {
+.app-shell:has(.lobby-page) .logo-button::after,
+.app-shell:has(.room-layout) .logo-button::after,
+.app-shell:has(.play-layout) .logo-button::after,
+.app-shell:has(.gallery-layout) .logo-button::after {
   content: "";
   position: absolute;
   right: -8px;
@@ -1376,6 +1384,10 @@ button.lobby-cta-card {
   border-radius: 15px 9px 14px 10px / 10px 15px 9px 14px;
   transform: translateY(-50%);
   padding: 0 14px;
+}
+
+.copy-code-button:hover {
+  transform: translateY(-50%);
 }
 
 .room-code span {
