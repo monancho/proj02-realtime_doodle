@@ -2174,6 +2174,7 @@ interface PlayViewProps {
 }
 
 function PlayView(props: PlayViewProps) {
+  const chatListRef = useRef<HTMLDivElement | null>(null);
   const drawingDisabled =
     !props.room ||
     props.room.status !== "playing" ||
@@ -2186,6 +2187,15 @@ function PlayView(props: PlayViewProps) {
     : props.gameStarting
       ? "곧 라운드가 시작됩니다."
       : undefined;
+
+  useEffect(() => {
+    const chatList = chatListRef.current;
+    if (!chatList) {
+      return;
+    }
+
+    chatList.scrollTop = chatList.scrollHeight;
+  }, [props.chatMessages.length]);
 
   return (
     <section className="play-layout">
@@ -2235,7 +2245,7 @@ function PlayView(props: PlayViewProps) {
           <h2>채팅</h2>
         </div>
         {props.socketError ? <p className="error-copy">{props.socketError}</p> : null}
-        <div className="chat-list" aria-live="polite">
+        <div className="chat-list" ref={chatListRef} aria-live="polite">
           {props.chatMessages.length === 0 ? (
             <p className="empty-copy">아직 메시지가 없습니다.</p>
           ) : (
@@ -2394,6 +2404,17 @@ interface ChatPanelProps {
 }
 
 function ChatPanelFixed(props: ChatPanelProps) {
+  const chatListRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const chatList = chatListRef.current;
+    if (!chatList) {
+      return;
+    }
+
+    chatList.scrollTop = chatList.scrollHeight;
+  }, [props.chatMessages.length]);
+
   return (
     <div className="chat-panel">
       <div className="card-heading">
@@ -2401,7 +2422,7 @@ function ChatPanelFixed(props: ChatPanelProps) {
         <h2>{props.title}</h2>
       </div>
       {props.socketError ? <p className="error-copy">{props.socketError}</p> : null}
-      <div className="chat-list" aria-live="polite">
+      <div className="chat-list" ref={chatListRef} aria-live="polite">
         {props.chatMessages.length === 0 ? (
           <p className="empty-copy">아직 메시지가 없습니다.</p>
         ) : (

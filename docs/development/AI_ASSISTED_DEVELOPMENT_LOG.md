@@ -2066,3 +2066,10 @@
 - 조치: CSS 중심으로 참가자/채팅 패널의 높이, border, shadow, row spacing, empty state, input alignment, mobile min-height를 추가 보정했다.
 - 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.
 - 남은 확인: 실제 브라우저 desktop/mobile에서 참고 이미지와 육안 비교 필요.
+
+## 2026-06-07 - Participant/chat alignment and scroll follow-up
+
+- 사용자 피드백: 참가자 패널 내부 이중 테두리 제거, 참가자 row 수평 정렬, 채팅 input/button CSS 조정, 메시지 누적 시 자동 스크롤 필요.
+- 조치: `paper-card::after`를 참가자/플레이 채팅 카드에서 비활성화하고, participant list grid를 4열로 조정했다. ChatPanelFixed와 PlayView chat list에 auto-scroll ref/effect를 추가했다.
+- 검증: web typecheck/build 통과, room/play/gallery preview HTTP 200 확인.
+- 제외: backend/API/Socket 계약 변경 없음. `package-lock.json`은 기존 미추적 상태 유지.

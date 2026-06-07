@@ -1708,3 +1708,22 @@
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 참가자/채팅 패널 정렬 및 스크롤 보정 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- PASS: 로컬 preview HTTP 응답 확인
+  - http://localhost:5174/?preview=room -> 200
+  - http://localhost:5174/?preview=play -> 200
+  - http://localhost:5174/?preview=gallery -> 200
+- 확인 범위:
+  - 참가자 패널 내부 이중 테두리 제거
+  - 참가자 row 수평 정렬 보정
+  - 채팅 input/button 크기 균형 보정
+  - 채팅 메시지 추가 시 하단 자동 스크롤 로직 추가
+- 미실행:
+  - Browser 자동 screenshot QA는 이전과 같은 Windows sandbox runtime 문제로 수행하지 못했다. 실제 브라우저 육안 확인은 사용자 로컬에서 이어서 필요하다.
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.

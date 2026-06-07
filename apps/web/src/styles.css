@@ -828,6 +828,11 @@ button:disabled {
   padding: 20px 12px;
 }
 
+.participants-card::after,
+.chat-card::after {
+  display: none;
+}
+
 .participants-card .card-heading {
   margin-bottom: 18px;
   border-bottom: 0;
@@ -1503,7 +1508,7 @@ button.lobby-cta-card {
 .image-list li,
 .participant-list li {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 14px;
   border-bottom: 1px solid rgba(34, 34, 34, 0.075);
@@ -1574,7 +1579,10 @@ button.lobby-cta-card {
 
 .image-list span,
 .participant-list span {
+  display: inline-flex;
   flex: 1 1 auto;
+  gap: 8px;
+  align-items: center;
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--ink);
@@ -1611,7 +1619,7 @@ button.lobby-cta-card {
 }
 
 .participant-list em {
-  grid-column: 3;
+  grid-column: auto;
   justify-self: end;
   color: #5f5a52;
   font-size: 0.78rem;
@@ -1624,7 +1632,9 @@ button.lobby-cta-card {
 }
 
 .participant-list small {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0;
   color: #6b6258;
   font-size: 0.75rem;
   font-weight: 800;
@@ -1886,6 +1896,7 @@ button.lobby-cta-card {
 .chat-panel .chat-list {
   min-height: 0;
   max-height: none;
+  overflow: auto;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1934,6 +1945,10 @@ button.lobby-cta-card {
 
 .chat-card .chat-form,
 .chat-panel .chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px;
+  gap: 10px;
+  align-items: end;
   align-self: end;
   margin-top: 0;
   padding-top: 10px;
@@ -1941,15 +1956,22 @@ button.lobby-cta-card {
 
 .chat-card .chat-form input,
 .chat-panel .chat-form input {
-  min-height: 44px;
+  width: 100%;
+  min-height: 42px;
+  border-width: 2px;
   border-color: rgba(34, 34, 34, 0.28);
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.78);
+  padding: 8px 10px;
 }
 
 .chat-card .chat-form .primary-button,
 .chat-panel .chat-form .primary-button {
-  min-height: 44px;
+  width: 82px;
   min-width: 82px;
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 0 10px;
   box-shadow: 2px 2px 0 rgba(37, 33, 29, 0.14);
 }
 
