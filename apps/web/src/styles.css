@@ -638,6 +638,12 @@ button:disabled {
   font-weight: 900;
 }
 
+.app-shell:has(.room-layout) .status-strip,
+.app-shell:has(.play-layout) .status-strip,
+.app-shell:has(.gallery-layout) .status-strip {
+  display: none;
+}
+
 .busy-dot {
   flex: 0 0 auto;
   border-radius: 999px;
@@ -799,31 +805,41 @@ button:disabled {
 .play-layout > .chat-panel,
 .gallery-layout > .chat-panel,
 .chat-card {
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) auto;
   grid-column: 3;
   grid-row: 1 / span 2;
   min-width: 0;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
+  min-height: min(68vh, 620px);
+  border: 1px solid rgba(34, 34, 34, 0.12);
+  border-radius: 10px;
   background: var(--paper);
-  box-shadow: 4px 4px 0 var(--shadow);
-  padding: 18px;
+  box-shadow: 0 10px 24px rgba(37, 33, 29, 0.055);
+  padding: 18px 14px;
 }
 
 .participants-card {
   min-width: 0;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-  padding-inline: 12px;
+  min-height: min(68vh, 620px);
+  border: 1px solid rgba(34, 34, 34, 0.08);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 10px 24px rgba(37, 33, 29, 0.045);
+  padding: 18px 12px;
 }
 
 .participants-card .card-heading {
-  border-bottom: 2px dashed #b5aea6;
-  padding-bottom: 14px;
+  margin-bottom: 18px;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.participants-card .card-heading svg {
+  display: none;
 }
 
 .participants-card .card-heading h2 {
-  font-size: clamp(1.55rem, 2.5vw, 2rem);
+  font-size: clamp(1.45rem, 2.1vw, 1.72rem);
 }
 
 .chat-card,
@@ -1473,7 +1489,7 @@ button.lobby-cta-card {
 .image-list,
 .participant-list {
   display: grid;
-  gap: 10px;
+  gap: 0;
   margin: 16px 0 0;
   padding: 0;
   list-style: none;
@@ -1486,12 +1502,12 @@ button.lobby-cta-card {
 .image-list li,
 .participant-list li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px dashed rgba(34, 34, 34, 0.26);
-  min-height: 62px;
-  padding: 8px 0 10px;
+  border-bottom: 1px solid rgba(34, 34, 34, 0.1);
+  min-height: 70px;
+  padding: 10px 0;
 }
 
 .image-list li {
@@ -1521,8 +1537,8 @@ button.lobby-cta-card {
 .participant-list li i {
   display: grid;
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   border: 2px solid var(--ink);
   border-radius: 999px;
@@ -1536,8 +1552,8 @@ button.lobby-cta-card {
 
 .participant-avatar {
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border: 2px solid var(--ink);
   border-radius: 999px;
   object-fit: cover;
@@ -1560,6 +1576,9 @@ button.lobby-cta-card {
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1.03rem;
+  font-weight: 900;
 }
 
 .image-list span {
@@ -1577,13 +1596,13 @@ button.lobby-cta-card {
 .image-list strong,
 .participant-list strong {
   flex: 0 0 auto;
-  color: var(--success);
-  border: 1px solid rgba(34, 34, 34, 0.18);
-  border-radius: 7px;
+  color: #247139;
+  border: 1px solid #b7dfbd;
+  border-radius: 8px;
   background: #dff0df;
   font-family: "Gaegu", "Pretendard", sans-serif;
   font-size: 1rem;
-  padding: 3px 9px;
+  padding: 5px 10px;
 }
 
 .image-list strong {
@@ -1837,6 +1856,79 @@ button.lobby-cta-card {
 .chat-panel .chat-list .empty-copy::after {
   content: "아직 메시지가 없습니다.";
   font-size: 0.9rem;
+}
+
+.chat-card .card-heading,
+.chat-panel .card-heading {
+  margin-bottom: 14px;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.chat-card .card-heading h2::after,
+.chat-panel .card-heading h2::after {
+  content: "채팅";
+  font-size: 1.4rem;
+}
+
+.chat-card .chat-form label::before,
+.chat-panel .chat-form label::before {
+  content: "메시지";
+}
+
+.chat-card .chat-form .primary-button::after,
+.chat-panel .chat-form .primary-button::after {
+  content: "보내기";
+}
+
+.chat-card .chat-list,
+.chat-panel .chat-list {
+  min-height: 360px;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.chat-card .chat-list:has(.empty-copy),
+.chat-panel .chat-list:has(.empty-copy) {
+  align-content: center;
+  place-items: center;
+  text-align: center;
+}
+
+.chat-card .chat-list .empty-copy,
+.chat-panel .chat-list .empty-copy {
+  display: grid;
+  gap: 10px;
+  place-items: center;
+  color: #77808a;
+  font-size: 0;
+}
+
+.chat-card .chat-list .empty-copy::before,
+.chat-panel .chat-list .empty-copy::before {
+  content: "...";
+  display: grid;
+  width: 72px;
+  height: 52px;
+  place-items: center;
+  border: 3px solid #a5abb2;
+  border-radius: 18px;
+  color: #a5abb2;
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.chat-card .chat-list .empty-copy::after,
+.chat-panel .chat-list .empty-copy::after {
+  content: "메시지가 없습니다.\A첫 메시지를 보내보세요!";
+  white-space: pre;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.8;
 }
 
 .play-participants-card {

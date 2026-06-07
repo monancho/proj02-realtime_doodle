@@ -2050,3 +2050,11 @@
 - 조치: CSS 중심으로 로비 헤더 스타일을 game shell 화면에도 확장하고, 참가자/채팅/중앙 패널 디자인을 reference image 방향으로 보정.
 - 검증: web typecheck/build 통과. 실제 브라우저 시각 확인은 후속 수동 QA 필요.
 
+
+## 2026-06-07 - Participant and chat panel visual refinement
+
+- 사용자 피드백: 참가자 목록과 채팅 패널을 제공 이미지처럼 더 가볍고 정돈된 톤으로 맞추고, 헤더 아래 불필요한 안내 UI를 제거해야 함.
+- 작업: `apps/web/src/styles.css`에서 참가자/채팅 패널의 배경, 그림자, 여백, empty state, 상태 배지, status strip 표시 범위를 조정했다.
+- 범위 제한: 프론트 CSS-only 변경이며 backend/API/Socket/Firebase 계약은 변경하지 않았다.
+- 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.
+- 주의: 실제 브라우저 시각 QA는 사용자의 로컬 확인이 필요하다. `package-lock.json`은 기존 미추적 상태로 남겨두었다.

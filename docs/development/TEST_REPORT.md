@@ -1678,3 +1678,17 @@
 - PASS: corepack pnpm --filter @doodle/web build
 - 미실행: Browser preview 시각 QA는 이전 런타임 sandbox 문제로 자동 확인하지 못해, 실제 로컬 브라우저에서 room/play/gallery 확인 필요.
 
+
+## 2026-06-07 - 참가자/채팅 패널 시각 정리 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- 확인 범위:
+  - 참가자 패널을 참고 이미지처럼 가벼운 세로 패널 톤으로 보정했다.
+  - 채팅 패널 empty state와 입력 영역을 같은 톤으로 보정했다.
+  - 방/플레이/갤러리 화면에서 헤더 아래 status 안내 strip을 숨겼다.
+- 미실행:
+  - Browser 자동 시각 QA는 이전 sandbox runtime 문제로 이번 검증 범위에서 제외했다. 실제 로컬 브라우저에서 desktop/mobile 최종 확인이 필요하다.
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
