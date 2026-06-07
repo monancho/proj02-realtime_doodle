@@ -8,6 +8,14 @@ import {
 } from "./auth/firebase-admin";
 import { createHttpAuthMiddleware } from "./auth/http";
 import type { TokenVerifier } from "./auth/tokens";
+import {
+  createMongoExpiredRoomCleanupStore
+} from "./cleanup/mongodb-room-cleanup-store";
+import {
+  cleanupExpiredFinishedRooms,
+  type ExpiredRoomCleanupStore,
+  type RoomCleanupSummary
+} from "./cleanup/room-cleanup";
 import type { ServerEnv } from "./config/env";
 import { connectMongoDb, type MongoDbConnection } from "./db/mongodb";
 import { createGridFsImageStorage } from "./images/gridfs-image-storage";
@@ -70,6 +78,14 @@ export interface BootstrapAdapters {
     connection: MongoDbConnection
   ) => Promise<ResultRepository>;
   createResultStorage?: (connection: MongoDbConnection) => ResultImageStorage;
+  createRoomCleanupStore?: (
+    connection: MongoDbConnection
+  ) => Promise<ExpiredRoomCleanupStore>;
+  runRoomCleanup?: (input: {
+    imageStorage: ImageStorage;
+    resultStorage: ResultImageStorage;
+    store: ExpiredRoomCleanupStore;
+  }) => Promise<RoomCleanupSummary>;
 }
 
 export async function createServerDependencies(
@@ -97,6 +113,15 @@ export async function createServerDependencies(
   const resultStorage =
     adapters.createResultStorage?.(mongoConnection) ??
     createDefaultResultStorage(mongoConnection);
+  const roomCleanupStore =
+    (await adapters.createRoomCleanupStore?.(mongoConnection)) ??
+    createDefaultRoomCleanupStore(mongoConnection);
+  await runRoomCleanupOnBoot({
+    imageStorage,
+    resultStorage,
+    runRoomCleanup: adapters.runRoomCleanup,
+    store: roomCleanupStore
+  });
   const roomUpdatePublisher = new SocketRoomUpdatePublisher();
 
   return {
@@ -189,4 +214,48 @@ function createDefaultResultStorage(
   connection: MongoDbConnection
 ): ResultImageStorage {
   return createGridFsResultImageStorage(connection.db);
+}
+
+function createDefaultRoomCleanupStore(
+  connection: MongoDbConnection
+): ExpiredRoomCleanupStore {
+  return createMongoExpiredRoomCleanupStore({
+    images: connection.db.collection<ImageDocument>("images"),
+    results: connection.db.collection<ResultDocument>("results"),
+    rooms: connection.db.collection<RoomDocument>("rooms")
+  });
+}
+
+async function runRoomCleanupOnBoot(input: {
+  imageStorage: ImageStorage;
+  resultStorage: ResultImageStorage;
+  runRoomCleanup?: (cleanupInput: {
+    imageStorage: ImageStorage;
+    resultStorage: ResultImageStorage;
+    store: ExpiredRoomCleanupStore;
+  }) => Promise<RoomCleanupSummary>;
+  store: ExpiredRoomCleanupStore;
+}): Promise<void> {
+  try {
+    const summary = await (input.runRoomCleanup ?? cleanupExpiredFinishedRooms)({
+      imageStorage: input.imageStorage,
+      resultStorage: input.resultStorage,
+      store: input.store
+    });
+
+    if (summary.roomsMatched > 0) {
+      console.info("room cleanup completed", {
+        failedOriginalFiles: summary.failedOriginalFiles,
+        failedResultFiles: summary.failedResultFiles,
+        imageMetadataDeleted: summary.imageMetadataDeleted,
+        originalFilesDeleted: summary.originalFilesDeleted,
+        resultFilesDeleted: summary.resultFilesDeleted,
+        resultMetadataDeleted: summary.resultMetadataDeleted,
+        roomsDeleted: summary.roomsDeleted,
+        roomsMatched: summary.roomsMatched
+      });
+    }
+  } catch {
+    console.warn("room cleanup failed; continuing server startup");
+  }
 }

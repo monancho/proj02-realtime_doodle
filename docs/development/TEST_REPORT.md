@@ -2001,3 +2001,13 @@
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
 - `corepack pnpm --filter @doodle/server typecheck`: PASS
 - `git status --short`: 문서 변경 5개와 기존 미추적 `package-lock.json` 확인. `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-08 - Room Cleanup On Boot Implementation
+
+- Scope: 서버 시작 시 오래된 finished room cleanup service와 bootstrap wiring을 구현했다.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 105 tests passed
+- Tests added/updated: cleanup service best-effort file deletion and empty-room skip, bootstrap cleanup wiring/failure continuation, room cleanup index expectation.
+- MongoDB/GridFS live verification: 실제 MongoDB/GridFS 연결 검증은 수행하지 않았다. mock/in-memory 중심 테스트로 대체했다.
+- Safety check: cleanup logs/counts do not include raw fileId/ObjectId, URI, token, Firebase private key, or secret values.
+- `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.

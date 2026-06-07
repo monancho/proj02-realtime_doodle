@@ -48,6 +48,8 @@ export interface RoomDocument {
   settings: RoomSettings;
   participants: RoomParticipantDocument[];
   createdAt: Date;
+  expiresAt?: Date;
+  finishedAt?: Date;
   updatedAt: Date;
 }
 
@@ -282,10 +284,13 @@ export class MongoRoomRepository implements RoomRepository {
   public async finishGame(input: FinishGameInput): Promise<RoomDetail> {
     const roomCode = normalizeRoomCode(input.roomCode);
     const now = new Date();
+    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const updatedRoom = await this.collection.findOneAndUpdate(
       { roomCode, status: "playing" },
       {
         $set: {
+          expiresAt,
+          finishedAt: now,
           status: "finished",
           updatedAt: now
         }
@@ -319,6 +324,10 @@ export class MongoRoomRepository implements RoomRepository {
           currentRoundIndex: 0,
           "participants.$[].isSpectator": false,
           updatedAt: now
+        },
+        $unset: {
+          expiresAt: "",
+          finishedAt: ""
         }
       } as UpdateFilter<RoomDocument>,
       { returnDocument: "after" }
@@ -416,6 +425,7 @@ export async function ensureRoomIndexes(
   await collection.createIndex({ roomCode: 1 }, { unique: true });
   await collection.createIndex({ hostUid: 1, createdAt: -1 });
   await collection.createIndex({ status: 1, updatedAt: -1 });
+  await collection.createIndex({ status: 1, expiresAt: 1 });
 }
 
 export function mapRoomDocumentToDetail(document: RoomDocument): RoomDetail {

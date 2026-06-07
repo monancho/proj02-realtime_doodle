@@ -2269,3 +2269,12 @@
 - Cleanup targets include room, image metadata, result metadata, and original/result GridFS file/chunk collections.
 - Logs must use counts and safe summaries only, excluding secrets, URIs, tokens, raw file ids, and raw documents.
 - Implementation remains pending as a separate backend phase.
+
+## 2026-06-08 - Room Cleanup On Boot Implementation
+
+- Implemented a backend cleanup service for expired finished rooms.
+- Added a Mongo cleanup store that finds expired finished rooms by `expiresAt`, then legacy `finishedAt`/`updatedAt` fallback.
+- Wired cleanup into server dependency bootstrap as a best-effort startup task that does not block boot on failure.
+- Reused existing image/result storage `deleteFile` contracts for GridFS deletion so tests can mock storage without a live MongoDB connection.
+- Updated Mongo room finish/reuse state to write `finishedAt`/`expiresAt` on finish and clear them on `prepare-next-game`.
+- Validation passed with server typecheck and test. `package-lock.json` remains untracked and unstaged.

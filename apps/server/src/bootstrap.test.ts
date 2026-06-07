@@ -57,6 +57,8 @@ describe("createServerDependencies", () => {
     const imageStorage = new InMemoryImageStorage();
     const resultRepository = new InMemoryResultRepository();
     const resultStorage = new InMemoryResultImageStorage();
+    const roomCleanupStore = createRoomCleanupStore();
+    const runRoomCleanup = vi.fn().mockResolvedValue(createCleanupSummary());
 
     const dependencies = await createServerDependencies(env, {
       connectDb: vi.fn().mockResolvedValue(mongoConnection),
@@ -65,8 +67,10 @@ describe("createServerDependencies", () => {
       createImageStorage: () => imageStorage,
       createResultRepository: vi.fn().mockResolvedValue(resultRepository),
       createResultStorage: () => resultStorage,
+      createRoomCleanupStore: vi.fn().mockResolvedValue(roomCleanupStore),
       createRoomRepository: vi.fn().mockResolvedValue(roomRepository),
-      createUserRepository: vi.fn().mockResolvedValue(userRepository)
+      createUserRepository: vi.fn().mockResolvedValue(userRepository),
+      runRoomCleanup
     });
 
     const response = await request(dependencies.app)
@@ -86,6 +90,11 @@ describe("createServerDependencies", () => {
     expect(dependencies.resultRepository).toBe(resultRepository);
     expect(dependencies.resultStorage).toBe(resultStorage);
     expect(dependencies.tokenVerifier).toBe(verifier);
+    expect(runRoomCleanup).toHaveBeenCalledWith({
+      imageStorage,
+      resultStorage,
+      store: roomCleanupStore
+    });
   });
 
   it("wires the RoomRepository into the app", async () => {
@@ -111,6 +120,7 @@ describe("createServerDependencies", () => {
     const imageStorage = new InMemoryImageStorage();
     const resultRepository = new InMemoryResultRepository();
     const resultStorage = new InMemoryResultImageStorage();
+    const roomCleanupStore = createRoomCleanupStore();
 
     const dependencies = await createServerDependencies(env, {
       connectDb: vi.fn().mockResolvedValue(mongoConnection),
@@ -119,8 +129,10 @@ describe("createServerDependencies", () => {
       createImageStorage: () => imageStorage,
       createResultRepository: vi.fn().mockResolvedValue(resultRepository),
       createResultStorage: () => resultStorage,
+      createRoomCleanupStore: vi.fn().mockResolvedValue(roomCleanupStore),
       createRoomRepository: vi.fn().mockResolvedValue(roomRepository),
-      createUserRepository: vi.fn().mockResolvedValue(userRepository)
+      createUserRepository: vi.fn().mockResolvedValue(userRepository),
+      runRoomCleanup: vi.fn().mockResolvedValue(createCleanupSummary())
     });
 
     const response = await request(dependencies.app)
@@ -136,4 +148,73 @@ describe("createServerDependencies", () => {
     });
     expect(dependencies.roomRepository).toBe(roomRepository);
   });
+
+  it("continues bootstrap when room cleanup fails", async () => {
+    const mongoConnection = {
+      client: { close: vi.fn() },
+      db: { databaseName: "realtime-doodle-relay" }
+    } as unknown as MongoDbConnection;
+    const verifier = {
+      verifyIdToken: vi.fn().mockResolvedValue({
+        uid: authContext.user.firebaseUid,
+        email: authContext.user.email ?? undefined,
+        firebase: {
+          sign_in_provider: "google.com"
+        }
+      })
+    };
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const dependencies = await createServerDependencies(env, {
+      connectDb: vi.fn().mockResolvedValue(mongoConnection),
+      createVerifier: () => verifier,
+      createImageRepository: vi
+        .fn()
+        .mockResolvedValue(new InMemoryImageRepository()),
+      createImageStorage: () => new InMemoryImageStorage(),
+      createResultRepository: vi
+        .fn()
+        .mockResolvedValue(new InMemoryResultRepository()),
+      createResultStorage: () => new InMemoryResultImageStorage(),
+      createRoomCleanupStore: vi.fn().mockResolvedValue(createRoomCleanupStore()),
+      createRoomRepository: vi
+        .fn()
+        .mockResolvedValue(new InMemoryRoomRepository()),
+      createUserRepository: vi
+        .fn()
+        .mockResolvedValue(new InMemoryUserRepository()),
+      runRoomCleanup: vi.fn().mockRejectedValue(new Error("cleanup failed"))
+    });
+
+    expect(dependencies.app).toBeDefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "room cleanup failed; continuing server startup"
+    );
+
+    warnSpy.mockRestore();
+  });
 });
+
+function createRoomCleanupStore() {
+  return {
+    findExpiredFinishedRoomCodes: vi.fn().mockResolvedValue([]),
+    listOriginalImageFileIds: vi.fn().mockResolvedValue([]),
+    listResultImageFileIds: vi.fn().mockResolvedValue([]),
+    deleteImageMetadataByRoomCodes: vi.fn().mockResolvedValue(0),
+    deleteResultMetadataByRoomCodes: vi.fn().mockResolvedValue(0),
+    deleteRoomsByCodes: vi.fn().mockResolvedValue(0)
+  };
+}
+
+function createCleanupSummary() {
+  return {
+    failedOriginalFiles: 0,
+    failedResultFiles: 0,
+    imageMetadataDeleted: 0,
+    originalFilesDeleted: 0,
+    resultFilesDeleted: 0,
+    resultMetadataDeleted: 0,
+    roomsDeleted: 0,
+    roomsMatched: 0
+  };
+}

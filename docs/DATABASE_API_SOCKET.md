@@ -2045,3 +2045,11 @@ Recommended deletion order:
 - file 삭제 실패가 일부 발생해도 가능한 항목은 계속 처리하고, 실패 count를 기록한다.
 - cleanup은 idempotent해야 한다. 이미 삭제된 GridFS file이나 metadata가 없어도 다음 boot cleanup이 실패하지 않아야 한다.
 - 결과 gallery/download UX를 보존하기 위해 보관 기간 전에는 room/result/image를 삭제하지 않는다.
+
+### Implemented cleanup contract
+
+- Backend now wires a startup cleanup pass through bootstrap as a best-effort task.
+- The cleanup service returns count-based summary only and does not expose raw room documents or raw file ids in logs.
+- Mongo room finish flow stores `finishedAt` and `expiresAt` using the MVP 24-hour retention default.
+- `prepare-next-game` clears `finishedAt` and `expiresAt` so reused rooms are not selected by cleanup.
+- Live MongoDB/GridFS cleanup verification remains a deployment/manual QA item; automated tests use mock/in-memory storage and repositories.

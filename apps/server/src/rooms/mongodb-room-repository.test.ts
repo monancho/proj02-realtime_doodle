@@ -35,6 +35,10 @@ describe("MongoRoomRepository", () => {
       status: 1,
       updatedAt: -1
     });
+    expect(collection.createIndex).toHaveBeenCalledWith({
+      status: 1,
+      expiresAt: 1
+    });
   });
 
   it("retries duplicate roomCode inserts", async () => {
