@@ -22,6 +22,7 @@ const MAX_RECENT_CHAT_MESSAGES = 50;
 const MAX_DRAW_POINTS_PER_PAYLOAD = 128;
 const MAX_RECENT_STROKE_BATCHES = 10000;
 const GAME_START_COUNTDOWN_SEC = 5;
+const ROUND_RESULT_REVIEW_DELAY_SEC = 5;
 const DRAW_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 export interface SocketErrorPayload {
@@ -1145,6 +1146,20 @@ export async function handleRoundTimerExpired(
     emitResultSaved(dependencies.io, resultSavedPayload);
   }
 
+  schedulePostRoundTransition(dependencies, expiredRound);
+}
+
+async function handlePostRoundReviewExpired(
+  dependencies: RoundTimerDependencies,
+  expiredRound: ActiveRoundState
+): Promise<void> {
+  const room = await dependencies.repository.findRoomByCode(
+    expiredRound.roomCode
+  );
+  if (!room || room.status !== "playing") {
+    return;
+  }
+
   const unusedImages =
     await dependencies.imageRepository.listUnusedImagesByRoomCode(room.roomCode);
 
@@ -1192,6 +1207,20 @@ export async function handleRoundTimerExpired(
     .to(createSocketRoomName(finishedRoom.roomCode))
     .emit("game-finished", finishedPayload);
   emitRoomUpdated(dependencies.io, finishedRoom);
+}
+
+function schedulePostRoundTransition(
+  dependencies: RoundTimerDependencies,
+  round: ActiveRoundState
+): void {
+  dependencies.timerScheduler.schedule({
+    roomCode: round.roomCode,
+    roundId: `${round.roundId}:review`,
+    durationSec: ROUND_RESULT_REVIEW_DELAY_SEC,
+    onExpire: () => {
+      void handlePostRoundReviewExpired(dependencies, round);
+    }
+  });
 }
 
 function scheduleRoundTimer(

@@ -2187,3 +2187,9 @@
 - Reduced the gradient-heavy result preview tone in favor of a flatter paper surface.
 - Left participant and chat side panels unchanged in this pass.
 - Validation passed: web typecheck/build.
+
+## 2026-06-07 - Round result review delay
+- Changed round-end flow so `round-ended` and optional `result-saved` are emitted immediately, then the next `round-started` or final `game-finished` transition is delayed for 5 seconds.
+- This lets clients show the just-finished round result before moving to the next round or final gallery state.
+- Updated socket room tests to assert the post-round review timer behavior.
+- Validation passed: server typecheck/test.

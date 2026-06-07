@@ -1890,3 +1890,10 @@
 - Scope: center panels only for room waiting, playing, and gallery/finished views.
 - Note: participant and chat side panels were not changed in this pass.
 - Note: package-lock.json was not modified or staged.
+
+## 2026-06-07 - Round result review delay validation
+- PASS: corepack pnpm --filter @doodle/server typecheck
+- PASS: corepack pnpm --filter @doodle/server test
+- Scope: backend socket round-end transition timing.
+- Behavior: `round-ended`/`result-saved` emit immediately; next `round-started` or `game-finished` waits 5 seconds.
+- Note: package-lock.json was not modified or staged.

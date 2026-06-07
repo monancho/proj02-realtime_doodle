@@ -894,6 +894,7 @@ describe("room membership socket handlers", () => {
     const imageRepository = new InMemoryImageRepository();
     const io = createMockIo();
     const roundState = new RoundRuntimeStateStore();
+    const timerScheduler = createMockTimerScheduler();
     const resultSaveService = createMockResultSaveService({
       roomCode: "ABC123",
       roundId: "round-1",
@@ -914,6 +915,7 @@ describe("room membership socket handlers", () => {
         imageRepository,
         roundState,
         resultSaveService,
+        timerScheduler,
         now: createClock([
           "2026-06-06T00:01:00.000Z",
           "2026-06-06T00:01:01.000Z"
@@ -922,9 +924,9 @@ describe("room membership socket handlers", () => {
       activeRound
     );
 
-    const room = await repository.findRoomByCode("ABC123");
+    const roomBeforeReview = await repository.findRoomByCode("ABC123");
 
-    expect(room?.status).toBe("finished");
+    expect(roomBeforeReview?.status).toBe("playing");
     expect(io.emitToRoom).toHaveBeenCalledWith("round-ended", {
       roomCode: "ABC123",
       roundId: "round-1",
@@ -947,6 +949,26 @@ describe("room membership socket handlers", () => {
         result: expect.objectContaining({ id: "result-round-1" })
       })
     );
+    expect(io.emitToRoom).not.toHaveBeenCalledWith(
+      "game-finished",
+      expect.anything()
+    );
+    const reviewSchedule = timerScheduler.schedule.mock.calls.at(-1)?.[0];
+    if (!reviewSchedule) {
+      throw new Error("Expected post-round review timer to be scheduled.");
+    }
+    expect(reviewSchedule).toMatchObject({
+      roomCode: "ABC123",
+      roundId: "round-1:review",
+      durationSec: 5
+    });
+
+    reviewSchedule.onExpire();
+    await flushPromises();
+
+    const room = await repository.findRoomByCode("ABC123");
+
+    expect(room?.status).toBe("finished");
     expect(io.emitToRoom).toHaveBeenCalledWith(
       "game-finished",
       expect.objectContaining({
@@ -1014,13 +1036,11 @@ describe("room membership socket handlers", () => {
     );
 
     const room = await repository.findRoomByCode("ABC123");
-    const usedImage = await imageRepository.findImageById("image-next");
 
     expect(room).toMatchObject({
       status: "playing",
-      currentRoundIndex: 1
+      currentRoundIndex: 0
     });
-    expect(usedImage?.used).toBe(true);
     expect(resultSaveService.saveRoundResult).toHaveBeenCalledWith({
       round: expect.objectContaining({
         roomCode: "ABC123",
@@ -1033,6 +1053,31 @@ describe("room membership socket handlers", () => {
         })
       ]
     });
+    expect(io.emitToRoom).not.toHaveBeenCalledWith(
+      "round-started",
+      expect.objectContaining({ roundId: "round-2" })
+    );
+    const reviewSchedule = timerScheduler.schedule.mock.calls.at(-1)?.[0];
+    if (!reviewSchedule) {
+      throw new Error("Expected post-round review timer to be scheduled.");
+    }
+    expect(reviewSchedule).toMatchObject({
+      roomCode: "ABC123",
+      roundId: "round-1:review",
+      durationSec: 5
+    });
+
+    reviewSchedule.onExpire();
+    await flushPromises();
+
+    const roomAfterReview = await repository.findRoomByCode("ABC123");
+    const usedImage = await imageRepository.findImageById("image-next");
+
+    expect(roomAfterReview).toMatchObject({
+      status: "playing",
+      currentRoundIndex: 1
+    });
+    expect(usedImage?.used).toBe(true);
     expect(io.emitToRoom).toHaveBeenCalledWith(
       "round-started",
       expect.objectContaining({
@@ -1062,6 +1107,7 @@ describe("room membership socket handlers", () => {
     });
     const io = createMockIo();
     const roundState = new RoundRuntimeStateStore();
+    const timerScheduler = createMockTimerScheduler();
     const activeRound = {
       roomCode: "ABC123",
       roundId: "round-1",
@@ -1077,6 +1123,7 @@ describe("room membership socket handlers", () => {
         imageRepository,
         roundState,
         resultSaveService: createMockResultSaveService(null),
+        timerScheduler,
         roundIdGenerator: () => "round-2",
         now: createClock([
           "2026-06-06T00:01:00.000Z",
@@ -1086,16 +1133,39 @@ describe("room membership socket handlers", () => {
       activeRound
     );
 
+    const roomBeforeReview = await repository.findRoomByCode("ABC123");
+
+    expect(roomBeforeReview).toMatchObject({
+      status: "playing",
+      currentRoundIndex: 0
+    });
+    expect(io.emitToRoom).not.toHaveBeenCalledWith(
+      "result-saved",
+      expect.anything()
+    );
+    expect(io.emitToRoom).not.toHaveBeenCalledWith(
+      "round-started",
+      expect.objectContaining({ roundId: "round-2" })
+    );
+    const reviewSchedule = timerScheduler.schedule.mock.calls.at(-1)?.[0];
+    if (!reviewSchedule) {
+      throw new Error("Expected post-round review timer to be scheduled.");
+    }
+    expect(reviewSchedule).toMatchObject({
+      roomCode: "ABC123",
+      roundId: "round-1:review",
+      durationSec: 5
+    });
+
+    reviewSchedule.onExpire();
+    await flushPromises();
+
     const room = await repository.findRoomByCode("ABC123");
 
     expect(room).toMatchObject({
       status: "playing",
       currentRoundIndex: 1
     });
-    expect(io.emitToRoom).not.toHaveBeenCalledWith(
-      "result-saved",
-      expect.anything()
-    );
     expect(io.emitToRoom).toHaveBeenCalledWith(
       "round-started",
       expect.objectContaining({ roundId: "round-2" })
@@ -1437,6 +1507,12 @@ function createMockTimerScheduler() {
     schedule: vi.fn(),
     clear: vi.fn()
   };
+}
+
+async function flushPromises(): Promise<void> {
+  for (let index = 0; index < 10; index += 1) {
+    await Promise.resolve();
+  }
 }
 
 function createMockResultSaveService(
