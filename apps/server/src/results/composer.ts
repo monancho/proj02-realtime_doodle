@@ -58,25 +58,51 @@ function createStrokeOverlaySvg(
   height: number,
   strokes: DrawStrokeBroadcastPayload[]
 ): string {
+  const erasers = strokes.map(({ stroke }) =>
+    stroke.tool === "eraser"
+      ? {
+          path: createSvgPath(stroke.points, width, height),
+          width: stroke.width
+        }
+      : null
+  );
+  const masks: string[] = [];
   const paths = strokes
-    .map(({ stroke }) => {
-      if (stroke.points.length === 0) {
+    .map(({ stroke }, index) => {
+      if (stroke.points.length === 0 || stroke.tool === "eraser") {
         return "";
       }
 
-      const path = stroke.points
-        .map((point, index) => {
-          const command = index === 0 ? "M" : "L";
-          return `${command}${formatSvgNumber(point.x * width)} ${formatSvgNumber(point.y * height)}`;
-        })
-        .join(" ");
-      const strokeColor = stroke.tool === "eraser" ? "#fffefa" : stroke.color;
+      const path = createSvgPath(stroke.points, width, height);
+      const laterErasers = erasers.slice(index + 1).filter((eraser) => eraser !== null);
+      const maskId = laterErasers.length > 0 ? `stroke-mask-${index}` : null;
 
-      return `<path d="${path}" fill="none" stroke="${escapeSvgAttribute(strokeColor)}" stroke-width="${formatSvgNumber(stroke.width)}" stroke-linecap="round" stroke-linejoin="round" />`;
+      if (maskId) {
+        masks.push(
+          `<mask id="${maskId}" maskUnits="userSpaceOnUse"><rect width="${width}" height="${height}" fill="white" />${laterErasers
+            .map((eraser) => `<path d="${eraser.path}" fill="none" stroke="black" stroke-width="${formatSvgNumber(eraser.width)}" stroke-linecap="round" stroke-linejoin="round" />`)
+            .join("")}</mask>`
+        );
+      }
+
+      return `<path d="${path}" fill="none" stroke="${escapeSvgAttribute(stroke.color)}" stroke-width="${formatSvgNumber(stroke.width)}" stroke-linecap="round" stroke-linejoin="round"${maskId ? ` mask="url(#${maskId})"` : ""} />`;
     })
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${paths}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs>${masks.join("")}</defs>${paths}</svg>`;
+}
+
+function createSvgPath(
+  points: DrawStrokeBroadcastPayload["stroke"]["points"],
+  width: number,
+  height: number
+): string {
+  return points
+    .map((point, index) => {
+      const command = index === 0 ? "M" : "L";
+      return `${command}${formatSvgNumber(point.x * width)} ${formatSvgNumber(point.y * height)}`;
+    })
+    .join(" ");
 }
 
 function formatSvgNumber(value: number): string {

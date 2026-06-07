@@ -1,11 +1,13 @@
 import {
   Copy,
   Download,
+  Eraser,
   ImagePlus,
   LogIn,
   LogOut,
   MessageCircle,
   Palette,
+  Pencil,
   Play,
   Plus,
   RefreshCw,
@@ -69,6 +71,8 @@ interface DrawStroke {
   points: DrawPoint[];
 }
 
+type DrawingTool = DrawStroke["tool"];
+
 interface DrawStrokePayload {
   roomCode: string;
   roundId: string;
@@ -120,6 +124,8 @@ const maxImageSizeBytes = 10 * 1024 * 1024;
 const maxChatMessageLength = 200;
 const maxStrokePointsPerPayload = 128;
 const maxRenderedStrokeBatches = 10000;
+const drawingColors = ["#222222", "#e85d75", "#f4b942", "#4f9d69", "#4f80d9", "#8b6fd6"];
+const drawingWidths = [3, 6, 10];
 const initialResourceState: ResourceState = {
   room: "idle",
   participants: "idle",
@@ -1529,6 +1535,9 @@ function CanvasPanel(props: CanvasPanelProps) {
   const draftPointsRef = useRef<DrawPoint[]>([]);
   const lastSentPointRef = useRef<DrawPoint | null>(null);
   const [backgroundImageVersion, setBackgroundImageVersion] = useState(0);
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>("pen");
+  const [drawingColor, setDrawingColor] = useState(drawingColors[0]);
+  const [drawingWidth, setDrawingWidth] = useState(drawingWidths[1]);
 
   useEffect(() => {
     if (!props.backgroundImageUrl) {
@@ -1596,10 +1605,11 @@ function CanvasPanel(props: CanvasPanelProps) {
     const previousPoint = lastSentPointRef.current;
 
     draftPointsRef.current = [...draftPointsRef.current, point];
-    previewDraftStroke(event.currentTarget, draftPointsRef.current);
 
     if (previousPoint) {
-      props.onDrawStroke(createDrawStroke([previousPoint, point]));
+      const stroke = createDrawStroke([previousPoint, point], drawingTool, drawingColor, drawingWidth);
+      previewDraftStroke(event.currentTarget, backgroundImageRef.current, props.strokes, stroke);
+      props.onDrawStroke(stroke);
     }
 
     lastSentPointRef.current = point;
@@ -1621,9 +1631,9 @@ function CanvasPanel(props: CanvasPanelProps) {
     }
 
     if (previousPoint) {
-      props.onDrawStroke(createDrawStroke([previousPoint, point]));
+      props.onDrawStroke(createDrawStroke([previousPoint, point], drawingTool, drawingColor, drawingWidth));
     } else {
-      props.onDrawStroke(createDrawStroke(points));
+      props.onDrawStroke(createDrawStroke(points, drawingTool, drawingColor, drawingWidth));
     }
   }
 
@@ -1635,6 +1645,54 @@ function CanvasPanel(props: CanvasPanelProps) {
           <span>{props.title}</span>
         </div>
         <small>{props.subtitle}</small>
+      </div>
+      <div className="drawing-toolbar" aria-label="드로잉 도구">
+        <div className="tool-group" role="group" aria-label="도구 선택">
+          <button
+            className={drawingTool === "pen" ? "tool-button active" : "tool-button"}
+            disabled={props.disabled}
+            onClick={() => setDrawingTool("pen")}
+            type="button"
+          >
+            <Pencil size={16} />
+            펜
+          </button>
+          <button
+            className={drawingTool === "eraser" ? "tool-button active" : "tool-button"}
+            disabled={props.disabled}
+            onClick={() => setDrawingTool("eraser")}
+            type="button"
+          >
+            <Eraser size={16} />
+            지우개
+          </button>
+        </div>
+        <div className="tool-group color-group" role="group" aria-label="색상 선택">
+          {drawingColors.map((color) => (
+            <button
+              aria-label={`색상 ${color}`}
+              className={drawingColor === color ? "color-swatch active" : "color-swatch"}
+              disabled={props.disabled || drawingTool === "eraser"}
+              key={color}
+              onClick={() => setDrawingColor(color)}
+              style={{ backgroundColor: color }}
+              type="button"
+            />
+          ))}
+        </div>
+        <div className="tool-group" role="group" aria-label="굵기 선택">
+          {drawingWidths.map((width) => (
+            <button
+              className={drawingWidth === width ? "tool-button active" : "tool-button"}
+              disabled={props.disabled}
+              key={width}
+              onClick={() => setDrawingWidth(width)}
+              type="button"
+            >
+              {width}
+            </button>
+          ))}
+        </div>
       </div>
       <canvas
         ref={canvasRef}
@@ -1823,6 +1881,8 @@ function drawStroke(context: CanvasRenderingContext2D, stroke: DrawStroke, width
     return;
   }
 
+  context.save();
+  context.globalCompositeOperation = stroke.tool === "eraser" ? "destination-out" : "source-over";
   context.strokeStyle = stroke.color;
   context.lineWidth = stroke.width;
   context.lineCap = "round";
@@ -1837,6 +1897,7 @@ function drawStroke(context: CanvasRenderingContext2D, stroke: DrawStroke, width
   }
 
   context.stroke();
+  context.restore();
 }
 
 function redrawCanvas(
@@ -1853,9 +1914,20 @@ function redrawCanvas(
     drawImageCover(context, backgroundImage, width, height);
   }
 
-  for (const stroke of strokes) {
-    drawStroke(context, stroke, width, height);
+  const drawingLayer = document.createElement("canvas");
+  drawingLayer.width = width;
+  drawingLayer.height = height;
+  const drawingContext = drawingLayer.getContext("2d");
+
+  if (!drawingContext) {
+    return;
   }
+
+  for (const stroke of strokes) {
+    drawStroke(drawingContext, stroke, width, height);
+  }
+
+  context.drawImage(drawingLayer, 0, 0);
 }
 
 function drawCanvasBackground(context: CanvasRenderingContext2D, width: number, height: number) {
@@ -1873,33 +1945,27 @@ function drawImageCover(context: CanvasRenderingContext2D, image: HTMLImageEleme
   context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 }
 
-function previewDraftStroke(canvas: HTMLCanvasElement, points: DrawPoint[]) {
+function previewDraftStroke(
+  canvas: HTMLCanvasElement,
+  backgroundImage: HTMLImageElement | null,
+  strokes: DrawStroke[],
+  previewStroke: DrawStroke
+) {
   const context = canvas.getContext("2d");
 
-  if (!context || points.length < 2) {
+  if (!context || previewStroke.points.length < 2) {
     return;
   }
 
-  drawStroke(
-    context,
-    {
-      strokeId: "preview",
-      tool: "pen",
-      color: "#222222",
-      width: 4,
-      points: points.slice(-2)
-    },
-    canvas.width,
-    canvas.height
-  );
+  redrawCanvas(context, canvas.width, canvas.height, backgroundImage, [...strokes, previewStroke]);
 }
 
-function createDrawStroke(points: DrawPoint[]): DrawStroke {
+function createDrawStroke(points: DrawPoint[], tool: DrawingTool, color: string, width: number): DrawStroke {
   return {
     strokeId: createStrokeId(),
-    tool: "pen",
-    color: "#222222",
-    width: 4,
+    tool,
+    color,
+    width,
     points
   };
 }

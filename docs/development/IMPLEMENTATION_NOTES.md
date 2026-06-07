@@ -649,10 +649,20 @@
 
 - 사용자가 제공한 손그림 와이어프레임을 기준으로 MVP에 해당하는 레이아웃 요소만 선별했다.
 - MVP 반영 범위는 Google 로그인 이후 `방 만들기/방 입장`, 대기실 ready/upload, 라운드 drawing/chat, 결과 gallery/download 흐름이다.
-- MVP 제외 범위는 방 목록, 공개/비공개/비밀번호, 최대 인원 설정, 고급 drawing tool, 전체 결과 일괄 다운로드, 설정/프로필 nav 확장이다.
+- MVP 제외 범위는 방 목록, 공개/비공개/비밀번호, 최대 인원 설정, 전체 결과 일괄 다운로드, 설정/프로필 nav 확장이다.
 - 대기실은 와이어프레임처럼 상단 방 정보 summary와 하단 participants/upload 구조가 더 분명하게 보이도록 grid layout을 조정했다.
 - 업로드 목록은 단순 행 목록에서 사진 카드 느낌의 grid로 조정해 참가자별 이미지 1장 흐름을 더 잘 드러내도록 했다.
 - 플레이 화면은 참가자 rail, canvas, chat의 3열 구조로 조정해 협업 드로잉 화면의 정보 구조를 와이어프레임에 맞췄다.
 - Canvas header에는 현재 라운드와 현재 사진 업로드 사용자를 표시한다.
 - Gallery toolbar와 result card style을 보강해 라운드별 결과 카드 흐름을 더 명확히 했다.
 - Socket, Upload, Timer, Result save 기능 동작과 backend 계약은 변경하지 않았다.
+
+### 2026-06-07 DRAWING-TOOL-LAYER-POLISH
+
+- 와이어프레임의 drawing 도구 중 MVP에 적합한 `펜`, `지우개`, `색상`, `굵기`를 프론트엔드에 추가했다.
+- `draw-stroke` payload의 기존 `tool`, `color`, `width` 계약을 그대로 사용하므로 Socket/API 계약은 변경하지 않았다.
+- Canvas 렌더링은 사진 배경과 드로잉 레이어를 논리적으로 분리해 합성한다.
+- 지우개는 흰색 선을 그리는 방식이 아니라 드로잉 레이어에서만 `destination-out`으로 stroke를 지우도록 수정했다.
+- 결과 PNG 합성도 같은 정책을 따르도록 서버 result composer의 eraser 처리를 SVG mask 기반으로 변경했다.
+- `전체 지우기`는 별도 동기화 이벤트와 결과 저장 계약이 필요하므로 이번 MVP polish에서는 제외했다.
+- 레이아웃은 중간 화면에서 play 3열이 깨지지 않도록 1180px 이하에서 단일 column으로 내려가게 보강했다.

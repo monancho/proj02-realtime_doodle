@@ -1176,3 +1176,28 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-07 DRAWING-TOOL-LAYER-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과:
+  - `web typecheck`: 통과.
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 19 files, 90 tests.
+  - `web build`: 통과. Vite production build 생성 확인.
+- 자동 점검/수정:
+  - Canvas toolbar에 펜/지우개/색상/굵기 선택 UI를 추가했다.
+  - 선택된 도구 상태는 기존 `draw-stroke` payload의 `tool`, `color`, `width`로 전송된다.
+  - 프론트 canvas는 사진 배경과 offscreen drawing layer를 분리해 합성한다.
+  - 지우개는 drawing layer에서만 stroke를 제거하므로 원본 사진을 지우지 않는다.
+  - 서버 result composer도 eraser를 흰색 stroke가 아닌 SVG mask 기반 제거로 처리한다.
+- 미실행:
+  - 실제 2인 브라우저 drawing tool 동기화 수동 QA는 사용자가 로컬 서버 실행 후 확인해야 한다.
+  - 지우개가 결과 PNG에서 기대대로 반영되는지는 실제 라운드 종료 후 다운로드로 추가 확인이 필요하다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

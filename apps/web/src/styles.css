@@ -441,7 +441,7 @@ button:disabled {
 }
 
 .play-layout {
-  grid-template-columns: 220px minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(420px, 2fr) minmax(280px, 0.95fr);
   align-items: start;
 }
 
@@ -462,9 +462,10 @@ button:disabled {
 .room-summary {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: minmax(180px, 1.1fr) minmax(220px, 1.4fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) minmax(220px, 1fr);
   gap: 12px;
   align-items: center;
+  min-width: 0;
 }
 
 .room-summary .card-heading {
@@ -479,6 +480,24 @@ button:disabled {
 
 .room-summary > .icon-button:not(.copy-code-button) {
   width: 100%;
+}
+
+.upload-card {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.participants-card {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.chat-card,
+.play-participants-card,
+.canvas-stage,
+.result-card {
+  min-width: 0;
 }
 
 .round-status {
@@ -562,6 +581,7 @@ button:disabled {
   gap: 8px;
   align-items: center;
   margin-bottom: 4px;
+  min-width: 0;
 }
 
 .room-code {
@@ -605,6 +625,7 @@ button:disabled {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
+  min-width: 0;
 }
 
 .summary-list div {
@@ -883,9 +904,66 @@ button:disabled {
   touch-action: none;
 }
 
+.drawing-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  border: 2px dashed rgba(34, 34, 34, 0.42);
+  border-radius: 8px 5px 7px 6px;
+  background: rgba(255, 254, 250, 0.72);
+  padding: 10px;
+}
+
+.tool-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.tool-button,
+.color-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 7px 5px 8px 6px;
+  background: var(--paper-light);
+  color: var(--ink);
+  font-family: "Pretendard", sans-serif;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 rgba(34, 34, 34, 0.12);
+}
+
+.tool-button.active,
+.color-swatch.active {
+  background: var(--yellow);
+  transform: rotate(-1deg);
+}
+
+.tool-button:disabled,
+.color-swatch:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.color-swatch {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 0;
+}
+
 .canvas-header {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   color: #4f463c;
@@ -899,6 +977,7 @@ button:disabled {
 }
 
 .canvas-header small {
+  flex: 1 1 180px;
   color: #6b6258;
   font-size: 0.8rem;
   font-weight: 800;
@@ -1119,6 +1198,24 @@ button:disabled {
   gap: 14px;
 }
 
+@media (max-width: 1180px) {
+  .play-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .play-participants-card {
+    order: 1;
+  }
+
+  .canvas-stage {
+    order: 2;
+  }
+
+  .chat-card {
+    order: 3;
+  }
+}
+
 @media (max-width: 900px) {
   .intro-panel,
   .lobby-actions,
@@ -1129,6 +1226,12 @@ button:disabled {
 
   .room-summary {
     grid-template-columns: 1fr;
+  }
+
+  .upload-card,
+  .participants-card {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .summary-list {
@@ -1179,6 +1282,11 @@ button:disabled {
     align-items: flex-start;
     flex-direction: column;
     padding: 10px 0;
+  }
+
+  .drawing-toolbar,
+  .tool-group {
+    width: 100%;
   }
 
   .summary-list {
