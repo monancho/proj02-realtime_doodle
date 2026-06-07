@@ -1727,3 +1727,20 @@
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 대기 중앙 패널 및 countdown modal 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- PASS: http://localhost:5174/?preview=room -> 200
+- 확인 범위:
+  - 대기 중앙 패널에서 테이프/Rough badge 장식 제거
+  - 초대 코드 카드와 복사 버튼 배치 보정
+  - 이미지 추가/이미지 변경 문구와 이미지 목록 카드 레이아웃 보정
+  - `game-starting` 수신 시 숫자 countdown modal 표시
+- 미실행/주의:
+  - 실제 backend maxPlayers는 아직 변경하지 않았다. 현재 작업은 frontend UI 표기만 4명 기준으로 맞췄다.
+  - 실제 브라우저 육안 확인은 사용자 로컬에서 추가 확인이 필요하다.
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.

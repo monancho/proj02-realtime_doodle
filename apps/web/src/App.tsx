@@ -1784,17 +1784,7 @@ function RoomView(props: RoomViewProps) {
   return (
     <section className="room-layout">
       {props.gameStarting ? (
-        <TimerBarFixed
-          activeRound={null}
-          countdownRemainingSec={props.countdownRemainingSec}
-          gameFinishedAt={null}
-          gameStarting={props.gameStarting}
-          imageCount={props.images.length}
-          remainingMs={null}
-          remainingSec={null}
-          resultSaveStatus="idle"
-          roundEnded={null}
-        />
+        <CountdownModal countdownSec={props.gameStarting.countdownSec} remainingSec={props.countdownRemainingSec} />
       ) : null}
       <ParticipantPanel
         currentFirebaseUid={props.currentFirebaseUid}
@@ -1812,7 +1802,6 @@ function RoomView(props: RoomViewProps) {
         </div>
         <div className="room-code-row">
           <div className="room-code">
-            <RoughDecoration className="rough-badge" seed={31} variant="badge" />
             <span>{props.activeRoomCode || "------"}</span>
           </div>
           <button
@@ -1832,7 +1821,7 @@ function RoomView(props: RoomViewProps) {
           </div>
           <div>
             <dt>참가자</dt>
-            <dd>{props.room?.participantCount ?? 0}명</dd>
+            <dd>{props.room?.participantCount ?? 0}/4명</dd>
           </div>
           <div>
             <dt>이미지</dt>
@@ -1887,7 +1876,7 @@ function RoomView(props: RoomViewProps) {
               <p>{canReplaceUpload ? "시작 전까지 이미지를 교체할 수 있습니다." : "게임 준비 중이거나 진행 중에는 교체할 수 없습니다."}</p>
             </div>
             <label className={canReplaceUpload ? "secondary-button replace-upload-button" : "secondary-button replace-upload-button disabled"}>
-              교체하기
+              이미지 변경
               <input
                 accept="image/jpeg,image/png,image/webp"
                 disabled={!canReplaceUpload}
@@ -1902,8 +1891,8 @@ function RoomView(props: RoomViewProps) {
         ) : (
           <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
             <Upload size={28} />
-            <strong>사진 1장 업로드</strong>
-            <span>JPEG, PNG, WebP 이미지를 선택하세요. 선택 후 미리보기에서 확인합니다.</span>
+            <strong>이미지 추가</strong>
+            <span>JPG, PNG, WebP 이미지를 선택하세요. 선택 후 미리보기에서 확인합니다.</span>
             <input
               accept="image/jpeg,image/png,image/webp"
               disabled={uploadDisabled}
@@ -2343,6 +2332,25 @@ function TimerBar(props: TimerBarProps) {
 }
 
 void TimerBar;
+
+function CountdownModal({ countdownSec, remainingSec }: { countdownSec: number; remainingSec: number | null }) {
+  const safeCountdownSec = Math.max(1, countdownSec);
+  const safeRemainingSec = Math.max(0, remainingSec ?? safeCountdownSec);
+  const progress = Math.min(100, Math.max(0, (safeRemainingSec / safeCountdownSec) * 100));
+
+  return (
+    <div className="countdown-backdrop" role="status" aria-live="assertive" aria-label="게임 시작 카운트다운">
+      <section className="countdown-modal">
+        <span>곧 시작합니다</span>
+        <strong>{safeRemainingSec}</strong>
+        <p>이미지 변경은 잠시 막히고, 카운트다운이 끝나면 바로 그림 화면으로 이동합니다.</p>
+        <div className="countdown-progress" aria-hidden="true">
+          <i style={{ width: `${progress}%` }} />
+        </div>
+      </section>
+    </div>
+  );
+}
 
 function TimerBarFixed(props: TimerBarProps) {
   const totalRounds = Math.max(1, props.imageCount);

@@ -2073,3 +2073,10 @@
 - 조치: `paper-card::after`를 참가자/플레이 채팅 카드에서 비활성화하고, participant list grid를 4열로 조정했다. ChatPanelFixed와 PlayView chat list에 auto-scroll ref/effect를 추가했다.
 - 검증: web typecheck/build 통과, room/play/gallery preview HTTP 200 확인.
 - 제외: backend/API/Socket 계약 변경 없음. `package-lock.json`은 기존 미추적 상태 유지.
+
+## 2026-06-07 - Waiting room center panel follow-up
+
+- 사용자 피드백: 대기 중앙 패널을 참고 이미지처럼 다듬되 테이프와 이전 Rough.js 장식을 제거하고, 시작 시 숫자 countdown modal로 전환 필요.
+- 조치: RoomView에서 room-code RoughDecoration을 제거하고, game-starting inline timer를 CountdownModal로 교체했다. CSS에서 room-summary/upload-card 외곽 프레임, 테이프 pseudo, rough badge 영향 범위를 제거하고 중앙 폭/초대코드/업로드/이미지 그리드를 보정했다.
+- 참가 최대 인원: backend 계약은 변경하지 않고 frontend 표기만 `n/4명`으로 반영했다. 실제 maxPlayers 4 제한은 후속 backend 작업으로 분리해야 한다.
+- 검증: web typecheck/build 통과, room preview HTTP 200 확인.

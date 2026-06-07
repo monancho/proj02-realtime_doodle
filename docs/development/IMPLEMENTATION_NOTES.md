@@ -902,3 +902,12 @@
 - 현재 사용자 표시(`나`)가 닉네임 아래로 떨어지지 않도록 inline badge처럼 정렬했다.
 - 채팅 입력 form은 input/button이 같은 높이와 균형으로 보이도록 grid column, align-items, button/input 크기를 조정했다.
 - 메시지가 추가될 때 대기실/갤러리 공통 채팅 패널과 플레이 채팅 패널 모두 자동으로 하단 스크롤되도록 ref/effect를 추가했다.
+
+## 2026-06-07 - 대기 중앙 패널 및 시작 카운트다운 모달 보정
+
+- 대기 화면 중앙 패널을 참고 이미지 방향으로 정리했다.
+- `room-summary`와 `upload-card`의 바깥 카드 프레임을 걷고, 초대 코드/이미지 추가/이미지 목록/CTA가 각각 독립적으로 보이도록 CSS를 보정했다.
+- 대기 화면 초대 코드 영역에서 Rough.js badge 장식과 테이프 pseudo 장식을 제거했다.
+- `시작하기` 후 backend의 `game-starting` 상태는 기존 inline timer bar 대신 숫자 중심 countdown modal로 표시하도록 변경했다.
+- 이미지 추가 CTA는 업로드 후 `이미지 변경` 흐름으로 보이도록 문구를 조정했다.
+- 참가 최대 인원은 이번 작업에서 backend 계약을 바꾸지 않고 UI 표기만 `n/4명`으로 반영했다. 실제 제한은 후속 backend 작업이 필요하다.

@@ -719,10 +719,14 @@ button:disabled {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
+  gap: 18px;
   align-items: center;
   min-width: 0;
   overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
   text-align: center;
 }
 
@@ -744,6 +748,13 @@ button:disabled {
 }
 
 .room-summary::before,
+.room-summary::after,
+.room-summary.paper-card::after,
+.upload-card.paper-card::after {
+  display: none;
+}
+
+.room-summary::before,
 .canvas-stage::before,
 .featured-result-card::before {
   top: -16px;
@@ -760,7 +771,32 @@ button:disabled {
 }
 
 .room-summary .card-heading {
+  justify-content: center;
   margin-bottom: 0;
+}
+
+.room-summary .card-heading svg {
+  display: none;
+}
+
+.room-summary .card-heading h2 {
+  position: relative;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+}
+
+.room-summary .card-heading h2::before,
+.room-summary .card-heading h2::after {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin: 0 12px;
+  border-top: 3px solid var(--yellow);
+  transform: rotate(38deg);
+}
+
+.room-summary .card-heading h2::after {
+  transform: rotate(-38deg);
 }
 
 .room-summary .summary-list,
@@ -775,6 +811,14 @@ button:disabled {
 
 .upload-card {
   min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.upload-card .card-heading {
+  display: none;
 }
 
 .room-main,
@@ -782,6 +826,11 @@ button:disabled {
   display: grid;
   gap: clamp(18px, 2.4vw, 26px);
   min-width: 0;
+}
+
+.room-main {
+  justify-self: center;
+  width: min(100%, 560px);
 }
 
 .room-layout > .participants-card,
@@ -1193,10 +1242,13 @@ button.lobby-cta-card {
 
 .room-code-row {
   display: grid;
+  position: relative;
   justify-items: center;
   gap: 12px;
   align-items: center;
-  margin-bottom: 4px;
+  justify-self: center;
+  width: min(100%, 520px);
+  margin-bottom: 2px;
   min-width: 0;
 }
 
@@ -1205,20 +1257,21 @@ button.lobby-cta-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: min(100%, 470px);
-  min-height: 112px;
+  width: 100%;
+  min-height: 118px;
   margin-bottom: 4px;
   overflow: hidden;
-  border: 2px solid var(--ink);
-  border-radius: 10px 8px 11px 7px;
+  border: 2px solid rgba(37, 33, 29, 0.86);
+  border-radius: 8px;
   background:
-    radial-gradient(circle at 20% 30%, rgba(255, 217, 120, 0.18), transparent 28%),
+    linear-gradient(135deg, rgba(255, 226, 138, 0.28), transparent 45%),
     #fff8e8;
-  box-shadow: 4px 4px 0 rgba(37, 33, 29, 0.12);
+  box-shadow: 0 7px 16px rgba(37, 33, 29, 0.1);
   font-family: "Gaegu", "Pretendard", sans-serif;
   font-size: clamp(3.8rem, 9vw, 5.4rem);
   font-weight: 900;
   letter-spacing: 0.1em;
+  padding-right: 116px;
   transform: none;
 }
 
@@ -1237,10 +1290,15 @@ button.lobby-cta-card {
 }
 
 .copy-code-button {
+  position: absolute;
+  z-index: 2;
+  right: 16px;
+  top: 50%;
   flex: 0 0 auto;
-  min-height: 36px;
-  min-width: 104px;
+  min-height: 48px;
+  min-width: 94px;
   background: var(--paper-light);
+  transform: translateY(-50%);
   padding: 0 14px;
 }
 
@@ -1248,7 +1306,7 @@ button.lobby-cta-card {
   position: relative;
   z-index: 1;
   margin-top: 18px;
-  padding: 0 22px;
+  padding: 0 10px 0 22px;
 }
 
 .rough-badge {
@@ -1263,7 +1321,7 @@ button.lobby-cta-card {
 .summary-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   min-width: 0;
 }
@@ -1271,10 +1329,10 @@ button.lobby-cta-card {
 .summary-list div {
   display: grid;
   gap: 4px;
-  border: 1px dashed rgba(34, 34, 34, 0.24);
+  border: 1px solid rgba(34, 34, 34, 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.42);
-  padding: 9px 10px;
+  background: rgba(255, 253, 250, 0.42);
+  padding: 7px 8px;
 }
 
 .summary-list dt {
@@ -1289,13 +1347,13 @@ button.lobby-cta-card {
 
 .upload-box {
   display: grid;
-  gap: 8px;
-  min-height: 96px;
+  gap: 6px;
+  min-height: 82px;
   place-items: center;
-  border: 2px dashed var(--ink);
+  border: 2px dashed rgba(37, 33, 29, 0.28);
   border-radius: 10px;
-  background: rgba(255, 253, 250, 0.68);
-  padding: 18px;
+  background: rgba(255, 253, 250, 0.38);
+  padding: 16px;
   text-align: center;
   cursor: pointer;
 }
@@ -1502,7 +1560,7 @@ button.lobby-cta-card {
 }
 
 .image-list {
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .image-list li,
@@ -1522,12 +1580,12 @@ button.lobby-cta-card {
   grid-template-columns: 86px minmax(0, 1fr);
   align-items: center;
   justify-content: start;
-  border: 1px solid var(--line-soft);
+  border: 1px solid rgba(34, 34, 34, 0.2);
   border-radius: 8px;
   background:
     linear-gradient(135deg, rgba(169, 203, 237, 0.22), transparent 52%),
     var(--paper-light);
-  box-shadow: 2px 2px 0 rgba(37, 33, 29, 0.08);
+  box-shadow: 0 3px 8px rgba(37, 33, 29, 0.08);
   padding: 10px;
 }
 
@@ -2211,6 +2269,72 @@ button.lobby-cta-card {
   gap: 14px;
 }
 
+.countdown-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(37, 33, 29, 0.34);
+  padding: 20px;
+}
+
+.countdown-modal {
+  display: grid;
+  width: min(360px, 100%);
+  gap: 12px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: 8px 8px 0 rgba(37, 33, 29, 0.18);
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.countdown-modal span {
+  color: var(--success);
+  font-weight: 900;
+}
+
+.countdown-modal strong {
+  display: grid;
+  width: 112px;
+  height: 112px;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--yellow);
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: 4.4rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.countdown-modal p {
+  margin: 0;
+  color: #5f5a52;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.countdown-progress {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 34, 34, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.countdown-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--yellow);
+  transition: width 160ms linear;
+}
+
 @media (max-width: 1180px) {
   .room-layout,
   .play-layout,
@@ -2371,6 +2495,25 @@ button.lobby-cta-card {
 
   .login-panel .hero-copy {
     font-size: 1rem;
+  }
+
+  .image-list {
+    grid-template-columns: 1fr;
+  }
+
+  .room-code {
+    min-height: 104px;
+    padding-right: 0;
+    padding-bottom: 58px;
+    font-size: clamp(3.2rem, 16vw, 4.2rem);
+  }
+
+  .copy-code-button {
+    top: auto;
+    right: 50%;
+    bottom: 12px;
+    min-height: 40px;
+    transform: translateX(50%);
   }
 
   .gsi-material-button {
