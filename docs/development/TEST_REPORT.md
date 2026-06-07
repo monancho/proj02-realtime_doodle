@@ -1848,3 +1848,18 @@
 - Fix: login/lobby page doodle dust now uses the same black pen color instead of rainbow colors.
 - Fix: drawing now emits small dust particles while dragging, not only on pointer down.
 - Fix: remote cursor updates are sent a little more often and animated with CSS transition for smoother movement.
+
+## 2026-06-07 - Doodle visual tone refinement validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Note: no physical doodle.css file exists in the repo; the UI style guide doodle rules were applied to existing styles.css.
+- Fix: removed several web-like gradients and softened shadows into flat paper-like offsets.
+- Fix: added more irregular doodle-style border radii to common cards/buttons/code/image cards.
+- Fix: eraser drawing dust now uses white particles.
+
+## 2026-06-07 - Doodle line asset preparation correction
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Note: doodle.css was not kept as a runtime dependency and no doodle.css package styles are applied.
+- Fix: added custom project-owned SVG line assets for future page-specific use only.
+- Fix: eraser drawing dust now uses white particles.

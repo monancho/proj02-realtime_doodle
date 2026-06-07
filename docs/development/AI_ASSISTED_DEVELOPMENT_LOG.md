@@ -2145,3 +2145,17 @@
 - Changed page doodle particles to black only, added throttled dust during page drawing and play canvas drawing.
 - Reduced cursor-move frontend throttle from 80ms to 50ms and added left/top transition for remote cursor overlays.
 - Validation passed: web typecheck/build.
+
+## 2026-06-07 - Doodle visual tone refinement
+- User asked whether doodle.css could make lines/components feel more doodle-like.
+- Checked the repo: no actual doodle.css file exists; docs/design/UI_STYLE_GUIDE.md contains doodle-button style guidance.
+- Applied that guidance to existing styles.css: flatter marker colors, lighter paper shadows, irregular radii, less gradient usage, and paper/photo-card tone.
+- Changed eraser dust particles to white.
+- Validation passed: web typecheck/build.
+
+## 2026-06-07 - Doodle line asset preparation correction
+- User clarified that doodle.css should not be broadly applied to the UI.
+- Removed runtime doodle.css usage and dependency traces before commit; no doodle.css package styles are applied to the app.
+- Added custom project-owned SVG line assets for future page-specific use: rectangle, rounded rectangle, and oval.
+- Kept the requested eraser dust behavior: eraser drawing particles now use white.
+- Validation passed: web typecheck/build.

@@ -2903,7 +2903,7 @@ function CanvasPanel(props: CanvasPanelProps) {
     event.currentTarget.setPointerCapture(event.pointerId);
     const point = createPoint(event);
     emitCursor(point);
-    burstParticles(point, drawingColor);
+    burstParticles(point, drawingTool === "eraser" ? "#ffffff" : drawingColor);
     draftPointsRef.current = [point];
     lastSentPointRef.current = point;
   }
@@ -2979,7 +2979,7 @@ function CanvasPanel(props: CanvasPanelProps) {
     }
 
     lastCanvasParticleAtRef.current = now;
-    burstParticles(point, drawingTool === "eraser" ? "#222222" : drawingColor, 3);
+    burstParticles(point, drawingTool === "eraser" ? "#ffffff" : drawingColor, 3);
   }
 
   function burstParticles(point: DrawPoint, color: string, count = 10) {
