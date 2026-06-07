@@ -1837,3 +1837,23 @@
   - backend/API/Socket/Firebase 계약 변경 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
   - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 PHASE-FE-LOBBY-REAL-VISUAL-QA-FIX
+
+- Agent: `qa-frontend`
+- 목표: 로그인 후 로비 화면을 참고 이미지 방향으로 더 자연스럽게 다듬고 desktop/mobile 깨짐 가능성을 줄였다.
+- 수행 내용:
+  - lobby 상태에서는 기존 intro panel과 generic status strip을 숨겨 로비가 단일 랜딩 화면처럼 보이게 했다.
+  - `LobbyView`에 `notice` prop을 추가하고 하단 dashed notice를 실제 app message와 연결했다.
+  - lobby 전용 header/profile style, 큰 CTA card, inner dashed border, icon bubble, headline/marker/spacing을 보정했다.
+  - mobile/narrow viewport에서 headline과 CTA form이 겹치지 않도록 responsive rule을 추가했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 미완료/리스크:
+  - Browser 도구가 런타임 오류로 종료되어 screenshot 기반 검증은 완료하지 못했다.
+  - 실제 Google 로그인 세션 기반 확인은 사용자의 로컬 수동 QA가 필요하다.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.

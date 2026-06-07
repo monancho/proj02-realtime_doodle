@@ -977,16 +977,18 @@ export function App() {
         onSignOut={() => void handleSignOut()}
       />
 
-      <section className="intro-panel" aria-labelledby="app-title">
-        <div>
-          <p className="eyebrow">Realtime Doodle Relay</p>
-          <h1 id="app-title">같이 그리고, 같이 망치고, 같이 저장하기</h1>
-          <RoughDecoration className="rough-underline" seed={21} variant="underline" />
-          <p className="hero-copy">
-            방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
-          </p>
-        </div>
-      </section>
+      {viewMode !== "lobby" ? (
+        <section className="intro-panel" aria-labelledby="app-title">
+          <div>
+            <p className="eyebrow">Realtime Doodle Relay</p>
+            <h1 id="app-title">같이 그리고, 같이 망치고, 같이 저장하기</h1>
+            <RoughDecoration className="rough-underline" seed={21} variant="underline" />
+            <p className="hero-copy">
+              방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {room ? (
         <nav className="mode-tabs" aria-label="방 화면 전환">
@@ -1001,15 +1003,18 @@ export function App() {
         </nav>
       ) : null}
 
-      <section className="status-strip" aria-live="polite">
-        <span>{message}</span>
-        {isBusy ? <span className="busy-dot">처리 중</span> : null}
-      </section>
+      {viewMode !== "lobby" ? (
+        <section className="status-strip" aria-live="polite">
+          <span>{message}</span>
+          {isBusy ? <span className="busy-dot">처리 중</span> : null}
+        </section>
+      ) : null}
 
       {viewMode === "lobby" ? (
         <LobbyView
           isBusy={isBusy}
           joinCode={joinCode}
+          notice={message}
           onJoinCodeChange={(value) => setJoinCode(normalizeRoomCode(value))}
           onJoinRoomSubmit={handleJoinRoom}
           onOpenCreateRoom={() => setActiveModal("create-room")}
@@ -1166,28 +1171,33 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
     <main className="app-shell preview-shell">
       <AppHeader authUser={mockAuthUser} profile={mockProfile} onOpenNickname={noop} onSignOut={noop} />
 
-      <section className="intro-panel" aria-labelledby="app-title">
-        <div>
-          <p className="eyebrow">UI Preview Mode</p>
-          <h1 id="app-title">로그인 없이 화면만 확인하기</h1>
-          <RoughDecoration className="rough-underline" seed={21} variant="underline" />
-          <p className="hero-copy">
-            이 화면은 로컬 UI QA 전용 mock preview입니다. 실제 API, Firebase, Socket 요청은 실행하지 않습니다.
-          </p>
-        </div>
-      </section>
+      {viewMode !== "lobby" ? (
+        <section className="intro-panel" aria-labelledby="app-title">
+          <div>
+            <p className="eyebrow">UI Preview Mode</p>
+            <h1 id="app-title">로그인 없이 화면만 확인하기</h1>
+            <RoughDecoration className="rough-underline" seed={21} variant="underline" />
+            <p className="hero-copy">
+              이 화면은 로컬 UI QA 전용 mock preview입니다. 실제 API, Firebase, Socket 요청은 실행하지 않습니다.
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       <PreviewSwitcher activeMode={mode} />
 
-      <section className="status-strip" aria-live="polite">
-        <span>{getPreviewMessage(mode)}</span>
-        <span className="preview-badge">dev preview</span>
-      </section>
+      {viewMode !== "lobby" ? (
+        <section className="status-strip" aria-live="polite">
+          <span>{getPreviewMessage(mode)}</span>
+          <span className="preview-badge">dev preview</span>
+        </section>
+      ) : null}
 
       {viewMode === "lobby" ? (
         <LobbyView
           isBusy={false}
           joinCode="ABC123"
+          notice={getPreviewMessage(mode)}
           onJoinCodeChange={noopString}
           onJoinRoomSubmit={preventSubmit}
           onOpenCreateRoom={noop}
@@ -1560,6 +1570,7 @@ function AppHeader(props: AppHeaderProps) {
 interface LobbyViewProps {
   isBusy: boolean;
   joinCode: string;
+  notice: string;
   onJoinCodeChange: (value: string) => void;
   onJoinRoomSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenCreateRoom: () => void;
@@ -1618,7 +1629,7 @@ function LobbyView(props: LobbyViewProps) {
 
       <aside className="lobby-notice" aria-label="로비 안내">
         <span className="notice-icon">i</span>
-        <span>방 정보는 새로 고침 시 갱신됩니다. 문제가 생기면 페이지를 새로고침해주세요.</span>
+        <span>{props.notice}</span>
       </aside>
     </section>
   );

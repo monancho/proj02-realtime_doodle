@@ -39,8 +39,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    linear-gradient(rgba(37, 33, 29, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37, 33, 29, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(37, 33, 29, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 33, 29, 0.028) 1px, transparent 1px),
     var(--paper);
   background-size: 28px 28px;
 }
@@ -132,6 +132,58 @@ a {
   font-family: "Gaegu", "Pretendard", sans-serif;
   font-size: 1.8rem;
   line-height: 1;
+}
+
+.app-shell:has(.lobby-page) {
+  width: min(1320px, calc(100vw - 48px));
+  padding-top: 36px;
+}
+
+.app-shell:has(.lobby-page) .app-header {
+  position: relative;
+  top: auto;
+  margin-bottom: clamp(42px, 6vh, 74px);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  backdrop-filter: none;
+}
+
+.app-shell:has(.lobby-page) .app-header > strong {
+  position: relative;
+  font-size: clamp(2.6rem, 4.4vw, 3.6rem);
+  font-weight: 900;
+}
+
+.app-shell:has(.lobby-page) .app-header > strong::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: -10px;
+  left: -8px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--yellow);
+  transform: rotate(-3deg);
+  z-index: -1;
+}
+
+.app-shell:has(.lobby-page) .profile-button {
+  min-height: 58px;
+  border-color: #8f8a83;
+  border-radius: 12px;
+  background: rgba(255, 253, 250, 0.9);
+  box-shadow: 3px 3px 0 rgba(37, 33, 29, 0.18);
+  padding-inline: 10px 16px;
+}
+
+.app-shell:has(.lobby-page) .profile-button img,
+.app-shell:has(.lobby-page) .profile-button span {
+  width: 42px;
+  height: 42px;
+  background: #7650d6;
+  color: #ffffff;
 }
 
 .intro-panel {
@@ -464,9 +516,9 @@ button:disabled {
 .lobby-page {
   grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.15fr);
   align-items: center;
-  gap: clamp(22px, 4vw, 56px);
-  min-height: clamp(460px, 62vh, 620px);
-  padding: clamp(16px, 2vw, 28px) 0 0;
+  gap: clamp(30px, 5vw, 72px);
+  min-height: clamp(540px, 68vh, 700px);
+  padding: 0 0 clamp(24px, 4vw, 46px);
 }
 
 .room-layout {
@@ -653,10 +705,10 @@ button:disabled {
 
 .lobby-copy-panel {
   display: grid;
-  gap: 18px;
+  gap: 22px;
   align-content: center;
   min-width: 0;
-  padding: clamp(8px, 2vw, 24px);
+  padding: clamp(8px, 2vw, 24px) clamp(4px, 1vw, 12px);
 }
 
 .lobby-kicker {
@@ -671,16 +723,16 @@ button:disabled {
   margin: 0;
   color: var(--ink);
   font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: clamp(3.2rem, 6.7vw, 5.9rem);
+  font-size: clamp(3.9rem, 7.2vw, 6.7rem);
   font-weight: 900;
-  line-height: 0.98;
-  max-width: 8.7ch;
+  line-height: 0.94;
+  max-width: 8.4ch;
 }
 
 .lobby-marker-line {
   display: block;
-  width: min(100%, 480px);
-  height: 12px;
+  width: min(100%, 520px);
+  height: 10px;
   border-radius: 999px;
   background: var(--yellow);
   transform: rotate(-1.4deg);
@@ -691,23 +743,27 @@ button:disabled {
   max-width: 560px;
   margin: 0;
   color: #3f3a34;
-  font-size: clamp(1rem, 1.4vw, 1.22rem);
+  font-size: clamp(1.05rem, 1.5vw, 1.24rem);
   font-weight: 800;
-  line-height: 1.8;
+  line-height: 1.9;
 }
 
 .lobby-cta-stack {
   display: grid;
-  gap: 26px;
+  gap: clamp(24px, 4vh, 34px);
 }
 
 .lobby-cta-card {
   display: flex;
-  gap: clamp(18px, 3vw, 34px);
+  gap: clamp(20px, 3.2vw, 38px);
   align-items: center;
-  min-height: 168px;
+  min-height: clamp(178px, 20vh, 214px);
+  border-width: 3px;
+  border-radius: 12px;
+  box-shadow: 6px 6px 0 rgba(37, 33, 29, 0.2);
   color: #222222;
   text-align: left;
+  padding: clamp(22px, 3vw, 34px);
 }
 
 button.lobby-cta-card {
@@ -716,7 +772,9 @@ button.lobby-cta-card {
 }
 
 .lobby-cta-card::after {
-  inset: 10px;
+  inset: 12px;
+  border-color: rgba(37, 33, 29, 0.2);
+  border-radius: 9px;
 }
 
 .lobby-card-heading {
@@ -730,7 +788,7 @@ button.lobby-cta-card {
   margin: 0;
   color: var(--ink);
   font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: clamp(2.05rem, 3vw, 3rem);
+  font-size: clamp(2.35rem, 3.6vw, 3.35rem);
   font-weight: 900;
   line-height: 1.05;
 }
@@ -746,8 +804,8 @@ button.lobby-cta-card {
 .lobby-icon-bubble {
   display: inline-grid;
   flex: 0 0 auto;
-  width: clamp(64px, 7vw, 88px);
-  height: clamp(64px, 7vw, 88px);
+  width: clamp(76px, 7.5vw, 96px);
+  height: clamp(76px, 7.5vw, 96px);
   place-items: center;
   border-radius: 50%;
   color: var(--ink);
@@ -770,10 +828,11 @@ button.lobby-cta-card {
 .lobby-join-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
+  gap: 16px;
   align-items: center;
-  width: min(100%, 520px);
-  margin-left: clamp(82px, 10vw, 122px);
+  width: min(100%, 560px);
+  margin-top: 6px;
+  margin-left: clamp(96px, 10vw, 136px);
 }
 
 .lobby-join-form input {
@@ -786,7 +845,7 @@ button.lobby-cta-card {
   grid-column: 1 / -1;
   gap: 14px;
   align-items: center;
-  margin-top: clamp(16px, 3vw, 34px);
+  margin-top: clamp(20px, 4vw, 52px);
   border: 2px dashed #b5aea6;
   border-radius: 16px;
   background: rgb(255 253 247 / 0.7);
@@ -1698,11 +1757,21 @@ button.lobby-cta-card {
   }
 
   .lobby-copy-panel h2 {
+    font-size: clamp(3rem, 12vw, 4.8rem);
     max-width: 10ch;
   }
 
   .lobby-join-form {
     margin-left: 0;
+  }
+
+  .app-shell:has(.lobby-page) {
+    width: min(100vw - 28px, 760px);
+    padding-top: 22px;
+  }
+
+  .app-shell:has(.lobby-page) .app-header {
+    margin-bottom: 30px;
   }
 
   .room-summary {
@@ -1775,6 +1844,10 @@ button.lobby-cta-card {
   .lobby-cta-card,
   .lobby-card-heading {
     flex-direction: column;
+  }
+
+  .lobby-cta-card {
+    min-height: auto;
   }
 
   .lobby-join-form {

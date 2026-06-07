@@ -1465,3 +1465,22 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 PHASE-FE-LOBBY-REAL-VISUAL-QA-FIX
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 브라우저 확인:
+  - web dev server를 `127.0.0.1:5174` 기준으로 실행했다.
+  - Browser 도구를 통해 `?preview=lobby` screenshot 확인을 2회 시도했으나, 브라우저 런타임이 `windows sandbox failed: spawn setup refresh` 상태로 종료되어 직접 screenshot 검증은 완료하지 못했다.
+  - 실제 Google 로그인 후 로비 확인은 사용자 로컬 수동 QA가 필요하다.
+- 코드 기반 점검:
+  - lobby 상태에서 중복 intro/status strip을 숨기고, lobby 하단 notice에 message를 연결했다.
+  - desktop 기준 좌측 소개 + 우측 CTA 카드 2단 구조를 유지했다.
+  - mobile 기준 CTA/input/button이 1단으로 쌓이도록 CSS를 보정했다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.

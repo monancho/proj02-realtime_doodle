@@ -775,3 +775,12 @@
 - 일반 lobby UI에서 join room modal 호출 버튼은 제거했다. modal 코드와 기존 handler는 다른 계약을 깨지 않도록 유지했다.
 - 상단 logo/profile menu, 기존 room/play/gallery 기능, Firebase/API/Socket 계약은 변경하지 않았다.
 - 하단 dashed notice strip과 모바일 1단 responsive layout을 추가했다.
+
+### 2026-06-07 PHASE-FE-LOBBY-REAL-VISUAL-QA-FIX
+
+- 로그인 후 lobby가 참고 이미지처럼 단일 로비 화면으로 읽히도록 중복 intro panel과 상단 status strip을 lobby 상태에서 숨겼다.
+- lobby 하단 dashed notice는 기존 `message` 상태와 연결해 방 생성/입장 오류와 진행 메시지를 표시하도록 했다.
+- lobby 전용 header 스타일을 추가해 상단 로고와 profile menu가 참고 이미지의 독립 배지처럼 보이도록 보정했다.
+- CTA card border, shadow, inner dashed line, icon bubble, spacing, headline 크기, marker underline을 참고 이미지 비율에 맞춰 조정했다.
+- mobile/narrow layout에서는 headline 크기, card stack, inline join form이 1단으로 자연스럽게 쌓이도록 보정했다.
+- 백엔드 코드, Firebase auth, API, Socket 계약, 로그인 전 Google login 화면은 변경하지 않았다.
