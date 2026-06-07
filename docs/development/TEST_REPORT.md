@@ -727,6 +727,27 @@
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 
+### 2026-06-07 PHASE-BE-ROOM-STARTING-REUSE-UPLOAD-REPLACE
+
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 결과:
+  - `server typecheck`: 통과.
+  - `server test`: 통과. 19 files, 93 tests.
+- 수정/검증:
+  - `start-game`이 `game-starting`을 먼저 emit하고 countdown scheduler를 등록하는지 검증했다.
+  - countdown 만료 후 `round-started`가 emit되고 selected image가 `used: true`가 되는지 검증했다.
+  - `waiting` 상태에서 같은 사용자의 image upload가 replace로 동작하고 기존 active image가 비활성화되는지 검증했다.
+  - spectator의 `draw-stroke`가 `ROOM_SPECTATOR_DRAWING_DENIED`로 거절되는지 검증했다.
+  - `prepare-next-game`이 finished room을 waiting으로 되돌리고 active images를 비활성화하는지 검증했다.
+- 미실행:
+  - 실제 MongoDB/GridFS 연결 검증.
+  - 실제 Socket.IO 클라이언트 2인 수동 E2E.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
 ### 2026-06-06 PHASE-LOCAL-MANUAL-E2E-SMOKE
 
 - 실행 명령: `corepack pnpm --filter @doodle/server typecheck`

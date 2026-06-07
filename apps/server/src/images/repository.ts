@@ -17,6 +17,12 @@ export interface ImageRepository {
     firebaseUid: string;
   }): Promise<number>;
   createImageMetadata(input: CreateImageMetadataInput): Promise<ImageMetadata>;
+  deactivateActiveImagesByRoomCode(roomCode: string): Promise<void>;
+  deactivateActiveImagesByUploader(input: {
+    roomCode: string;
+    firebaseUid: string;
+    exceptImageId?: string;
+  }): Promise<void>;
   findImageById(imageId: string): Promise<ImageMetadata | null>;
   listImagesByRoomCode(roomCode: string): Promise<ImageMetadata[]>;
   listUnusedImagesByRoomCode(roomCode: string): Promise<ImageMetadata[]>;

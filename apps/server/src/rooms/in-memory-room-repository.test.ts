@@ -182,7 +182,7 @@ describe("InMemoryRoomRepository", () => {
     ).resolves.toBeNull();
   });
 
-  it("rejects joins for missing, full, and already-started rooms", async () => {
+  it("rejects joins for missing and full rooms and marks playing joins as spectators", async () => {
     const fullRoom = createRoomFixture({
       roomCode: "FULL01",
       status: "waiting",
@@ -212,12 +212,17 @@ describe("InMemoryRoomRepository", () => {
         participant: createActor("new-uid")
       })
     ).rejects.toMatchObject({ code: "ROOM_FULL" });
-    await expect(
-      repository.joinRoom({
-        roomCode: "PLAY01",
-        participant: createActor("new-uid")
+    const spectatorRoom = await repository.joinRoom({
+      roomCode: "PLAY01",
+      participant: createActor("new-uid")
+    });
+
+    expect(spectatorRoom.participants).toContainEqual(
+      expect.objectContaining({
+        firebaseUid: "new-uid",
+        isSpectator: true
       })
-    ).rejects.toMatchObject({ code: "ROOM_ALREADY_STARTED" });
+    );
   });
 });
 

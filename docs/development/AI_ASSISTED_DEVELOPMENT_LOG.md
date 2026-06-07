@@ -1145,6 +1145,33 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 PHASE-BE-ROOM-STARTING-REUSE-UPLOAD-REPLACE
+
+- Agent: `backend`
+- 목표: room `starting` 상태, 5초 countdown, image replace, spectator drawing guard, 같은 방 재사용 backend 계약 구현.
+- 수행 내용:
+  - shared `RoomStatus`에 `starting`을 추가했다.
+  - shared `RoomParticipant`에 optional `isSpectator`, `ImageMetadata`에 optional `active`/`replacedAt`을 추가했다.
+  - `RoomRepository.startGame()`은 `waiting -> starting`, 새 `beginGame()`은 `starting -> playing`을 담당하도록 분리했다.
+  - `start-game` socket flow가 `game-starting`을 먼저 emit하고 5초 countdown 만료 후 `round-started`를 emit하도록 변경했다.
+  - image repository는 active image 기준으로 list/unused/count/used 처리를 수행한다.
+  - `POST /api/rooms/:roomCode/images`는 `waiting` 상태에서 기존 active image를 replace할 수 있도록 변경했다.
+  - `starting`, `playing`, `finished` 상태에서 join한 participant는 spectator로 표시할 수 있다.
+  - spectator drawing은 `ROOM_SPECTATOR_DRAWING_DENIED`로 거절하고 chat은 기존 membership 기준으로 허용한다.
+  - `prepare-next-game` socket event를 추가해 host가 finished room을 waiting으로 재사용할 수 있게 했다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 19 files, 93 tests.
+- 의도적으로 제외:
+  - 프론트엔드 코드 변경.
+  - 실제 MongoDB/GridFS 연결 검증.
+  - Redis adapter, durable scheduler, multi-instance countdown recovery.
+  - 기존 GridFS file cleanup.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 충돌/주의:
   - 기존 미추적 `package-lock.json`은 건드리지 않았다.
   - `pnpm-lock.yaml`은 pnpm workspace 의존성 추가로 갱신되었다.

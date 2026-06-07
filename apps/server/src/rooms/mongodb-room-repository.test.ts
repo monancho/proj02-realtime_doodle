@@ -127,7 +127,6 @@ describe("MongoRoomRepository", () => {
     expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         roomCode: "ABC123",
-        status: "waiting",
         "participants.firebaseUid": { $ne: "guest-uid" }
       }),
       expect.objectContaining({

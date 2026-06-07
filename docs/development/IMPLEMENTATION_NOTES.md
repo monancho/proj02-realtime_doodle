@@ -725,3 +725,18 @@
 - 업로드 안내 문구가 카드 안에서 안정적으로 줄바꿈되도록 upload box text style을 보정했다.
 - 업로드 preview 확인/취소 버튼은 같은 줄에서 균형 있게 배치되도록 flex sizing을 보정했다.
 - 갤러리 결과 카드의 다운로드 버튼은 카드 하단에서 일관되게 보이도록 full-width와 auto margin을 적용했다.
+
+### 2026-06-07 PHASE-BE-ROOM-STARTING-REUSE-UPLOAD-REPLACE
+
+- room status에 `starting`을 추가했다.
+- `start-game`은 이제 `waiting -> starting` 전이 후 `game-starting { roomCode, countdownSec, startsAt, room }`을 emit한다.
+- MVP countdown은 5초이며 countdown 만료 후 첫 라운드를 선택하고 `round-started`를 emit한다.
+- countdown 중 room status가 `starting`이므로 이미지 업로드/교체는 기존 room state guard로 거절된다.
+- image metadata에 `active`와 `replacedAt` 계약을 추가했다.
+- 같은 사용자가 `waiting` 상태에서 다시 업로드하면 새 image를 active로 만들고 기존 active image를 비활성화한다.
+- ready 계산과 unused image 선택은 active image 기준으로 동작한다.
+- `starting`, `playing`, `finished` 상태에서 join한 사용자는 `isSpectator: true` participant로 표시할 수 있다.
+- spectator는 chat은 가능하지만 `draw-stroke`는 `ROOM_SPECTATOR_DRAWING_DENIED`로 거절된다.
+- `prepare-next-game` socket event를 추가해 host가 `finished -> waiting`으로 같은 방을 재사용할 수 있게 했다.
+- 재사용 시 `currentRoundIndex`는 0으로 초기화하고 이전 active images는 비활성화하며 results는 보존한다.
+- 프론트엔드 코드는 변경하지 않았다.

@@ -16,9 +16,11 @@ import type {
 import { RoomDomainError } from "./errors";
 import type {
   AdvanceRoundInput,
+  BeginGameInput,
   CreateRoomInput,
   FinishGameInput,
   JoinRoomInput,
+  PrepareNextGameInput,
   RoomRepository,
   StartGameInput,
   UpdateParticipantProfileInput
@@ -32,6 +34,7 @@ export interface RoomParticipantDocument {
   firebaseUid: string;
   nickname: string | null;
   avatarUrl: string | null;
+  isSpectator?: boolean;
   joinedAt: Date;
 }
 
@@ -129,18 +132,12 @@ export class MongoRoomRepository implements RoomRepository {
       return mapRoomDocumentToDetail(existingRoom);
     }
 
-    if (existingRoom.status !== "waiting") {
-      throw new RoomDomainError(
-        "ROOM_ALREADY_STARTED",
-        "Only waiting rooms can be joined."
-      );
-    }
-
     if (existingRoom.participants.length >= existingRoom.settings.maxPlayers) {
       throw new RoomDomainError("ROOM_FULL", "Room has reached max players.");
     }
 
     const now = new Date();
+    const isSpectator = existingRoom.status !== "waiting";
     const updatedRoom = await this.collection.findOneAndUpdate(
       createJoinRoomFilter(roomCode, input.participant.firebaseUid),
       {
@@ -149,6 +146,7 @@ export class MongoRoomRepository implements RoomRepository {
             firebaseUid: input.participant.firebaseUid,
             nickname: input.participant.nickname,
             avatarUrl: input.participant.avatarUrl,
+            ...(isSpectator ? { isSpectator: true } : {}),
             joinedAt: now
           }
         },
@@ -168,12 +166,6 @@ export class MongoRoomRepository implements RoomRepository {
     if (hasParticipant(latestRoom, input.participant.firebaseUid)) {
       return mapRoomDocumentToDetail(latestRoom);
     }
-    if (latestRoom.status !== "waiting") {
-      throw new RoomDomainError(
-        "ROOM_ALREADY_STARTED",
-        "Only waiting rooms can be joined."
-      );
-    }
     if (latestRoom.participants.length >= latestRoom.settings.maxPlayers) {
       throw new RoomDomainError("ROOM_FULL", "Room has reached max players.");
     }
@@ -191,7 +183,7 @@ export class MongoRoomRepository implements RoomRepository {
       { roomCode, status: "waiting" },
       {
         $set: {
-          status: "playing",
+          status: "starting",
           currentRoundIndex: 0,
           updatedAt: now
         }
@@ -211,6 +203,35 @@ export class MongoRoomRepository implements RoomRepository {
     throw new RoomDomainError(
       "ROOM_STATE_INVALID",
       "Only waiting rooms can be started."
+    );
+  }
+
+  public async beginGame(input: BeginGameInput): Promise<RoomDetail> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const now = new Date();
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      { roomCode, status: "starting" },
+      {
+        $set: {
+          status: "playing",
+          updatedAt: now
+        }
+      },
+      { returnDocument: "after" }
+    );
+
+    if (updatedRoom) {
+      return mapRoomDocumentToDetail(updatedRoom);
+    }
+
+    const latestRoom = await this.collection.findOne({ roomCode });
+    if (!latestRoom) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    throw new RoomDomainError(
+      "ROOM_STATE_INVALID",
+      "Only starting rooms can begin play."
     );
   }
 
@@ -270,6 +291,37 @@ export class MongoRoomRepository implements RoomRepository {
     );
   }
 
+  public async prepareNextGame(input: PrepareNextGameInput): Promise<RoomDetail> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const now = new Date();
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      { roomCode, status: "finished" },
+      {
+        $set: {
+          status: "waiting",
+          currentRoundIndex: 0,
+          "participants.$[].isSpectator": false,
+          updatedAt: now
+        }
+      } as UpdateFilter<RoomDocument>,
+      { returnDocument: "after" }
+    );
+
+    if (updatedRoom) {
+      return mapRoomDocumentToDetail(updatedRoom);
+    }
+
+    const latestRoom = await this.collection.findOne({ roomCode });
+    if (!latestRoom) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    throw new RoomDomainError(
+      "ROOM_STATE_INVALID",
+      "Only finished rooms can be prepared for another game."
+    );
+  }
+
   public async updateParticipantProfile(
     input: UpdateParticipantProfileInput
   ): Promise<RoomDetail | null> {
@@ -315,6 +367,7 @@ export function mapRoomDocumentToDetail(document: RoomDocument): RoomDetail {
       nickname: participant.nickname,
       avatarUrl: participant.avatarUrl,
       isHost: participant.firebaseUid === document.hostUid,
+      ...(participant.isSpectator === true ? { isSpectator: true } : {}),
       joinedAt: participant.joinedAt.toISOString()
     })
   );
@@ -349,7 +402,6 @@ function createJoinRoomFilter(
 ): Filter<RoomDocument> {
   return {
     roomCode,
-    status: "waiting",
     "participants.firebaseUid": { $ne: firebaseUid },
     $expr: { $lt: [{ $size: "$participants" }, "$settings.maxPlayers"] }
   } as Filter<RoomDocument>;

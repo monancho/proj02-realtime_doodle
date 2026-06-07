@@ -14,8 +14,10 @@ import { InMemoryUserRepository } from "../users/in-memory-user-repository";
 import {
   createSocketRoomName,
   handleDrawStroke,
+  handleGameCountdownExpired,
   handleJoinRoom,
   handleLeaveRoom,
+  handlePrepareNextGame,
   handleProfileUpdated,
   handleRoundTimerExpired,
   handleSendMessage,
@@ -455,6 +457,50 @@ describe("room membership socket handlers", () => {
     );
   });
 
+  it("rejects draw-stroke from spectators while still allowing room membership", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [
+        {
+          ...createRoomDetail({ status: "playing" }),
+          participants: [
+            {
+              firebaseUid: "spectator-uid",
+              nickname: "Spectator",
+              avatarUrl: null,
+              isHost: false,
+              isSpectator: true,
+              joinedAt: "2026-06-06T00:00:02.000Z"
+            }
+          ]
+        }
+      ]
+    });
+    const io = createMockIo();
+    const socket = createMockSocket({
+      user: {
+        firebaseUid: "spectator-uid",
+        email: "spectator@example.com",
+        nickname: "Spectator",
+        avatarUrl: null
+      }
+    });
+
+    await handleDrawStroke(
+      createDrawingDependencies({ io, repository, socket }),
+      {
+        roomCode: "ABC123",
+        roundId: "round-1",
+        stroke: createValidStroke()
+      }
+    );
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "ROOM_SPECTATOR_DRAWING_DENIED" })
+    );
+  });
+
   it("rejects draw-stroke without authenticated socket context", async () => {
     const repository = new InMemoryRoomRepository();
     const socket = createMockSocket(undefined);
@@ -563,7 +609,7 @@ describe("room membership socket handlers", () => {
     expect(strokeBatches[9999]?.stroke.strokeId).toBe("stroke-10000");
   });
 
-  it("starts a game by selecting an unused image and emitting round-started", async () => {
+  it("moves a ready room to starting and emits game-starting before the first round", async () => {
     const repository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "ABC123",
       now: createClock([
@@ -597,29 +643,84 @@ describe("room membership socket handlers", () => {
     const usedImage = await imageRepository.findImageById("image-2");
     const room = await repository.findRoomByCode("ABC123");
 
+    expect(usedImage?.used).toBe(false);
+    expect(room).toMatchObject({
+      status: "starting",
+      currentRoundIndex: 0
+    });
+    expect(io.to).toHaveBeenCalledWith("room:ABC123");
+    expect(io.emitToRoom).toHaveBeenCalledWith("game-starting", {
+      roomCode: "ABC123",
+      countdownSec: 5,
+      startsAt: "2026-06-06T00:00:07.000Z",
+      room: expect.objectContaining({
+        status: "starting",
+        currentRoundIndex: 0
+      })
+    });
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "room-updated",
+      expect.objectContaining({
+        room: expect.objectContaining({
+          status: "starting",
+          currentRoundIndex: 0
+        })
+      })
+    );
+    expect(timerScheduler.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "game-starting",
+        durationSec: 5
+      })
+    );
+  });
+
+  it("starts the first round after the game-starting countdown expires", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "starting" })],
+      now: () => new Date("2026-06-06T00:00:05.000Z")
+    });
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [
+        createImageMetadata({ id: "image-1" }),
+        createImageMetadata({ id: "image-2" })
+      ]
+    });
+    const io = createMockIo();
+    const timerScheduler = createMockTimerScheduler();
+    const roundState = new RoundRuntimeStateStore();
+
+    await handleGameCountdownExpired(
+      createTimerDependencies({
+        io,
+        repository,
+        imageRepository,
+        roundState,
+        timerScheduler,
+        selectImage: (images) => images[1] ?? images[0],
+        roundIdGenerator: () => "round-test",
+        now: () => new Date("2026-06-06T00:00:07.000Z")
+      }),
+      "ABC123"
+    );
+
+    const usedImage = await imageRepository.findImageById("image-2");
+    const room = await repository.findRoomByCode("ABC123");
+
     expect(usedImage?.used).toBe(true);
     expect(room).toMatchObject({
       status: "playing",
       currentRoundIndex: 0
     });
-    expect(io.to).toHaveBeenCalledWith("room:ABC123");
     expect(io.emitToRoom).toHaveBeenCalledWith("round-started", {
       roomCode: "ABC123",
       roundId: "round-test",
       roundIndex: 0,
       image: usedImage,
       durationSec: 60,
-      startedAt: "2026-06-06T00:00:02.000Z"
+      startedAt: "2026-06-06T00:00:07.000Z"
     });
-    expect(io.emitToRoom).toHaveBeenCalledWith(
-      "room-updated",
-      expect.objectContaining({
-        room: expect.objectContaining({
-          status: "playing",
-          currentRoundIndex: 0
-        })
-      })
-    );
     expect(timerScheduler.schedule).toHaveBeenCalledWith(
       expect.objectContaining({
         roomCode: "ABC123",
@@ -842,6 +943,52 @@ describe("room membership socket handlers", () => {
     expect(io.emitToRoom).toHaveBeenCalledWith(
       "round-started",
       expect.objectContaining({ roundId: "round-2" })
+    );
+  });
+
+  it("prepares a finished room for another game without removing results", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "finished" })],
+      now: () => new Date("2026-06-06T00:02:00.000Z")
+    });
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [
+        createImageMetadata({ id: "image-host" }),
+        createImageMetadata({
+          id: "image-guest",
+          firebaseUid: "guest-uid",
+          nickname: "Guest"
+        })
+      ]
+    });
+    const io = createMockIo();
+    const socket = createMockSocket(hostAuth);
+
+    await handlePrepareNextGame(
+      createRoundDependencies({
+        io,
+        repository,
+        imageRepository,
+        socket
+      }),
+      { roomCode: "ABC123" }
+    );
+
+    const room = await repository.findRoomByCode("ABC123");
+    const activeImages = await imageRepository.listImagesByRoomCode("ABC123");
+    const oldImage = await imageRepository.findImageById("image-host");
+
+    expect(room).toMatchObject({
+      status: "waiting",
+      currentRoundIndex: 0
+    });
+    expect(activeImages).toHaveLength(0);
+    expect(oldImage?.active).toBe(false);
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "room-updated",
+      expect.objectContaining({
+        room: expect.objectContaining({ status: "waiting" })
+      })
     );
   });
 

@@ -21,6 +21,7 @@ const MAX_CHAT_MESSAGE_LENGTH = 200;
 const MAX_RECENT_CHAT_MESSAGES = 50;
 const MAX_DRAW_POINTS_PER_PAYLOAD = 128;
 const MAX_RECENT_STROKE_BATCHES = 10000;
+const GAME_START_COUNTDOWN_SEC = 5;
 const DRAW_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 export interface SocketErrorPayload {
@@ -36,6 +37,7 @@ export interface SocketErrorPayload {
     | "ROOM_NOT_FOUND"
     | "ROOM_PAYLOAD_INVALID"
     | "ROOM_PARTICIPANTS_NOT_READY"
+    | "ROOM_SPECTATOR_DRAWING_DENIED"
     | "ROOM_STATE_INVALID"
     | "ROUND_IMAGE_NOT_FOUND"
     | "ROUND_STATE_INVALID"
@@ -92,8 +94,19 @@ export interface StartGamePayload {
   roomCode: string;
 }
 
+export interface PrepareNextGamePayload {
+  roomCode: string;
+}
+
 export interface ProfileUpdatedPayload {
   roomCode: string;
+}
+
+export interface GameStartingPayload {
+  roomCode: string;
+  countdownSec: number;
+  startsAt: string;
+  room: RoomDetail;
 }
 
 export interface RoundStartedPayload {
@@ -381,6 +394,25 @@ export function registerRoomMembershipHandlers(
       );
     });
 
+    socket.on("prepare-next-game", (payload: unknown) => {
+      void handlePrepareNextGame(
+        {
+          io,
+          repository,
+          socket,
+          imageRepository,
+          now: () => new Date(),
+          recentStrokeBatches,
+          roundIdGenerator: createRoundId,
+          resultSaveService: saveService ?? createDisabledResultSaveService(),
+          selectImage: selectRandomImage,
+          roundState,
+          timerScheduler
+        },
+        payload
+      );
+    });
+
     socket.on("profile-updated", (payload: unknown) => {
       if (!userRepository) {
         socket.emit("socket-error", {
@@ -599,6 +631,14 @@ export async function handleDrawStroke(
     return;
   }
 
+  if (participant.isSpectator) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_SPECTATOR_DRAWING_DENIED",
+      message: "Spectators cannot draw in the active game."
+    });
+    return;
+  }
+
   if (room.status !== "playing") {
     emitSocketError(dependencies.socket, {
       code: "ROOM_STATE_INVALID",
@@ -713,36 +753,73 @@ export async function handleStartGame(
     return;
   }
 
+  const startedRoom = await dependencies.repository.startGame({
+    roomCode: room.roomCode
+  });
+  const startsAtDate = new Date(
+    dependencies.now().getTime() + GAME_START_COUNTDOWN_SEC * 1000
+  );
+  const payloadToEmit: GameStartingPayload = {
+    roomCode: startedRoom.roomCode,
+    countdownSec: GAME_START_COUNTDOWN_SEC,
+    startsAt: startsAtDate.toISOString(),
+    room: startedRoom
+  };
+
+  dependencies.io
+    .to(createSocketRoomName(startedRoom.roomCode))
+    .emit("game-starting", payloadToEmit);
+  emitRoomUpdated(dependencies.io, startedRoom);
+  dependencies.timerScheduler.schedule({
+    roomCode: startedRoom.roomCode,
+    roundId: "game-starting",
+    durationSec: GAME_START_COUNTDOWN_SEC,
+    onExpire: () => {
+      void handleGameCountdownExpired(dependencies, startedRoom.roomCode);
+    }
+  });
+}
+
+export async function handleGameCountdownExpired(
+  dependencies: RoundTimerDependencies,
+  roomCode: string
+): Promise<void> {
+  const room = await dependencies.repository.findRoomByCode(roomCode);
+  if (!room || room.status !== "starting") {
+    return;
+  }
+
+  const unusedImages =
+    await dependencies.imageRepository.listUnusedImagesByRoomCode(room.roomCode);
+  if (unusedImages.length === 0) {
+    return;
+  }
+
   const selectedCandidate = dependencies.selectImage(unusedImages);
   const selectedImage =
     await dependencies.imageRepository.markImageUsed(selectedCandidate.id);
   if (!selectedImage) {
-    emitSocketError(dependencies.socket, {
-      code: "ROUND_IMAGE_NOT_FOUND",
-      message: "Selected image is no longer available."
-    });
     return;
   }
 
-  const startedRoom = await dependencies.repository.startGame({
+  const playingRoom = await dependencies.repository.beginGame({
     roomCode: room.roomCode
   });
-  const startedAt = dependencies.now().toISOString();
-  const payloadToEmit: RoundStartedPayload = {
-    roomCode: startedRoom.roomCode,
+  const startedPayload: RoundStartedPayload = {
+    roomCode: playingRoom.roomCode,
     roundId: dependencies.roundIdGenerator(),
-    roundIndex: startedRoom.currentRoundIndex,
+    roundIndex: playingRoom.currentRoundIndex,
     image: selectedImage,
-    durationSec: startedRoom.settings.roundDurationSec,
-    startedAt
+    durationSec: playingRoom.settings.roundDurationSec,
+    startedAt: dependencies.now().toISOString()
   };
-  dependencies.roundState.startRound(payloadToEmit);
 
+  dependencies.roundState.startRound(startedPayload);
   dependencies.io
-    .to(createSocketRoomName(startedRoom.roomCode))
-    .emit("round-started", payloadToEmit);
-  emitRoomUpdated(dependencies.io, startedRoom);
-  scheduleRoundTimer(dependencies, payloadToEmit);
+    .to(createSocketRoomName(playingRoom.roomCode))
+    .emit("round-started", startedPayload);
+  emitRoomUpdated(dependencies.io, playingRoom);
+  scheduleRoundTimer(dependencies, startedPayload);
 }
 
 export async function handleProfileUpdated(
@@ -813,6 +890,76 @@ export async function handleProfileUpdated(
   }
 
   emitRoomUpdated(dependencies.io, updatedRoom);
+}
+
+export async function handlePrepareNextGame(
+  dependencies: RoundEventDependencies,
+  payload: unknown
+): Promise<void> {
+  const auth = getSocketAuth(dependencies.socket);
+  if (!auth) {
+    emitSocketError(dependencies.socket, {
+      code: "AUTH_TOKEN_MISSING",
+      message: "Authentication is required."
+    });
+    return;
+  }
+
+  const roomCode = parseRoomCode(payload);
+  if (!roomCode) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_PAYLOAD_INVALID",
+      message: "roomCode must be a non-empty string."
+    });
+    return;
+  }
+
+  const room = await dependencies.repository.findRoomByCode(roomCode);
+  if (!room) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_NOT_FOUND",
+      message: "Room was not found."
+    });
+    return;
+  }
+
+  const isParticipant = room.participants.some(
+    (participant) => participant.firebaseUid === auth.user.firebaseUid
+  );
+  if (!isParticipant) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_ACCESS_DENIED",
+      message: "Join the room before preparing the next game."
+    });
+    return;
+  }
+
+  if (room.hostUid !== auth.user.firebaseUid) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_HOST_REQUIRED",
+      message: "Only the room host can prepare the next game."
+    });
+    return;
+  }
+
+  if (room.status !== "finished") {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_STATE_INVALID",
+      message: "Only finished rooms can be prepared for another game."
+    });
+    return;
+  }
+
+  dependencies.roundState.clearRoom(room.roomCode);
+  dependencies.timerScheduler.clear(room.roomCode);
+  await dependencies.imageRepository.deactivateActiveImagesByRoomCode(
+    room.roomCode
+  );
+  const preparedRoom = await dependencies.repository.prepareNextGame({
+    roomCode: room.roomCode
+  });
+
+  emitRoomUpdated(dependencies.io, preparedRoom);
 }
 
 export async function handleRoundTimerExpired(
@@ -933,11 +1080,14 @@ function areAllParticipantsReady(
   images: ImageMetadata[]
 ): boolean {
   const uploaders = new Set(
-    images.map((image) => image.uploadedBy.firebaseUid)
+    images
+      .filter((image) => image.active !== false)
+      .map((image) => image.uploadedBy.firebaseUid)
   );
 
-  return room.participants.every((participant) =>
-    uploaders.has(participant.firebaseUid)
+  return room.participants.every(
+    (participant) =>
+      participant.isSpectator === true || uploaders.has(participant.firebaseUid)
   );
 }
 

@@ -21,11 +21,19 @@ export interface StartGameInput {
   roomCode: string;
 }
 
+export interface BeginGameInput {
+  roomCode: string;
+}
+
 export interface AdvanceRoundInput {
   roomCode: string;
 }
 
 export interface FinishGameInput {
+  roomCode: string;
+}
+
+export interface PrepareNextGameInput {
   roomCode: string;
 }
 
@@ -41,8 +49,10 @@ export interface RoomRepository {
   findRoomByCode(roomCode: string): Promise<RoomDetail | null>;
   joinRoom(input: JoinRoomInput): Promise<RoomDetail>;
   startGame(input: StartGameInput): Promise<RoomDetail>;
+  beginGame(input: BeginGameInput): Promise<RoomDetail>;
   advanceRound(input: AdvanceRoundInput): Promise<RoomDetail>;
   finishGame(input: FinishGameInput): Promise<RoomDetail>;
+  prepareNextGame(input: PrepareNextGameInput): Promise<RoomDetail>;
   updateParticipantProfile(
     input: UpdateParticipantProfileInput
   ): Promise<RoomDetail | null>;

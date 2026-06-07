@@ -8,9 +8,11 @@ import type {
 import { RoomDomainError } from "./errors";
 import type {
   AdvanceRoundInput,
+  BeginGameInput,
   CreateRoomInput,
   FinishGameInput,
   JoinRoomInput,
+  PrepareNextGameInput,
   RoomRepository,
   StartGameInput,
   UpdateParticipantProfileInput
@@ -100,7 +102,7 @@ export class InMemoryRoomRepository implements RoomRepository {
       return cloneRoom(room);
     }
 
-    if (room.status !== "waiting") {
+    if (room.status !== "waiting" && room.status !== "starting" && room.status !== "playing" && room.status !== "finished") {
       throw new RoomDomainError(
         "ROOM_ALREADY_STARTED",
         "Only waiting rooms can be joined."
@@ -121,6 +123,7 @@ export class InMemoryRoomRepository implements RoomRepository {
           nickname: input.participant.nickname,
           avatarUrl: input.participant.avatarUrl,
           isHost: input.participant.firebaseUid === room.hostUid,
+          ...(room.status !== "waiting" ? { isSpectator: true } : {}),
           joinedAt: now
         }
       ],
@@ -149,8 +152,34 @@ export class InMemoryRoomRepository implements RoomRepository {
 
     const nextRoom = createRoomDetail({
       ...room,
-      status: "playing",
+      status: "starting",
       currentRoundIndex: 0,
+      updatedAt: this.now().toISOString()
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async beginGame(input: BeginGameInput): Promise<RoomDetail> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    if (room.status !== "starting") {
+      throw new RoomDomainError(
+        "ROOM_STATE_INVALID",
+        "Only starting rooms can begin play."
+      );
+    }
+
+    const nextRoom = createRoomDetail({
+      ...room,
+      status: "playing",
       updatedAt: this.now().toISOString()
     });
 
@@ -203,6 +232,37 @@ export class InMemoryRoomRepository implements RoomRepository {
     const nextRoom = createRoomDetail({
       ...room,
       status: "finished",
+      updatedAt: this.now().toISOString()
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async prepareNextGame(input: PrepareNextGameInput): Promise<RoomDetail> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room) {
+      throw new RoomDomainError("ROOM_NOT_FOUND", "Room was not found.");
+    }
+
+    if (room.status !== "finished") {
+      throw new RoomDomainError(
+        "ROOM_STATE_INVALID",
+        "Only finished rooms can be prepared for another game."
+      );
+    }
+
+    const nextRoom = createRoomDetail({
+      ...room,
+      status: "waiting",
+      currentRoundIndex: 0,
+      participants: room.participants.map((participant) => ({
+        ...participant,
+        isSpectator: false
+      })),
       updatedAt: this.now().toISOString()
     });
 

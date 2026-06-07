@@ -155,8 +155,8 @@ describe("image routes", () => {
     expect(response.body.error.code).toBe("ROOM_STATE_INVALID");
   });
 
-  it("enforces file validation and per-user upload limits", async () => {
-    const { app } = await createImageRouteTestApp(hostAuthContext);
+  it("enforces file validation and replaces an existing user upload while waiting", async () => {
+    const { app, imageRepository } = await createImageRouteTestApp(hostAuthContext);
 
     const unsupported = await request(app)
       .post("/api/rooms/ABC123/images")
@@ -181,17 +181,26 @@ describe("image routes", () => {
       })
       .expect(201);
 
-    const limit = await request(app)
+    const replacement = await request(app)
       .post("/api/rooms/ABC123/images")
       .attach("image", Buffer.from("more-bytes"), {
         filename: "second.png",
         contentType: "image/png"
       })
-      .expect(409);
+      .expect(201);
+    const activeImages = await imageRepository.listImagesByRoomCode("ABC123");
+    const oldImage = await imageRepository.findImageById("image-1");
 
     expect(unsupported.body.error.code).toBe("IMAGE_FILE_TYPE_UNSUPPORTED");
     expect(empty.body.error.code).toBe("IMAGE_FILE_EMPTY");
-    expect(limit.body.error.code).toBe("IMAGE_UPLOAD_LIMIT_EXCEEDED");
+    expect(replacement.body.image).toMatchObject({
+      id: "image-2",
+      originalName: "second.png",
+      active: true
+    });
+    expect(activeImages).toHaveLength(1);
+    expect(activeImages[0]?.id).toBe("image-2");
+    expect(oldImage?.active).toBe(false);
   });
 });
 

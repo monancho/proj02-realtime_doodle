@@ -57,13 +57,6 @@ export function createRoomImageRouter({
           firebaseUid: auth.user.firebaseUid
         });
 
-      if (existingUploadCount >= 1) {
-        throw new ImageDomainError(
-          "IMAGE_UPLOAD_LIMIT_EXCEEDED",
-          "Only one image can be uploaded by each participant."
-        );
-      }
-
       const multipartFile = await parseSingleImageMultipart(
         request,
         MAX_IMAGE_FILE_SIZE_BYTES
@@ -117,6 +110,13 @@ export function createRoomImageRouter({
           width: null,
           height: null
         });
+        if (existingUploadCount >= room.settings.maxImagesPerUser) {
+          await imageRepository.deactivateActiveImagesByUploader({
+            roomCode: room.roomCode,
+            firebaseUid: auth.user.firebaseUid,
+            exceptImageId: image.id
+          });
+        }
         const payload: UploadImageResponse = { image };
 
         roomUpdatePublisher?.publishRoomUpdated(room);

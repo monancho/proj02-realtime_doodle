@@ -19,14 +19,16 @@ export interface ImageDocument {
   width: number | null;
   height: number | null;
   used: boolean;
+  active?: boolean;
+  replacedAt?: Date | null;
   createdAt: Date;
 }
 
 export async function ensureImageIndexes(
   collection: Collection<ImageDocument>
 ): Promise<void> {
-  await collection.createIndex({ roomCode: 1, used: 1 });
-  await collection.createIndex({ roomCode: 1, "uploadedBy.firebaseUid": 1 });
+  await collection.createIndex({ roomCode: 1, active: 1, used: 1 });
+  await collection.createIndex({ roomCode: 1, "uploadedBy.firebaseUid": 1, active: 1 });
   await collection.createIndex({ createdAt: 1 });
 }
 
@@ -45,7 +47,8 @@ class MongoImageRepository implements ImageRepository {
   }): Promise<number> {
     return this.collection.countDocuments({
       roomCode: input.roomCode,
-      "uploadedBy.firebaseUid": input.firebaseUid
+      "uploadedBy.firebaseUid": input.firebaseUid,
+      active: { $ne: false }
     });
   }
 
@@ -65,6 +68,8 @@ class MongoImageRepository implements ImageRepository {
       width: input.width,
       height: input.height,
       used: false,
+      active: true,
+      replacedAt: null,
       createdAt: new Date()
     };
 
@@ -85,9 +90,46 @@ class MongoImageRepository implements ImageRepository {
     return document ? mapImageDocument(document) : null;
   }
 
+  public async deactivateActiveImagesByRoomCode(roomCode: string): Promise<void> {
+    await this.collection.updateMany(
+      { roomCode, active: { $ne: false } },
+      {
+        $set: {
+          active: false,
+          replacedAt: new Date()
+        }
+      }
+    );
+  }
+
+  public async deactivateActiveImagesByUploader(input: {
+    roomCode: string;
+    firebaseUid: string;
+    exceptImageId?: string;
+  }): Promise<void> {
+    const filter = {
+      roomCode: input.roomCode,
+      "uploadedBy.firebaseUid": input.firebaseUid,
+      active: { $ne: false },
+      ...(input.exceptImageId && ObjectId.isValid(input.exceptImageId)
+        ? { _id: { $ne: new ObjectId(input.exceptImageId) } }
+        : {})
+    };
+
+    await this.collection.updateMany(
+      filter,
+      {
+        $set: {
+          active: false,
+          replacedAt: new Date()
+        }
+      }
+    );
+  }
+
   public async listImagesByRoomCode(roomCode: string): Promise<ImageMetadata[]> {
     const documents = await this.collection
-      .find({ roomCode })
+      .find({ roomCode, active: { $ne: false } })
       .sort({ createdAt: 1 })
       .toArray();
 
@@ -98,7 +140,7 @@ class MongoImageRepository implements ImageRepository {
     roomCode: string
   ): Promise<ImageMetadata[]> {
     const documents = await this.collection
-      .find({ roomCode, used: false })
+      .find({ roomCode, active: { $ne: false }, used: false })
       .sort({ createdAt: 1 })
       .toArray();
 
@@ -111,7 +153,7 @@ class MongoImageRepository implements ImageRepository {
     }
 
     const document = await this.collection.findOneAndUpdate(
-      { _id: new ObjectId(imageId), used: false },
+      { _id: new ObjectId(imageId), active: { $ne: false }, used: false },
       { $set: { used: true } },
       { returnDocument: "after" }
     );
@@ -133,6 +175,8 @@ function mapImageDocument(document: ImageDocument): ImageMetadata {
     width: document.width,
     height: document.height,
     used: document.used,
+    active: document.active ?? true,
+    replacedAt: document.replacedAt?.toISOString() ?? null,
     createdAt: document.createdAt.toISOString()
   };
 }

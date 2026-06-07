@@ -27,7 +27,8 @@ export class InMemoryImageRepository implements ImageRepository {
     return [...this.imagesById.values()].filter(
       (image) =>
         image.roomCode === input.roomCode &&
-        image.uploadedBy.firebaseUid === input.firebaseUid
+        image.uploadedBy.firebaseUid === input.firebaseUid &&
+        isActiveImage(image)
     ).length;
   }
 
@@ -46,6 +47,8 @@ export class InMemoryImageRepository implements ImageRepository {
       width: input.width,
       height: input.height,
       used: false,
+      active: true,
+      replacedAt: null,
       createdAt: this.now().toISOString()
     };
 
@@ -61,9 +64,49 @@ export class InMemoryImageRepository implements ImageRepository {
     return image ? cloneImage(image) : null;
   }
 
+  public async deactivateActiveImagesByRoomCode(roomCode: string): Promise<void> {
+    const normalizedRoomCode = roomCode;
+    const replacedAt = this.now().toISOString();
+
+    for (const [imageId, image] of this.imagesById.entries()) {
+      if (image.roomCode === normalizedRoomCode && isActiveImage(image)) {
+        this.imagesById.set(imageId, {
+          ...image,
+          uploadedBy: { ...image.uploadedBy },
+          active: false,
+          replacedAt
+        });
+      }
+    }
+  }
+
+  public async deactivateActiveImagesByUploader(input: {
+    roomCode: string;
+    firebaseUid: string;
+    exceptImageId?: string;
+  }): Promise<void> {
+    const replacedAt = this.now().toISOString();
+
+    for (const [imageId, image] of this.imagesById.entries()) {
+      if (
+        image.roomCode === input.roomCode &&
+        image.uploadedBy.firebaseUid === input.firebaseUid &&
+        image.id !== input.exceptImageId &&
+        isActiveImage(image)
+      ) {
+        this.imagesById.set(imageId, {
+          ...image,
+          uploadedBy: { ...image.uploadedBy },
+          active: false,
+          replacedAt
+        });
+      }
+    }
+  }
+
   public async listImagesByRoomCode(roomCode: string): Promise<ImageMetadata[]> {
     return [...this.imagesById.values()]
-      .filter((image) => image.roomCode === roomCode)
+      .filter((image) => image.roomCode === roomCode && isActiveImage(image))
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
       .map(cloneImage);
   }
@@ -72,7 +115,9 @@ export class InMemoryImageRepository implements ImageRepository {
     roomCode: string
   ): Promise<ImageMetadata[]> {
     return [...this.imagesById.values()]
-      .filter((image) => image.roomCode === roomCode && !image.used)
+      .filter(
+        (image) => image.roomCode === roomCode && isActiveImage(image) && !image.used
+      )
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
       .map(cloneImage);
   }
@@ -80,7 +125,7 @@ export class InMemoryImageRepository implements ImageRepository {
   public async markImageUsed(imageId: string): Promise<ImageMetadata | null> {
     const image = this.imagesById.get(imageId);
 
-    if (!image || image.used) {
+    if (!image || image.used || !isActiveImage(image)) {
       return null;
     }
 
@@ -101,4 +146,8 @@ function cloneImage(image: ImageMetadata): ImageMetadata {
     ...image,
     uploadedBy: { ...image.uploadedBy }
   };
+}
+
+function isActiveImage(image: ImageMetadata): boolean {
+  return image.active !== false;
 }

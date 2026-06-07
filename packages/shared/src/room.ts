@@ -1,4 +1,4 @@
-export type RoomStatus = "waiting" | "playing" | "finished";
+export type RoomStatus = "waiting" | "starting" | "playing" | "finished";
 
 export interface RoomSettings {
   roundDurationSec: number;
@@ -11,6 +11,7 @@ export interface RoomParticipant {
   nickname: string | null;
   avatarUrl: string | null;
   isHost: boolean;
+  isSpectator?: boolean;
   joinedAt: string;
 }
 

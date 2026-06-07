@@ -18,6 +18,8 @@ export interface ImageMetadata {
   width: number | null;
   height: number | null;
   used: boolean;
+  active?: boolean;
+  replacedAt?: string | null;
   createdAt: string;
 }
 

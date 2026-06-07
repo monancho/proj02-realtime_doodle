@@ -1866,3 +1866,50 @@ export interface ListRoomResultsResponse {
 - 프론트엔드 UI 변경은 이번 backend 작업 범위에서 제외했다.
 - Drawing, Chat, Timer, Result save 기존 동작은 변경하지 않았다.
 - 실제 MongoDB/GridFS 연결 검증, Redis adapter, durable presence, multi-instance coordination은 수행하지 않았다.
+
+## Room Starting / Upload Replace / Reuse 구현 기록
+
+이 섹션은 `PHASE-BE-ROOM-STARTING-REUSE-UPLOAD-REPLACE`의 구현 결과 기준이다.
+
+### Room Status
+
+- `RoomStatus`는 `waiting | starting | playing | finished`를 사용한다.
+- `waiting`: 이미지 업로드/교체 가능, chat 가능, host가 start-game 요청 가능.
+- `starting`: 5초 countdown 상태, 이미지 업로드/교체 불가, chat 가능.
+- `playing`: 라운드 진행 상태, 이미지 업로드/교체 불가, chat 가능.
+- `finished`: 결과 확인 상태, chat 가능, host가 같은 방을 다시 준비할 수 있다.
+
+### Image Metadata
+
+- `ImageMetadata.active`는 현재 게임 준비/라운드 선택에 사용할 수 있는 이미지 여부를 나타낸다.
+- `ImageMetadata.replacedAt`은 교체 또는 방 재사용으로 비활성화된 시각이다.
+- `listImagesByRoomCode()`와 `listUnusedImagesByRoomCode()`는 active image만 반환한다.
+- `markImageUsed()`는 active이고 unused인 image만 used 처리한다.
+- `POST /api/rooms/:roomCode/images`는 `waiting` 상태에서만 허용한다.
+- 같은 사용자가 이미 active image를 업로드한 경우 새 image metadata를 생성한 뒤 기존 active image를 `active: false`로 비활성화한다.
+- 기존 GridFS original image file 삭제는 MVP에서 수행하지 않는다.
+
+### Start Countdown
+
+- `start-game { roomCode }` 성공 시 즉시 `round-started`를 emit하지 않는다.
+- host, membership, `waiting` 상태, active image ready 기준을 통과하면 room status를 `starting`으로 전이한다.
+- 같은 Socket.IO room에 `game-starting { roomCode, countdownSec, startsAt, room }`을 emit한다.
+- MVP countdown은 5초이다.
+- countdown 만료 후 첫 unused active image를 선택하고 `used: true`로 처리한 뒤 `starting -> playing`으로 전이한다.
+- 이후 기존 `round-started { roomCode, roundId, roundIndex, image, durationSec, startedAt }`를 emit한다.
+
+### Spectator / Reuse
+
+- `starting`, `playing`, `finished` 상태에서 새로 join한 사용자는 participant로 추가하되 `isSpectator: true`로 표시할 수 있다.
+- spectator는 chat 가능, drawing 불가이다.
+- spectator의 `draw-stroke`는 `ROOM_SPECTATOR_DRAWING_DENIED`로 거절한다.
+- `prepare-next-game { roomCode }`는 host만 요청할 수 있다.
+- `prepare-next-game`은 `finished -> waiting`으로 전이하고 `currentRoundIndex`를 0으로 초기화한다.
+- 기존 result metadata와 result image는 보존한다.
+- 이전 active image는 새 게임 ready 계산에서 제외되도록 비활성화한다.
+
+### 구현 제외
+
+- 프론트엔드 UI 변경은 이번 backend 작업 범위에서 제외했다.
+- Redis adapter, durable scheduler, multi-instance countdown recovery는 구현하지 않았다.
+- 기존 GridFS file cleanup은 구현하지 않았다.
