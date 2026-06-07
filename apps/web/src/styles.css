@@ -183,7 +183,7 @@ a {
   color: var(--ink);
   pointer-events: none;
   filter: drop-shadow(1px 2px 0 rgba(37, 33, 29, 0.18));
-  transform: translate(-26px, -24px) rotate(-18deg);
+  transform: translate(-10px, -24px) rotate(-18deg);
 }
 
 .app-header {
