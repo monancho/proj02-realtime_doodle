@@ -107,6 +107,13 @@ interface ResultSavedPayload {
   createdAt: string;
 }
 
+interface GameStartingPayload {
+  roomCode: string;
+  countdownSec: number;
+  startsAt: string;
+  room: RoomDetail;
+}
+
 interface ActiveRound extends RoundStartedPayload {
   endedAt: string | null;
 }
@@ -171,6 +178,9 @@ export function App() {
   const [drawStrokes, setDrawStrokes] = useState<DrawStroke[]>([]);
   const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
   const [activeRoundImageUrl, setActiveRoundImageUrl] = useState<string | null>(null);
+  const [uploadedImagePreviewUrl, setUploadedImagePreviewUrl] = useState<string | null>(null);
+  const [gameStarting, setGameStarting] = useState<GameStartingPayload | null>(null);
+  const [countdownRemainingSec, setCountdownRemainingSec] = useState<number | null>(null);
   const [roundEnded, setRoundEnded] = useState<RoundEndedPayload | null>(null);
   const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>("idle");
@@ -231,6 +241,15 @@ export function App() {
     socket.on("room-updated", (payload: { room: RoomDetail }) => {
       setRoom(payload.room);
       markRoomReady(payload.room);
+      if (payload.room.status === "waiting") {
+        setGameStarting(null);
+        setActiveRound(null);
+        setRoundEnded(null);
+        setGameFinishedAt(null);
+        setResultSaveStatus("idle");
+        setDrawStrokes([]);
+        setViewMode("room");
+      }
       void refreshRoomImages(payload.room.roomCode);
     });
 
@@ -245,7 +264,19 @@ export function App() {
       ]);
     });
 
+    socket.on("game-starting", (payload: GameStartingPayload) => {
+      setRoom(payload.room);
+      markRoomReady(payload.room);
+      setGameStarting(payload);
+      setCountdownRemainingSec(payload.countdownSec);
+      clearUploadPreview();
+      setViewMode("play");
+      setMessage(`${payload.countdownSec}초 후 게임이 시작됩니다.`);
+    });
+
     socket.on("round-started", (payload: RoundStartedPayload) => {
+      setGameStarting(null);
+      setCountdownRemainingSec(null);
       setActiveRound({ ...payload, endedAt: null });
       setRoundEnded(null);
       setGameFinishedAt(null);
@@ -278,6 +309,8 @@ export function App() {
 
     socket.on("game-finished", (payload: { roomCode: string; room: RoomDetail; finishedAt: string }) => {
       setRoom(payload.room);
+      setGameStarting(null);
+      setCountdownRemainingSec(null);
       setGameFinishedAt(payload.finishedAt);
       setResultSaveStatus("saved");
       setViewMode("gallery");
@@ -319,6 +352,24 @@ export function App() {
 
     return () => window.clearInterval(intervalId);
   }, [activeRound]);
+
+  useEffect(() => {
+    if (!gameStarting) {
+      setCountdownRemainingSec(null);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const startsAtMs = new Date(gameStarting.startsAt).getTime();
+      const remainingMs = startsAtMs - Date.now();
+      setCountdownRemainingSec(Math.max(0, Math.ceil(remainingMs / 1000)));
+    };
+
+    updateRemaining();
+    const intervalId = window.setInterval(updateRemaining, 250);
+
+    return () => window.clearInterval(intervalId);
+  }, [gameStarting]);
 
   useEffect(() => {
     if (!activeRound) {
@@ -480,7 +531,7 @@ export function App() {
       const joinedRoom = await api.joinRoom(normalizedRoomCode);
       setRoom(joinedRoom);
       setJoinCode(joinedRoom.roomCode);
-      setViewMode("room");
+      setViewMode(resolveViewModeForRoom(joinedRoom, currentFirebaseUid));
       setActiveModal(null);
       markRoomReady(joinedRoom);
       await refreshRoomData(joinedRoom.roomCode, joinedRoom);
@@ -505,8 +556,8 @@ export function App() {
       return;
     }
 
-    if (myUploadedImage) {
-      setUploadError("이미 이 방에 이미지를 업로드했습니다.");
+    if (room.status !== "waiting") {
+      setUploadError("게임 시작 준비 중이거나 진행 중에는 이미지를 바꿀 수 없습니다.");
       return;
     }
 
@@ -639,6 +690,11 @@ export function App() {
       return;
     }
 
+    if (isCurrentUserSpectator) {
+      setSocketError("관전자는 채팅과 라운드 보기만 사용할 수 있습니다.");
+      return;
+    }
+
     const roomCode = normalizeRoomCode(room.roomCode);
     const roundId = activeRound?.roundId ?? createClientRoundId(room);
     const batches = chunkStroke(stroke, maxStrokePointsPerPayload);
@@ -663,12 +719,34 @@ export function App() {
       return;
     }
 
+    if (room.status !== "waiting") {
+      setSocketError("방이 대기 상태일 때만 시작할 수 있습니다.");
+      return;
+    }
+
     if (!areAllParticipantsReady) {
       setSocketError("모든 참가자가 이미지를 1장씩 업로드해야 시작할 수 있습니다.");
       return;
     }
 
     socketRef.current.emit("start-game", {
+      roomCode: normalizeRoomCode(room.roomCode)
+    });
+    setSocketError(null);
+  }
+
+  function handlePrepareNextGame() {
+    if (!room || !socketRef.current || socketStatus !== "connected") {
+      setSocketError("방 연결이 준비되면 다시 준비할 수 있습니다.");
+      return;
+    }
+
+    if (!isCurrentUserHost) {
+      setSocketError("방장만 다시 준비할 수 있습니다.");
+      return;
+    }
+
+    socketRef.current.emit("prepare-next-game", {
       roomCode: normalizeRoomCode(room.roomCode)
     });
     setSocketError(null);
@@ -783,9 +861,18 @@ export function App() {
     setGameFinishedAt(null);
     setResultSaveStatus("idle");
     setRemainingSec(null);
+    setGameStarting(null);
+    setCountdownRemainingSec(null);
     setSocketError(null);
     setSocketStatus("idle");
     clearUploadPreview();
+    setUploadedImagePreviewUrl((currentUrl) => {
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+
+      return null;
+    });
   }
 
   function disconnectSocket() {
@@ -801,15 +888,70 @@ export function App() {
   const activeRoomCode = room?.roomCode ?? normalizeRoomCode(joinCode);
   const canUseRoomActions = Boolean(room);
   const currentFirebaseUid = authUser?.uid ?? profile?.firebaseUid ?? null;
-  const uploadedFirebaseUids = new Set(images.map((image) => image.uploadedBy.firebaseUid));
+  const activeImages = images.filter((image) => image.active !== false);
+  const uploadedFirebaseUids = new Set(activeImages.map((image) => image.uploadedBy.firebaseUid));
   const myUploadedImage = currentFirebaseUid
-    ? images.find((image) => image.uploadedBy.firebaseUid === currentFirebaseUid) ?? null
+    ? activeImages.find((image) => image.uploadedBy.firebaseUid === currentFirebaseUid) ?? null
     : null;
-  const readyParticipantCount = room?.participants.filter((participant) => uploadedFirebaseUids.has(participant.firebaseUid)).length ?? 0;
+  const currentParticipant = room?.participants.find((participant) => participant.firebaseUid === currentFirebaseUid) ?? null;
+  const isCurrentUserSpectator = currentParticipant?.isSpectator === true;
+  const readyParticipantCount =
+    room?.participants.filter(
+      (participant) => participant.isSpectator === true || uploadedFirebaseUids.has(participant.firebaseUid)
+    ).length ?? 0;
   const areAllParticipantsReady = Boolean(
-    room && room.participants.length > 0 && room.participants.every((participant) => uploadedFirebaseUids.has(participant.firebaseUid))
+    room &&
+      room.participants.length > 0 &&
+      room.participants.every(
+        (participant) => participant.isSpectator === true || uploadedFirebaseUids.has(participant.firebaseUid)
+      )
   );
   const isCurrentUserHost = Boolean(room && currentFirebaseUid && room.hostUid === currentFirebaseUid);
+
+  useEffect(() => {
+    if (!myUploadedImage) {
+      setUploadedImagePreviewUrl((currentUrl) => {
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+        }
+
+        return null;
+      });
+      return;
+    }
+
+    let isCancelled = false;
+    let nextUrl: string | null = null;
+
+    api
+      .downloadImage(myUploadedImage.id)
+      .then((blob) => {
+        if (isCancelled) {
+          return;
+        }
+
+        nextUrl = URL.createObjectURL(blob);
+        setUploadedImagePreviewUrl((currentUrl) => {
+          if (currentUrl) {
+            URL.revokeObjectURL(currentUrl);
+          }
+
+          return nextUrl;
+        });
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setUploadedImagePreviewUrl(null);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      if (nextUrl) {
+        URL.revokeObjectURL(nextUrl);
+      }
+    };
+  }, [myUploadedImage?.id, api]);
 
   if (!isAuthenticated) {
     return (
@@ -846,9 +988,11 @@ export function App() {
           <TabButton isActive={viewMode === "lobby"} onClick={() => setViewMode("lobby")} icon={<LogIn size={18} />}>
             로비
           </TabButton>
-          <TabButton isActive={viewMode === "room"} onClick={() => setViewMode("room")} icon={<Users size={18} />}>
-            방 준비
-          </TabButton>
+          {room.status === "waiting" && !isCurrentUserSpectator ? (
+            <TabButton isActive={viewMode === "room"} onClick={() => setViewMode("room")} icon={<Users size={18} />}>
+              방 준비
+            </TabButton>
+          ) : null}
         </nav>
       ) : null}
 
@@ -869,7 +1013,7 @@ export function App() {
         <RoomView
           activeRoomCode={activeRoomCode}
           canUseRoomActions={canUseRoomActions}
-          images={images}
+          images={activeImages}
           isBusy={isBusy}
           resourceErrors={resourceErrors}
           resourceState={resourceState}
@@ -877,14 +1021,22 @@ export function App() {
           areAllParticipantsReady={areAllParticipantsReady}
           currentFirebaseUid={currentFirebaseUid}
           isCurrentUserHost={isCurrentUserHost}
+          isCurrentUserSpectator={isCurrentUserSpectator}
           myUploadedImage={myUploadedImage}
+          uploadedImagePreviewUrl={uploadedImagePreviewUrl}
           readyParticipantCount={readyParticipantCount}
           uploadPreview={uploadPreview}
           uploadError={uploadError}
+          chatDraft={chatDraft}
+          chatMessages={chatMessages}
+          socketError={socketError}
+          socketStatus={socketStatus}
           onCancelUploadPreview={clearUploadPreview}
+          onChatDraftChange={setChatDraft}
           onCopyRoomCode={() => void handleCopyRoomCode()}
           onConfirmUpload={() => void handleConfirmUpload()}
           onRefreshRoom={() => void handleRefreshRoom()}
+          onSendMessage={handleSendMessage}
           onSelectUploadFile={handleSelectUploadFile}
           onStartGame={handleStartGame}
         />
@@ -896,9 +1048,12 @@ export function App() {
           activeRoundImageUrl={activeRoundImageUrl}
           chatDraft={chatDraft}
           chatMessages={chatMessages}
+          countdownRemainingSec={countdownRemainingSec}
           drawStrokes={drawStrokes}
           gameFinishedAt={gameFinishedAt}
-          imageCount={images.length}
+          imageCount={activeImages.length}
+          isCurrentUserSpectator={isCurrentUserSpectator}
+          gameStarting={gameStarting}
           remainingSec={remainingSec}
           room={room}
           roundEnded={roundEnded}
@@ -916,10 +1071,13 @@ export function App() {
           isBusy={isBusy}
           nextCursor={nextResultCursor}
           results={results}
+          room={room}
           state={resourceState.results}
           error={resourceErrors.results}
+          isCurrentUserHost={isCurrentUserHost}
           onDownload={(resultId) => void handleDownloadResult(resultId)}
           onLoadMore={() => void handleLoadResults(nextResultCursor)}
+          onPrepareNextGame={handlePrepareNextGame}
           onRefresh={() => void handleLoadResults(null)}
         />
       ) : null}
@@ -1029,14 +1187,22 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           areAllParticipantsReady={areAllParticipantsReady}
           currentFirebaseUid={currentFirebaseUid}
           isCurrentUserHost={isCurrentUserHost}
+          isCurrentUserSpectator={false}
           myUploadedImage={mockImages[0]}
+          uploadedImagePreviewUrl={mockRoundImageUrl}
           readyParticipantCount={mockRoom.participants.length}
           uploadPreview={null}
           uploadError={null}
+          chatDraft=""
+          chatMessages={mockChatMessages}
+          socketError={null}
+          socketStatus="connected"
           onCancelUploadPreview={noop}
+          onChatDraftChange={noopString}
           onCopyRoomCode={noop}
           onConfirmUpload={noop}
           onRefreshRoom={noop}
+          onSendMessage={preventSubmit}
           onSelectUploadFile={noopSelectFile}
           onStartGame={noop}
         />
@@ -1048,9 +1214,12 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           activeRoundImageUrl={mockRoundImageUrl}
           chatDraft=""
           chatMessages={mockChatMessages}
+          countdownRemainingSec={null}
           drawStrokes={mockDrawStrokes}
           gameFinishedAt={null}
           imageCount={mockImages.length}
+          isCurrentUserSpectator={false}
+          gameStarting={null}
           remainingSec={83}
           room={mockPlayingRoom}
           roundEnded={null}
@@ -1068,10 +1237,13 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           isBusy={false}
           nextCursor={null}
           results={mockResults}
+          room={mockPlayingRoom}
           state="ready"
           error={null}
+          isCurrentUserHost={true}
           onDownload={noopString}
           onLoadMore={noop}
+          onPrepareNextGame={noop}
           onRefresh={noop}
         />
       ) : null}
@@ -1114,6 +1286,20 @@ function getPreviewMode(): PreviewMode | null {
 
 function isPreviewMode(value: string | null): value is PreviewMode {
   return value === "login" || value === "lobby" || value === "room" || value === "play" || value === "gallery";
+}
+
+function resolveViewModeForRoom(room: RoomDetail, firebaseUid: string | null): ViewMode {
+  const participant = room.participants.find((roomParticipant) => roomParticipant.firebaseUid === firebaseUid);
+
+  if (room.status === "waiting" && participant?.isSpectator !== true) {
+    return "room";
+  }
+
+  if (room.status === "finished") {
+    return "gallery";
+  }
+
+  return "play";
 }
 
 function getPreviewMessage(mode: PreviewMode): string {
@@ -1405,23 +1591,39 @@ interface RoomViewProps {
   canUseRoomActions: boolean;
   currentFirebaseUid: string | null;
   isCurrentUserHost: boolean;
+  isCurrentUserSpectator: boolean;
   isBusy: boolean;
   myUploadedImage: ImageMetadata | null;
+  uploadedImagePreviewUrl: string | null;
   readyParticipantCount: number;
   resourceState: ResourceState;
   resourceErrors: ResourceErrors;
   uploadPreview: UploadPreview | null;
   uploadError: string | null;
+  chatMessages: ChatMessage[];
+  chatDraft: string;
+  socketStatus: "idle" | "connecting" | "connected" | "error";
+  socketError: string | null;
   onCancelUploadPreview: () => void;
+  onChatDraftChange: (value: string) => void;
   onCopyRoomCode: () => void;
   onConfirmUpload: () => void;
   onRefreshRoom: () => void;
+  onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
   onSelectUploadFile: (file: File | null) => void;
   onStartGame: () => void;
 }
 
 function RoomView(props: RoomViewProps) {
-  const uploadDisabled = !props.canUseRoomActions || props.isBusy || Boolean(props.myUploadedImage);
+  const canReplaceUpload =
+    Boolean(props.myUploadedImage) &&
+    props.room?.status === "waiting" &&
+    !props.isCurrentUserSpectator;
+  const uploadDisabled =
+    !props.canUseRoomActions ||
+    props.isBusy ||
+    props.room?.status !== "waiting" ||
+    props.isCurrentUserSpectator;
   const startDisabled =
     props.isBusy ||
     !props.canUseRoomActions ||
@@ -1429,7 +1631,9 @@ function RoomView(props: RoomViewProps) {
     props.room?.status !== "waiting";
   const readyFirebaseUids = new Set(props.images.map((image) => image.uploadedBy.firebaseUid));
   const pendingParticipants =
-    props.room?.participants.filter((participant) => !readyFirebaseUids.has(participant.firebaseUid)) ?? [];
+    props.room?.participants.filter(
+      (participant) => participant.isSpectator !== true && !readyFirebaseUids.has(participant.firebaseUid)
+    ) ?? [];
   const pendingNames = pendingParticipants.map((participant) => participant.nickname ?? "익명 참가자").join(", ");
   const startHelpText = getStartHelpText({
     areAllParticipantsReady: props.areAllParticipantsReady,
@@ -1510,26 +1714,48 @@ function RoomView(props: RoomViewProps) {
           <h2>이미지 업로드</h2>
         </div>
         {props.myUploadedImage ? (
-          <p className="state-copy">이미 이 방에 이미지를 업로드했습니다.</p>
-        ) : null}
-        <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
-          <Upload size={28} />
-          <strong>사진 1장 업로드</strong>
-          <span>
-            {props.myUploadedImage
-              ? "사용자당 이미지는 1장만 업로드할 수 있습니다."
-              : "JPEG, PNG, WebP 이미지를 선택하세요. 선택 후 미리보기에서 확인합니다."}
-          </span>
-          <input
-            accept="image/jpeg,image/png,image/webp"
-            disabled={uploadDisabled}
-            type="file"
-            onChange={(event) => {
-              props.onSelectUploadFile(event.currentTarget.files?.item(0) ?? null);
-              event.currentTarget.value = "";
-            }}
-          />
-        </label>
+          <section className="uploaded-image-card" aria-label="업로드한 이미지">
+            {props.uploadedImagePreviewUrl ? (
+              <img alt="" src={props.uploadedImagePreviewUrl} />
+            ) : (
+              <div className="uploaded-image-placeholder">
+                <ImagePlus size={24} />
+              </div>
+            )}
+            <div>
+              <strong>{props.myUploadedImage.originalName}</strong>
+              <small>{formatBytes(props.myUploadedImage.size)}</small>
+              <p>{canReplaceUpload ? "시작 전까지 이미지를 교체할 수 있습니다." : "게임 준비 중이거나 진행 중에는 교체할 수 없습니다."}</p>
+            </div>
+            <label className={canReplaceUpload ? "secondary-button replace-upload-button" : "secondary-button replace-upload-button disabled"}>
+              교체하기
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                disabled={!canReplaceUpload}
+                type="file"
+                onChange={(event) => {
+                  props.onSelectUploadFile(event.currentTarget.files?.item(0) ?? null);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </label>
+          </section>
+        ) : (
+          <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
+            <Upload size={28} />
+            <strong>사진 1장 업로드</strong>
+            <span>JPEG, PNG, WebP 이미지를 선택하세요. 선택 후 미리보기에서 확인합니다.</span>
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              disabled={uploadDisabled}
+              type="file"
+              onChange={(event) => {
+                props.onSelectUploadFile(event.currentTarget.files?.item(0) ?? null);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+        )}
         {props.uploadPreview ? (
           <section className="upload-preview" aria-label="업로드 미리보기">
             <img alt="" src={props.uploadPreview.url} />
@@ -1557,6 +1783,15 @@ function RoomView(props: RoomViewProps) {
         images={props.images}
         room={props.room}
         state={props.resourceState.participants}
+      />
+      <ChatPanel
+        chatDraft={props.chatDraft}
+        chatMessages={props.chatMessages}
+        socketError={props.socketError}
+        socketStatus={props.socketStatus}
+        title="대기실 채팅"
+        onChatDraftChange={props.onChatDraftChange}
+        onSendMessage={props.onSendMessage}
       />
     </section>
   );
@@ -1687,24 +1922,45 @@ interface PlayViewProps {
   resultSaveStatus: ResultSaveStatus;
   gameFinishedAt: string | null;
   remainingSec: number | null;
+  countdownRemainingSec: number | null;
+  gameStarting: GameStartingPayload | null;
+  isCurrentUserSpectator: boolean;
   onChatDraftChange: (value: string) => void;
   onDrawStroke: (stroke: DrawStroke) => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
 function PlayView(props: PlayViewProps) {
+  const drawingDisabled =
+    !props.room ||
+    props.room.status !== "playing" ||
+    props.socketStatus !== "connected" ||
+    !props.activeRound ||
+    Boolean(props.activeRound.endedAt) ||
+    props.isCurrentUserSpectator;
+  const lockMessage = props.isCurrentUserSpectator
+    ? "관전자는 현재 라운드와 채팅만 볼 수 있습니다."
+    : props.gameStarting
+      ? "곧 라운드가 시작됩니다."
+      : undefined;
+
   return (
     <section className="play-layout">
+      <TimerBar
+        activeRound={props.activeRound}
+        countdownRemainingSec={props.countdownRemainingSec}
+        gameFinishedAt={props.gameFinishedAt}
+        gameStarting={props.gameStarting}
+        imageCount={props.imageCount}
+        remainingSec={props.remainingSec}
+        resultSaveStatus={props.resultSaveStatus}
+        roundEnded={props.roundEnded}
+      />
       <PlayParticipantsPanel room={props.room} />
       <CanvasPanel
-        disabled={
-          !props.room ||
-          props.room.status !== "playing" ||
-          props.socketStatus !== "connected" ||
-          !props.activeRound ||
-          Boolean(props.activeRound.endedAt)
-        }
+        disabled={drawingDisabled}
         backgroundImageUrl={props.activeRoundImageUrl}
+        lockMessage={lockMessage}
         strokes={props.drawStrokes}
         title={props.activeRound ? `Round ${props.activeRound.roundIndex + 1}` : "캔버스 준비 중"}
         subtitle={
@@ -1759,6 +2015,115 @@ function PlayView(props: PlayViewProps) {
         </div>
       </aside>
     </section>
+  );
+}
+
+interface TimerBarProps {
+  activeRound: ActiveRound | null;
+  countdownRemainingSec: number | null;
+  gameFinishedAt: string | null;
+  gameStarting: GameStartingPayload | null;
+  imageCount: number;
+  remainingSec: number | null;
+  resultSaveStatus: ResultSaveStatus;
+  roundEnded: RoundEndedPayload | null;
+}
+
+function TimerBar(props: TimerBarProps) {
+  const totalRounds = Math.max(1, props.imageCount);
+  let title = "?쇱슫???湲?";
+  let meta = "?ъ쭊???좏깮?섎㈃ ?쒖옉?⑸땲??";
+  let progress = 0;
+  let tone: "idle" | "starting" | "playing" | "ended" | "finished" = "idle";
+
+  if (props.gameStarting) {
+    const remaining = props.countdownRemainingSec ?? props.gameStarting.countdownSec;
+    const elapsed = props.gameStarting.countdownSec - remaining;
+    title = `${remaining}珥??? ?쒖옉`;
+    meta = "移댁슫?몃떎??以묒뿉???대?吏瑜?諛붽? ???놁뒿?덈떎.";
+    progress =
+      props.gameStarting.countdownSec > 0
+        ? Math.min(100, Math.max(0, (elapsed / props.gameStarting.countdownSec) * 100))
+        : 100;
+    tone = "starting";
+  } else if (props.gameFinishedAt) {
+    title = "寃뚯엫 醫낅즺";
+    meta = "寃곌낵瑜?媛ㅻ윭由ъ뿉??蹂?二鍮꾧? ?섏뿀?듬땲??";
+    progress = 100;
+    tone = "finished";
+  } else if (props.roundEnded) {
+    title = `Round ${props.roundEnded.roundIndex + 1} 醫낅즺`;
+    meta = props.resultSaveStatus === "saved" ? "寃곌낵 ??μ씠 ?꾨즺?섏뿀?듬땲??" : "寃곌낵瑜???ν븯??以묒엯?덈떎.";
+    progress = 100;
+    tone = "ended";
+  } else if (props.activeRound) {
+    const remaining = props.remainingSec ?? props.activeRound.durationSec;
+    const elapsed = props.activeRound.durationSec - remaining;
+    title = `Round ${props.activeRound.roundIndex + 1} / ${totalRounds}`;
+    meta = `${remaining}珥??⑥쓬 · ?꾩옱 ?ъ쭊: ${props.activeRound.image.uploadedBy.nickname ?? "?듬챸 李멸???"}`;
+    progress =
+      props.activeRound.durationSec > 0 ? Math.min(100, Math.max(0, (elapsed / props.activeRound.durationSec) * 100)) : 0;
+    tone = "playing";
+  }
+
+  return (
+    <section className={`timer-bar ${tone}`} aria-label="?쇱슫????대㉧">
+      <div>
+        <strong>{title}</strong>
+        <span>{meta}</span>
+      </div>
+      <div className="timer-progress" aria-hidden="true">
+        <span style={{ width: `${progress}%` }} />
+      </div>
+    </section>
+  );
+}
+
+interface ChatPanelProps {
+  chatMessages: ChatMessage[];
+  chatDraft: string;
+  socketStatus: "idle" | "connecting" | "connected" | "error";
+  socketError: string | null;
+  title: string;
+  onChatDraftChange: (value: string) => void;
+  onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
+}
+
+function ChatPanel(props: ChatPanelProps) {
+  return (
+    <div className="chat-panel">
+      <div className="card-heading">
+        <MessageCircle size={20} />
+        <h2>{props.title}</h2>
+      </div>
+      {props.socketError ? <p className="error-copy">{props.socketError}</p> : null}
+      <div className="chat-list" aria-live="polite">
+        {props.chatMessages.length === 0 ? (
+          <p className="empty-copy">?꾩쭅 硫붿떆吏媛 ?놁뒿?덈떎.</p>
+        ) : (
+          props.chatMessages.map((chatMessage, index) => (
+            <article className="chat-message" key={`${chatMessage.createdAt}-${index}`}>
+              <strong>{chatMessage.nickname ?? "?듬챸 李멸???"}</strong>
+              <p>{chatMessage.message}</p>
+              <time>{formatDateTime(chatMessage.createdAt)}</time>
+            </article>
+          ))
+        )}
+      </div>
+      <form className="chat-form" onSubmit={props.onSendMessage}>
+        <label>
+          硫붿떆吏
+          <input
+            maxLength={maxChatMessageLength}
+            value={props.chatDraft}
+            onChange={(event) => props.onChatDraftChange(event.target.value)}
+          />
+        </label>
+        <button className="primary-button" disabled={props.socketStatus !== "connected"} type="submit">
+          蹂대궡湲?
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -1837,6 +2202,7 @@ function RoundStatusPanel(props: RoundStatusPanelProps) {
 interface CanvasPanelProps {
   disabled: boolean;
   backgroundImageUrl: string | null;
+  lockMessage?: string;
   strokes: DrawStroke[];
   title: string;
   subtitle: string;
@@ -2021,23 +2387,32 @@ function CanvasPanel(props: CanvasPanelProps) {
           lastSentPointRef.current = null;
         }}
       />
-      {props.disabled ? <p className="canvas-lock">라운드가 시작되고 연결이 준비되면 그림을 그릴 수 있습니다.</p> : null}
+      {props.disabled ? (
+        <p className="canvas-lock">
+          {props.lockMessage ?? "라운드가 시작되고 연결이 준비되면 그림을 그릴 수 있습니다."}
+        </p>
+      ) : null}
     </div>
   );
 }
 
 interface GalleryViewProps {
   results: ResultMetadata[];
+  room: RoomDetail | null;
   nextCursor: string | null;
+  isCurrentUserHost: boolean;
   isBusy: boolean;
   state: LoadState;
   error: string | null;
+  onPrepareNextGame: () => void;
   onLoadMore: () => void;
   onRefresh: () => void;
   onDownload: (resultId: string) => void;
 }
 
 function GalleryView(props: GalleryViewProps) {
+  const canPrepareNextGame = props.room?.status === "finished" && props.isCurrentUserHost;
+
   if (props.state === "loading") {
     return (
       <section className="paper-card gallery-empty">
@@ -2081,6 +2456,12 @@ function GalleryView(props: GalleryViewProps) {
       <section className="gallery-toolbar" aria-label="결과 갤러리 상태">
         <span>결과 {props.results.length}개</span>
         <span>{props.nextCursor ? "더 불러올 결과가 있습니다." : "마지막 결과까지 불러왔습니다."}</span>
+        {canPrepareNextGame ? (
+          <button className="secondary-button" disabled={props.isBusy} onClick={props.onPrepareNextGame} type="button">
+            <RefreshCw size={18} />
+            다시 준비
+          </button>
+        ) : null}
       </section>
       <section className="gallery-grid">
         {props.results.map((result) => (

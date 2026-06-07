@@ -508,6 +508,16 @@ button:disabled {
   min-width: 0;
 }
 
+.room-layout > .chat-panel {
+  grid-column: 1 / -1;
+  min-width: 0;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--shadow);
+  padding: 18px;
+}
+
 .participants-card {
   grid-column: 1;
   grid-row: 2;
@@ -529,6 +539,69 @@ button:disabled {
   border-radius: 8px;
   background: var(--paper-light);
   padding: 12px;
+}
+
+.timer-bar {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+  position: sticky;
+  top: 10px;
+  z-index: 3;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper-light);
+  box-shadow: 4px 4px 0 var(--shadow);
+  padding: 12px 14px;
+}
+
+.timer-bar > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.timer-bar strong {
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.timer-bar span {
+  color: #5f5a52;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.timer-progress {
+  height: 14px;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #fffefa;
+}
+
+.timer-progress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--pink);
+  transition: width 180ms ease;
+}
+
+.timer-bar.starting .timer-progress span {
+  background: var(--yellow);
+}
+
+.timer-bar.playing .timer-progress span {
+  background: var(--green);
+}
+
+.timer-bar.ended .timer-progress span,
+.timer-bar.finished .timer-progress span {
+  background: var(--purple);
 }
 
 .round-status strong {
@@ -686,6 +759,61 @@ button:disabled {
     var(--paper);
   text-align: center;
   cursor: pointer;
+}
+
+.uploaded-image-card {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper-light);
+  padding: 12px;
+}
+
+.uploaded-image-card img,
+.uploaded-image-placeholder {
+  width: 104px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #fffefa;
+}
+
+.uploaded-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: #6b6258;
+}
+
+.uploaded-image-card strong,
+.uploaded-image-card small,
+.uploaded-image-card p {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.uploaded-image-card p {
+  margin: 4px 0 0;
+  color: #6b6258;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.replace-upload-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.replace-upload-button input {
+  display: none;
+}
+
+.replace-upload-button.disabled {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .upload-box strong {
@@ -1282,6 +1410,11 @@ button:disabled {
     order: 1;
   }
 
+  .timer-bar {
+    order: 0;
+    position: static;
+  }
+
   .canvas-stage {
     order: 2;
   }
@@ -1304,7 +1437,8 @@ button:disabled {
   }
 
   .upload-card,
-  .participants-card {
+  .participants-card,
+  .room-layout > .chat-panel {
     grid-column: auto;
     grid-row: auto;
   }
@@ -1397,6 +1531,10 @@ button:disabled {
     flex-direction: column;
   }
 
+  .gallery-toolbar .secondary-button {
+    width: 100%;
+  }
+
   .room-code {
     width: 100%;
     margin-bottom: 8px;
@@ -1415,6 +1553,15 @@ button:disabled {
 
   .upload-preview {
     grid-template-columns: 1fr;
+  }
+
+  .uploaded-image-card {
+    grid-template-columns: 1fr;
+  }
+
+  .uploaded-image-card img,
+  .uploaded-image-placeholder {
+    width: 100%;
   }
 
   .upload-preview img {
