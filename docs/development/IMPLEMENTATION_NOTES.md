@@ -798,3 +798,8 @@
 - lobby profile menu를 오른쪽 끝에서 8-24px 범위로 살짝 안쪽으로 이동했다.
 - lobby profile avatar와 이름 사이 간격을 조금 넓혀 단독으로 떠 있는 느낌을 줄였다.
 - mobile/narrow layout에서는 profile menu의 추가 오른쪽 여백을 제거해 폭 계산이 어긋나지 않게 했다.
+
+### 2026-06-07 LOBBY-HEADLINE-LINEBREAK-POLISH
+
+- lobby headline을 `같이 그리고,` / `같이 망치고,` / `같이 저장하기` 3줄 고정 구조로 변경했다.
+- headline span block과 line-height/gap을 조정해 손글씨 리듬이 더 명확하게 보이도록 했다.

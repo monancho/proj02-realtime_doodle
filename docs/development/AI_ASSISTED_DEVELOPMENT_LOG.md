@@ -1890,3 +1890,18 @@
   - backend/API/Socket/Firebase 계약 변경 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
   - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 LOBBY-HEADLINE-LINEBREAK-POLISH
+
+- Agent: `qa-frontend`
+- 목표: 사용자가 요청한 lobby headline 줄바꿈 리듬을 반영했다.
+- 수행 내용:
+  - lobby headline을 세 개의 block span으로 나눠 `같이 그리고,` / `같이 망치고,` / `같이 저장하기` 형태로 고정했다.
+  - headline line-height/gap/max-width를 조정했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.

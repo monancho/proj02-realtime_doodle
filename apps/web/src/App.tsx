@@ -1581,7 +1581,11 @@ function LobbyView(props: LobbyViewProps) {
     <section className="lobby-page" aria-label="로비">
       <div className="lobby-copy-panel">
         <p className="lobby-kicker">Realtime Doodle Relay</p>
-        <h2>같이 그리고, 같이 망치고, 같이 저장하기</h2>
+        <h2>
+          <span>같이 그리고,</span>
+          <span>같이 망치고,</span>
+          <span>같이 저장하기</span>
+        </h2>
         <span className="lobby-marker-line" aria-hidden="true" />
         <p>
           방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
