@@ -2022,3 +2022,16 @@
 - Live cleanup deletion QA: 실제 만료 `finished` room과 GridFS file/chunk 삭제는 테스트 데이터를 만들어야 하므로 이번 smoke에서는 수행하지 않았다. 배포 전 별도 수동 QA 또는 안전한 staging data로 확인이 필요하다.
 - `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-08 - Cleanup Staging Manual QA Plan
+
+- Scope: 실제 MongoDB/GridFS 삭제 검증 전에 staging/local test database에서만 수행할 cleanup manual QA 절차를 문서화했다.
+- Procedure doc: `docs/development/CLEANUP_STAGING_MANUAL_QA.md`
+- Production safety: production data 삭제는 수행하지 않았다.
+- Test data criteria: expired `finished` room, linked `images`, `results`, `originalImages.files/chunks`, `resultImages.files/chunks` count 확인 기준을 문서화했다.
+- Log safety criteria: cleanup log에는 count summary만 기록하고 raw fileId/ObjectId, URI, token, Firebase private key, credential 값을 기록하지 않는 기준을 문서화했다.
+- Rollback/reset: staging/local test database snapshot 또는 fixture reset 절차를 문서화했다.
+- Validation pending: `corepack pnpm --filter @doodle/server typecheck` 실행 예정.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `git status --short`: cleanup QA 문서 변경과 기존 미추적 `package-lock.json` 확인. `package-lock.json`은 수정/삭제/commit하지 않았다.

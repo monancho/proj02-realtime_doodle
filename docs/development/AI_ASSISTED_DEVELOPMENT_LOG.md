@@ -2287,3 +2287,12 @@
 - Reviewed cleanup logging contract: success logs count-based summaries only, and failure logs a fixed safe startup-continuation message.
 - Documented remaining risk: actual expired-room/GridFS deletion should be validated with controlled staging/manual data before deployment confidence is claimed.
 - `package-lock.json` remains untracked and unstaged.
+
+## 2026-06-08 - PHASE-BE-CLEANUP-STAGING-MANUAL-QA-PLAN
+
+- Created a staging/local-only manual QA procedure for cleanup deletion verification.
+- Documented test data setup for expired finished rooms and linked image/result/GridFS records.
+- Documented pre/post cleanup count checks for rooms, images, results, originalImages, and resultImages collections.
+- Documented log safety checks so raw file ids, ObjectIds, URIs, tokens, and secrets are not recorded.
+- Documented rollback/reset guidance for staging/local test database failures.
+- No production deletion or live cleanup execution was performed.
