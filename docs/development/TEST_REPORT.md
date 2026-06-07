@@ -1876,3 +1876,10 @@
 - Scope: login Google button CSS only; no lobby/room/play/gallery changes.
 - Note: SVG line overlays and doodle.css package styles were not applied.
 - Correction: the Google icon ring remains circular; the visible handdrawn asymmetry is applied to the button body.
+
+## 2026-06-07 - Lobby panel handdrawn border polish validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Scope: lobby CTA panels, lobby join input/button, and lobby header profile avatar only.
+- Note: package-lock.json was not modified or staged.
+- Follow-up: verified stronger lobby panel border thickness and more asymmetric lobby card/input/button radii with web typecheck/build.

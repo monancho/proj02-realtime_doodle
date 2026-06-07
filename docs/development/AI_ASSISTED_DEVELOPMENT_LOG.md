@@ -2173,3 +2173,10 @@
 - Did not use SVG line overlays or doodle.css package styles.
 - Validation passed: web typecheck/build.
 - Correction: the Google icon ring was kept as a regular circle; the visible asymmetry is applied to the button body itself.
+
+## 2026-06-07 - Lobby panel handdrawn border polish
+- Removed the inner dashed outline from lobby CTA panels only.
+- Added asymmetric border radius to lobby CTA panels, inline room-code input, and lobby join button.
+- Added asymmetric profile avatar shape for the lobby header while preserving existing size/color.
+- Validation passed: web typecheck/build.
+- Follow-up: increased lobby CTA panel border thickness and pushed the asymmetric radii further for a more visible handdrawn card shape.
