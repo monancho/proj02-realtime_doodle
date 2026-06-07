@@ -2504,6 +2504,14 @@ button.result-card .result-preview {
   gap: 14px;
 }
 
+.form-hint {
+  margin: -4px 0 0;
+  color: var(--muted-ink);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 .countdown-backdrop {
   position: fixed;
   z-index: 60;

@@ -1956,3 +1956,15 @@
 - Tests added/updated: room create maxPlayers clamp, waiting room full error `ROOM_PARTICIPANTS_FULL`, active room spectator join over full active slots, user explicit nickname setup, missing explicit nickname setup state, invalid/duplicate nickname, invalid avatarUrl.
 - `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-07 - Frontend Profile Setup and Round-End Modal QA
+
+- Scope: Google login 이후 profile setup이 완료되지 않은 사용자의 nickname setup UX와 room full error 표시를 frontend에 반영했다.
+- Round-end QA: `round-ended`는 play 화면 위 result modal을 유지하고, `result-saved`는 같은 modal에 result preview를 반영한다. 최종 `game-finished`는 마지막 round modal을 5초 유지한 뒤 gallery로 전환하도록 보정했다.
+- Solo flow code check: 1인 1이미지 play도 active image count 기반으로 timer/round UI가 계산되며, 마지막 round는 `game-finished` 지연 전환 경로를 사용한다.
+- Browser visual QA: Browser runtime이 Windows sandbox `spawn setup refresh` 오류로 중단되어 자동 screenshot 확인은 수행하지 못했다. 코드 기반 event flow 점검과 web typecheck/build로 대체했다.
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Manual QA needed: 실제 Google 로그인 후 최초 nickname setup modal, duplicate nickname error, 4명 초과 room join error, round -> round 및 round -> finish modal 5초 유지 흐름을 브라우저에서 확인해야 한다.
+- `package-lock.json`은 기존 미추적 상태로 남겨두고 수정/삭제/commit하지 않았다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.

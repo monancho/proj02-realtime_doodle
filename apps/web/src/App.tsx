@@ -213,13 +213,35 @@ export function App() {
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
   const socketRef = useRef<Socket | null>(null);
   const roomStatusRef = useRef<string | null>(null);
+  const roundEndedRef = useRef<RoundEndedPayload | null>(null);
+  const roundResultModalRef = useRef<RoundResultModalState | null>(null);
+  const pendingGalleryTimeoutRef = useRef<number | null>(null);
 
   const activeToken = firebaseToken;
   const isAuthenticated = Boolean(authUser && activeToken.trim());
+  const isProfileSetupRequired = Boolean(isAuthenticated && profile && !profile.profileSetupCompletedAt);
 
   useEffect(() => {
     roomStatusRef.current = room?.status ?? null;
   }, [room?.status]);
+
+  useEffect(() => {
+    roundEndedRef.current = roundEnded;
+  }, [roundEnded]);
+
+  useEffect(() => {
+    roundResultModalRef.current = roundResultModal;
+  }, [roundResultModal]);
+
+  useEffect(() => {
+    if (isProfileSetupRequired) {
+      setActiveModal("nickname");
+    }
+  }, [isProfileSetupRequired]);
+
+  useEffect(() => {
+    return () => clearPendingGalleryTransition();
+  }, []);
 
   const api = useMemo(
     () =>
@@ -340,6 +362,7 @@ export function App() {
     });
 
     socket.on("round-started", (payload: RoundStartedPayload) => {
+      clearPendingGalleryTransition();
       setGameStarting(null);
       setCountdownRemainingSec(null);
       setRemainingSec(payload.durationSec);
@@ -386,9 +409,14 @@ export function App() {
       setRoom(payload.room);
       setGameStarting(null);
       setCountdownRemainingSec(null);
-      setRoundResultModal(null);
       setGameFinishedAt(payload.finishedAt);
       setResultSaveStatus("saved");
+      if (roundResultModalRef.current || roundEndedRef.current) {
+        setMessage("게임이 종료되었습니다. 마지막 라운드 결과를 잠시 보여드린 뒤 갤러리로 이동합니다.");
+        scheduleGalleryTransition(payload.roomCode);
+        return;
+      }
+      setRoundResultModal(null);
       setViewMode("gallery");
       void refreshResults(payload.roomCode);
       setMessage("게임이 종료되었습니다. 갤러리에서 결과를 확인하세요.");
@@ -518,7 +546,6 @@ export function App() {
         getToken: () => idToken
       });
       const upsertedProfile = await authenticatedApi.upsertMe({
-        nickname: signedInUser.displayName || null,
         avatarUrl: signedInUser.photoURL || null
       });
 
@@ -526,6 +553,11 @@ export function App() {
       setFirebaseToken(idToken);
       setProfile(upsertedProfile);
       setNickname(upsertedProfile.nickname ?? signedInUser.displayName ?? "");
+      if (!upsertedProfile.profileSetupCompletedAt) {
+        setActiveModal("nickname");
+        setMessage("처음 시작하기 전에 사용할 닉네임을 설정해 주세요.");
+        return;
+      }
       setMessage(`${upsertedProfile.nickname ?? upsertedProfile.email ?? "사용자"}님, 로그인되었습니다.`);
     });
   }
@@ -538,13 +570,21 @@ export function App() {
       return;
     }
 
+    const validatedNickname = validateNickname(nickname);
+
+    if (validatedNickname.error) {
+      setMessage(validatedNickname.error);
+      return;
+    }
+
     await runAction(async () => {
       const updatedProfile = await api.upsertMe({
-        nickname: nickname.trim() || authUser.displayName || null,
+        nickname: validatedNickname.value,
         avatarUrl: authUser.photoURL || null
       });
 
       setProfile(updatedProfile);
+      setNickname(updatedProfile.nickname ?? "");
       if (room && socketRef.current) {
         socketRef.current.emit("profile-updated", {
           roomCode: normalizeRoomCode(room.roomCode)
@@ -945,6 +985,7 @@ export function App() {
   }
 
   function resetRoomState() {
+    clearPendingGalleryTransition();
     disconnectSocket();
     setRoom(null);
     setImages([]);
@@ -984,6 +1025,23 @@ export function App() {
       socketRef.current.disconnect();
       socketRef.current = null;
     }
+  }
+
+  function clearPendingGalleryTransition() {
+    if (pendingGalleryTimeoutRef.current !== null) {
+      window.clearTimeout(pendingGalleryTimeoutRef.current);
+      pendingGalleryTimeoutRef.current = null;
+    }
+  }
+
+  function scheduleGalleryTransition(roomCode: string) {
+    clearPendingGalleryTransition();
+    pendingGalleryTimeoutRef.current = window.setTimeout(() => {
+      setRoundResultModal(null);
+      setViewMode("gallery");
+      void refreshResults(roomCode);
+      pendingGalleryTimeoutRef.current = null;
+    }, 5000);
   }
 
   const activeRoomCode = room?.roomCode ?? normalizeRoomCode(joinCode);
@@ -1232,12 +1290,23 @@ export function App() {
       ) : null}
 
       {activeModal === "nickname" ? (
-        <Modal title="닉네임 변경" onClose={() => setActiveModal(null)}>
+        <Modal
+          closeDisabled={isProfileSetupRequired}
+          title={isProfileSetupRequired ? "닉네임 설정" : "닉네임 변경"}
+          onClose={() => setActiveModal(null)}
+        >
           <form className="modal-form" onSubmit={handleSaveNickname}>
             <label>
               닉네임
-              <input autoFocus value={nickname} onChange={(event) => setNickname(event.target.value)} />
+              <input
+                autoFocus
+                maxLength={12}
+                minLength={2}
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+              />
             </label>
+            <p className="form-hint">2자 이상 12자 이하로 입력해 주세요. 같은 닉네임은 사용할 수 없습니다.</p>
             <button className="primary-button" disabled={isBusy} type="submit">
               <Save size={18} />
               저장
@@ -1463,7 +1532,9 @@ const mockProfile: UserProfile = {
   firebaseUid: "preview-user-1",
   email: "preview@example.com",
   nickname: "민지",
+  nicknameNormalized: "preview",
   avatarUrl: null,
+  profileSetupCompletedAt: mockCreatedAt,
   createdAt: mockCreatedAt,
   updatedAt: mockCreatedAt
 };
@@ -1969,6 +2040,7 @@ function LobbyView(props: LobbyViewProps) {
 
 interface ModalProps {
   children: ReactNode;
+  closeDisabled?: boolean;
   title: string;
   onClose: () => void;
 }
@@ -1979,9 +2051,11 @@ function Modal(props: ModalProps) {
       <section className="modal-panel" aria-modal="true" role="dialog" aria-labelledby="modal-title">
         <div className="modal-heading">
           <h2 id="modal-title">{props.title}</h2>
+          {props.closeDisabled ? null : (
           <button className="icon-button" onClick={props.onClose} type="button">
             닫기
           </button>
+          )}
         </div>
         {props.children}
       </section>
@@ -3431,7 +3505,37 @@ function formatError(error: unknown): string {
   return "알 수 없는 오류가 발생했습니다.";
 }
 
+function validateNickname(value: string): { value: string; error: null } | { value: null; error: string } {
+  const normalized = value.trim().replace(/\s+/g, " ");
+
+  if (normalized.length < 2 || normalized.length > 12) {
+    return { value: null, error: "닉네임은 2자 이상 12자 이하로 입력해 주세요." };
+  }
+
+  return { value: normalized, error: null };
+}
+
 function formatApiError(error: ApiClientError): string {
+  if (error.code === "ROOM_PARTICIPANTS_FULL") {
+    return "방이 가득 찼습니다. 최대 4명까지 참여할 수 있어요.";
+  }
+
+  if (error.code === "USER_NICKNAME_REQUIRED") {
+    return "닉네임을 입력해 주세요.";
+  }
+
+  if (error.code === "USER_NICKNAME_INVALID") {
+    return "닉네임은 2자 이상 12자 이하로 입력해 주세요.";
+  }
+
+  if (error.code === "USER_NICKNAME_DUPLICATE") {
+    return "이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.";
+  }
+
+  if (error.code === "USER_AVATAR_URL_INVALID") {
+    return "프로필 이미지 주소를 확인해 주세요.";
+  }
+
   const messages: Record<string, string> = {
     AUTH_TOKEN_MISSING: "로그인이 필요합니다.",
     ROOM_NOT_FOUND: "방을 찾을 수 없습니다.",
