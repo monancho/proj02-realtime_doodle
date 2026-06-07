@@ -133,14 +133,24 @@ export class MongoRoomRepository implements RoomRepository {
       return mapRoomDocumentToDetail(existingRoom);
     }
 
-    if (existingRoom.participants.length >= existingRoom.settings.maxPlayers) {
-      throw new RoomDomainError("ROOM_FULL", "Room has reached max players.");
+    if (
+      existingRoom.status === "waiting" &&
+      countActiveParticipants(existingRoom) >= existingRoom.settings.maxPlayers
+    ) {
+      throw new RoomDomainError(
+        "ROOM_PARTICIPANTS_FULL",
+        "Room has reached max players."
+      );
     }
 
     const now = new Date();
     const isSpectator = existingRoom.status !== "waiting";
     const updatedRoom = await this.collection.findOneAndUpdate(
-      createJoinRoomFilter(roomCode, input.participant.firebaseUid),
+      createJoinRoomFilter(
+        roomCode,
+        input.participant.firebaseUid,
+        existingRoom.status === "waiting"
+      ),
       {
         $push: {
           participants: {
@@ -167,8 +177,14 @@ export class MongoRoomRepository implements RoomRepository {
     if (hasParticipant(latestRoom, input.participant.firebaseUid)) {
       return mapRoomDocumentToDetail(latestRoom);
     }
-    if (latestRoom.participants.length >= latestRoom.settings.maxPlayers) {
-      throw new RoomDomainError("ROOM_FULL", "Room has reached max players.");
+    if (
+      latestRoom.status === "waiting" &&
+      countActiveParticipants(latestRoom) >= latestRoom.settings.maxPlayers
+    ) {
+      throw new RoomDomainError(
+        "ROOM_PARTICIPANTS_FULL",
+        "Room has reached max players."
+      );
     }
 
     throw new RoomDomainError(
@@ -438,15 +454,40 @@ function hasParticipant(
   );
 }
 
+function countActiveParticipants(document: RoomDocument): number {
+  return document.participants.filter(
+    (participant) => participant.isSpectator !== true
+  ).length;
+}
+
 function createJoinRoomFilter(
   roomCode: string,
-  firebaseUid: string
+  firebaseUid: string,
+  enforceMaxPlayers: boolean
 ): Filter<RoomDocument> {
-  return {
+  const filter: Record<string, unknown> = {
     roomCode,
-    "participants.firebaseUid": { $ne: firebaseUid },
-    $expr: { $lt: [{ $size: "$participants" }, "$settings.maxPlayers"] }
-  } as Filter<RoomDocument>;
+    "participants.firebaseUid": { $ne: firebaseUid }
+  };
+
+  if (enforceMaxPlayers) {
+    filter.$expr = {
+      $lt: [
+        {
+          $size: {
+            $filter: {
+              input: "$participants",
+              as: "participant",
+              cond: { $ne: ["$$participant.isSpectator", true] }
+            }
+          }
+        },
+        "$settings.maxPlayers"
+      ]
+    };
+  }
+
+  return filter as Filter<RoomDocument>;
 }
 
 function isDuplicateKeyError(error: unknown): boolean {

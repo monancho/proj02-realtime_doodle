@@ -110,8 +110,14 @@ export class InMemoryRoomRepository implements RoomRepository {
       );
     }
 
-    if (room.participants.length >= room.settings.maxPlayers) {
-      throw new RoomDomainError("ROOM_FULL", "Room has reached max players.");
+    if (
+      room.status === "waiting" &&
+      countActiveParticipants(room) >= room.settings.maxPlayers
+    ) {
+      throw new RoomDomainError(
+        "ROOM_PARTICIPANTS_FULL",
+        "Room has reached max players."
+      );
     }
 
     const now = this.now().toISOString();
@@ -381,4 +387,10 @@ function cloneRoom(room: RoomDetail): RoomDetail {
     settings: { ...room.settings },
     participants: room.participants.map((participant) => ({ ...participant }))
   };
+}
+
+function countActiveParticipants(room: RoomDetail): number {
+  return room.participants.filter(
+    (participant) => participant.isSpectator !== true
+  ).length;
 }

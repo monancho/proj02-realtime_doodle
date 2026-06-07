@@ -40,11 +40,64 @@ describe("POST /api/users/me", () => {
       firebaseUid: "firebase-uid",
       email: "user@example.com",
       nickname: "Doodle User",
+      nicknameNormalized: "doodle user",
       avatarUrl: "https://example.com/avatar.png"
     });
+    expect(response.body.user.profileSetupCompletedAt).toEqual(expect.any(String));
     expect(repository.getByFirebaseUid("firebase-uid")?.nickname).toBe(
       "Doodle User"
     );
+  });
+
+  it("does not complete profile setup without an explicit nickname", async () => {
+    const repository = new InMemoryUserRepository();
+    const app = createApp({
+      authMiddleware: createStubAuthMiddleware(authContext),
+      userRepository: repository
+    });
+
+    const response = await request(app).post("/api/users/me").send({}).expect(200);
+
+    expect(response.body.user).toMatchObject({
+      firebaseUid: "firebase-uid",
+      nickname: null,
+      nicknameNormalized: null,
+      avatarUrl: "https://example.com/avatar.png",
+      profileSetupCompletedAt: null
+    });
+  });
+
+  it("rejects invalid nickname, duplicate nickname, and invalid avatarUrl", async () => {
+    const repository = new InMemoryUserRepository();
+    await repository.upsertByFirebaseUid({
+      firebaseUid: "other-uid",
+      email: "other@example.com",
+      nickname: "Taken",
+      nicknameNormalized: "taken",
+      avatarUrl: null,
+      profileSetupCompletedAt: "2026-06-07T00:00:00.000Z"
+    });
+    const app = createApp({
+      authMiddleware: createStubAuthMiddleware(authContext),
+      userRepository: repository
+    });
+
+    const shortNicknameResponse = await request(app)
+      .post("/api/users/me")
+      .send({ nickname: "A" })
+      .expect(400);
+    const duplicateResponse = await request(app)
+      .post("/api/users/me")
+      .send({ nickname: " taken " })
+      .expect(409);
+    const avatarResponse = await request(app)
+      .post("/api/users/me")
+      .send({ nickname: "Fresh", avatarUrl: "http://example.com/avatar.png" })
+      .expect(400);
+
+    expect(shortNicknameResponse.body.error.code).toBe("USER_NICKNAME_INVALID");
+    expect(duplicateResponse.body.error.code).toBe("USER_NICKNAME_DUPLICATE");
+    expect(avatarResponse.body.error.code).toBe("USER_AVATAR_URL_INVALID");
   });
 
   it("returns 401 when auth context is missing", async () => {

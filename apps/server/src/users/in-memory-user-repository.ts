@@ -11,6 +11,17 @@ export class InMemoryUserRepository implements UserRepository {
     return user ? { ...user } : null;
   }
 
+  public async findByNicknameNormalized(
+    nicknameNormalized: string
+  ): Promise<UserProfile | null> {
+    const normalized = nicknameNormalized.toLowerCase();
+    const user = [...this.usersByFirebaseUid.values()].find(
+      (candidate) => candidate.nicknameNormalized === normalized
+    );
+
+    return user ? { ...user } : null;
+  }
+
   public async upsertByFirebaseUid(
     input: UpsertUserInput
   ): Promise<UserProfile> {
@@ -20,7 +31,9 @@ export class InMemoryUserRepository implements UserRepository {
       firebaseUid: input.firebaseUid,
       email: input.email,
       nickname: input.nickname,
+      nicknameNormalized: input.nicknameNormalized,
       avatarUrl: input.avatarUrl,
+      profileSetupCompletedAt: input.profileSetupCompletedAt,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
     };

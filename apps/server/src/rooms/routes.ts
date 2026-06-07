@@ -18,6 +18,7 @@ const DEFAULT_ROOM_SETTINGS: RoomSettings = {
   maxPlayers: 4,
   maxImagesPerUser: 1
 };
+const MAX_ROOM_PLAYERS = 4;
 
 export interface RoomRouterDependencies {
   authMiddleware: RequestHandler;
@@ -147,7 +148,7 @@ function parseRoomSettings(value: unknown): Partial<RoomSettings> | undefined {
     settings.roundDurationSec = roundDurationSec;
   }
   if (maxPlayers !== undefined) {
-    settings.maxPlayers = maxPlayers;
+    settings.maxPlayers = Math.min(maxPlayers, MAX_ROOM_PLAYERS);
   }
   if (maxImagesPerUser !== undefined) {
     settings.maxImagesPerUser = maxImagesPerUser;

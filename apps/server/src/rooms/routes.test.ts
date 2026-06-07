@@ -99,6 +99,25 @@ describe("Room routes", () => {
     });
   });
 
+  it("clamps requested maxPlayers to the MVP maximum", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "MAX444",
+      now: () => new Date("2026-06-06T00:00:00.000Z")
+    });
+    const app = createApp({
+      authMiddleware: createStubAuthMiddleware(hostAuthContext),
+      roomRepository: repository
+    });
+
+    const response = await request(app)
+      .post("/api/rooms")
+      .send({ settings: { maxPlayers: 8 } })
+      .expect(201);
+
+    expect(response.body.room.settings.maxPlayers).toBe(4);
+    expect(response.body.room.maxPlayers).toBe(4);
+  });
+
   it("gets a room by roomCode", async () => {
     const repository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "ABC123",
@@ -191,6 +210,32 @@ describe("Room routes", () => {
         message: "Room was not found."
       }
     });
+  });
+
+  it("returns ROOM_PARTICIPANTS_FULL when a waiting room is full", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "FULL01"
+    });
+    await repository.createRoom({
+      host: {
+        firebaseUid: "host-uid",
+        nickname: "Host",
+        avatarUrl: null
+      },
+      title: "Full Room",
+      settings: { ...smallRoomSettings, maxPlayers: 1 }
+    });
+    const app = createApp({
+      authMiddleware: createStubAuthMiddleware(guestAuthContext),
+      roomRepository: repository
+    });
+
+    const response = await request(app)
+      .post("/api/rooms/FULL01/join")
+      .send({})
+      .expect(409);
+
+    expect(response.body.error.code).toBe("ROOM_PARTICIPANTS_FULL");
   });
 
   it("returns 401 when auth context is missing", async () => {

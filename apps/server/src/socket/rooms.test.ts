@@ -266,7 +266,9 @@ describe("room membership socket handlers", () => {
       firebaseUid: "host-uid",
       email: "host@example.com",
       nickname: "Updated Host",
-      avatarUrl: "https://example.test/updated.png"
+      nicknameNormalized: "updated host",
+      avatarUrl: "https://example.test/updated.png",
+      profileSetupCompletedAt: "2026-06-07T00:00:00.000Z"
     });
     const socket = createMockSocket(hostAuth);
     const io = createMockIo();

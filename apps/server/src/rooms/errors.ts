@@ -1,6 +1,7 @@
 export type RoomErrorCode =
   | "ROOM_NOT_FOUND"
   | "ROOM_FULL"
+  | "ROOM_PARTICIPANTS_FULL"
   | "ROOM_ALREADY_STARTED"
   | "ROOM_CODE_COLLISION"
   | "ROOM_ACCESS_DENIED"
@@ -21,6 +22,7 @@ export function getRoomErrorHttpStatus(code: RoomErrorCode): number {
     case "ROOM_NOT_FOUND":
       return 404;
     case "ROOM_FULL":
+    case "ROOM_PARTICIPANTS_FULL":
     case "ROOM_ALREADY_STARTED":
     case "ROOM_STATE_INVALID":
       return 409;

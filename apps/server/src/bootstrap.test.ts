@@ -78,7 +78,8 @@ describe("createServerDependencies", () => {
     expect(response.body.user).toMatchObject({
       firebaseUid: "firebase-uid",
       email: "user@example.com",
-      nickname: "Firebase User"
+      nickname: null,
+      profileSetupCompletedAt: null
     });
     expect(verifier.verifyIdToken).toHaveBeenCalledWith("test-token");
     expect(dependencies.mongoConnection).toBe(mongoConnection);

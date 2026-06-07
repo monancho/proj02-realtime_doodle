@@ -15,7 +15,9 @@ describe("MongoUserRepository", () => {
       firebaseUid: "firebase-uid",
       email: "user@example.com",
       nickname: "Doodle User",
+      nicknameNormalized: "doodle user",
       avatarUrl: null,
+      profileSetupCompletedAt: new Date("2026-06-05T00:00:01.000Z"),
       createdAt: new Date("2026-06-05T00:00:00.000Z"),
       updatedAt: new Date("2026-06-05T00:00:01.000Z")
     };
@@ -28,7 +30,9 @@ describe("MongoUserRepository", () => {
       firebaseUid: "firebase-uid",
       email: "user@example.com",
       nickname: "Doodle User",
-      avatarUrl: null
+      nicknameNormalized: "doodle user",
+      avatarUrl: null,
+      profileSetupCompletedAt: "2026-06-05T00:00:01.000Z"
     });
 
     expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
@@ -37,7 +41,9 @@ describe("MongoUserRepository", () => {
         $set: expect.objectContaining({
           email: "user@example.com",
           nickname: "Doodle User",
-          avatarUrl: null
+          nicknameNormalized: "doodle user",
+          avatarUrl: null,
+          profileSetupCompletedAt: new Date("2026-06-05T00:00:01.000Z")
         }),
         $setOnInsert: expect.objectContaining({
           firebaseUid: "firebase-uid"
@@ -49,7 +55,9 @@ describe("MongoUserRepository", () => {
       firebaseUid: "firebase-uid",
       email: "user@example.com",
       nickname: "Doodle User",
+      nicknameNormalized: "doodle user",
       avatarUrl: null,
+      profileSetupCompletedAt: "2026-06-05T00:00:01.000Z",
       createdAt: "2026-06-05T00:00:00.000Z",
       updatedAt: "2026-06-05T00:00:01.000Z"
     });
@@ -66,6 +74,13 @@ describe("MongoUserRepository", () => {
       { firebaseUid: 1 },
       { unique: true }
     );
+    expect(collection.createIndex).toHaveBeenCalledWith(
+      { nicknameNormalized: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { nicknameNormalized: { $type: "string" } }
+      }
+    );
   });
 
   it("finds a user by firebaseUid", async () => {
@@ -74,7 +89,9 @@ describe("MongoUserRepository", () => {
       firebaseUid: "firebase-uid",
       email: "user@example.com",
       nickname: "Doodle User",
+      nicknameNormalized: "doodle user",
       avatarUrl: "https://example.test/avatar.png",
+      profileSetupCompletedAt: new Date("2026-06-05T00:00:01.000Z"),
       createdAt: new Date("2026-06-05T00:00:00.000Z"),
       updatedAt: new Date("2026-06-05T00:00:01.000Z")
     };
