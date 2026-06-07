@@ -1923,3 +1923,18 @@
 - `corepack pnpm --filter @doodle/web build`: PASS
 - Manual QA needed: 대기/진행/종료 화면에서 채팅 메시지가 많을 때 채팅 패널 내부에서만 스크롤되고 중앙 패널이 밀리지 않는지 실제 브라우저에서 확인해야 한다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-07 - Round End Modal Real Flow QA
+
+- Scope: 라운드 종료 모달, 다음 라운드 전환, 최종 갤러리 전환 흐름을 코드 기반으로 점검했다.
+- Local preview: `http://localhost:5180/?preview=play` 응답 200 확인.
+- Flow check: `round-ended`는 플레이 화면 위 결과 모달을 열고 `resultSaveStatus`를 `saving`으로 둔다.
+- Flow check: `result-saved`는 갤러리로 전환하지 않고 현재 모달에 result preview 데이터를 반영한다.
+- Flow check: 다음 `round-started`는 모달을 닫고 플레이 화면을 유지하며, 최종 `game-finished`에서만 gallery로 전환한다.
+- Chat/layout check: 이전 보정으로 채팅 리스트는 패널 내부 스크롤 제약을 유지한다.
+- Browser visual QA: Browser runtime이 Windows sandbox `spawn setup refresh` 오류로 중단되어 실제 자동 스크린샷 확인은 수행하지 못했다.
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Source change: 추가 코드 보정은 필요하지 않아 문서 기록만 남겼다.
+- Manual QA needed: 실제 2인 플레이에서 결과 저장 preview 표시와 5초 후 모달 해제/다음 라운드 전환을 확인해야 한다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
