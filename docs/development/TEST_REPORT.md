@@ -1771,3 +1771,22 @@
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 플레이/갤러리 패널, 채팅 스크롤, 라운드 선택 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- PASS: http://localhost:5174/?preview=play -> 200
+- 확인 범위:
+  - 상단 헤더의 `로비` 버튼 제거
+  - 진행 화면 timer bar가 full 상태에서 시작해 남은 시간 비율로 줄어드는 계산 적용
+  - 채팅 패널 높이 고정 및 메시지 목록 내부 스크롤 적용
+  - 채팅이 길어져도 드로잉 도구/캔버스가 하단으로 밀리지 않도록 grid/height 보정
+  - 방 재사용 시 이전 라운드/결과/미리보기 상태 초기화
+  - 종료 화면 라운드 기록 카드 클릭 시 대표 preview와 다운로드 대상 변경
+- 미실행/주의:
+  - Browser 자동 screenshot QA는 Windows sandbox runtime 오류(`windows sandbox failed: spawn setup refresh`)로 수행하지 못했다.
+  - 실제 Google 로그인 2인 플레이에서 채팅 장문 누적, 다시 준비 후 이미지 초기화, 라운드 선택 다운로드는 사용자 로컬에서 추가 확인이 필요하다.
+- 보안:
+  - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.

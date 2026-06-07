@@ -218,29 +218,6 @@ a {
   padding-inline: 0;
 }
 
-.header-actions {
-  display: inline-flex;
-  gap: 14px;
-  align-items: center;
-}
-
-.header-lobby-button {
-  display: inline-flex;
-  gap: 7px;
-  align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: 3px 3px 0 rgba(37, 33, 29, 0.12);
-  cursor: pointer;
-  font-family: "Pretendard", sans-serif;
-  font-weight: 900;
-  padding: 0 14px;
-}
-
 .app-shell:has(.lobby-page) .profile-menu,
 .app-shell:has(.room-layout) .profile-menu,
 .app-shell:has(.play-layout) .profile-menu,
@@ -773,7 +750,12 @@ button:disabled {
 .room-summary::before,
 .room-summary::after,
 .room-summary.paper-card::after,
-.upload-card.paper-card::after {
+.upload-card.paper-card::after,
+.canvas-stage::before,
+.canvas-stage::after,
+.featured-result-card::before,
+.featured-result-card::after,
+.featured-result-card.paper-card::after {
   display: none;
 }
 
@@ -876,7 +858,9 @@ button:disabled {
   grid-column: 3;
   grid-row: 1 / span 2;
   min-width: 0;
-  min-height: clamp(520px, 68vh, 640px);
+  min-height: 0;
+  height: clamp(520px, calc(100vh - 190px), 680px);
+  overflow: hidden;
   border: 1px solid rgba(34, 34, 34, 0.09);
   border-radius: 10px;
   background: var(--paper);
@@ -937,7 +921,7 @@ button:disabled {
 
 .timer-bar {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   position: sticky;
   top: 10px;
   z-index: 3;
@@ -945,7 +929,7 @@ button:disabled {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 0 2px 6px;
+  padding: 0;
 }
 
 .room-layout > .timer-bar,
@@ -974,42 +958,43 @@ button:disabled {
   font-weight: 900;
 }
 
-.timer-bar > div:first-child {
+.timer-labels {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
   align-items: baseline;
   justify-content: space-between;
-  border-bottom: 2px dashed #b5aea6;
-  padding-bottom: 8px;
 }
 
 .timer-bar strong {
-  font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: clamp(1.55rem, 2.5vw, 2rem);
+  font-family: "Pretendard", sans-serif;
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
   font-weight: 900;
 }
 
 .timer-bar span {
-  color: #5f5a52;
+  color: var(--ink);
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
   font-weight: 900;
   overflow-wrap: anywhere;
 }
 
 .timer-progress {
-  height: 14px;
+  height: 10px;
   overflow: hidden;
-  border: 2px solid var(--ink);
+  border: 1px solid rgba(34, 34, 34, 0.34);
   border-radius: 999px;
-  background: #fffefa;
+  background: rgba(255, 255, 255, 0.68);
 }
 
 .timer-progress span {
   display: block;
-  min-width: 0;
+  width: 100%;
   height: 100%;
-  background: var(--pink);
-  transition: width 180ms ease;
+  border-radius: inherit;
+  background: var(--yellow);
+  transform-origin: left center;
+  transition: transform 180ms linear;
 }
 
 .timer-bar.starting .timer-progress span {
@@ -1017,7 +1002,7 @@ button:disabled {
 }
 
 .timer-bar.playing .timer-progress span {
-  background: var(--green);
+  background: var(--yellow);
 }
 
 .timer-bar.ended .timer-progress span,
@@ -1251,7 +1236,6 @@ button.lobby-cta-card {
 }
 
 .card-heading svg,
-.canvas-header svg,
 .round-meter svg {
   filter: drop-shadow(1px 1px 0 rgba(34, 34, 34, 0.18));
   transform: rotate(-4deg);
@@ -1741,17 +1725,13 @@ button.lobby-cta-card {
 .canvas-stage {
   position: relative;
   display: grid;
-  gap: 10px;
-  min-height: clamp(430px, 54vw, 620px);
-  border: 2px solid var(--ink);
-  border-radius: 12px 9px 13px 8px;
-  background:
-    radial-gradient(circle at 20% 16%, rgba(255, 217, 120, 0.12), transparent 28%),
-    var(--paper-light);
-  box-shadow:
-    6px 6px 0 var(--shadow),
-    inset 0 0 0 8px rgba(248, 243, 234, 0.88);
-  padding: 14px;
+  gap: 16px;
+  min-height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .canvas-stage.disabled canvas {
@@ -1764,10 +1744,11 @@ button.lobby-cta-card {
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 3;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
+  border: 1px solid rgba(37, 33, 29, 0.28);
+  border-radius: 4px;
   background: var(--paper-light);
   cursor: crosshair;
+  box-shadow: 0 8px 18px rgba(37, 33, 29, 0.08);
   touch-action: none;
 }
 
@@ -1777,10 +1758,11 @@ button.lobby-cta-card {
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  border: 2px solid rgba(34, 34, 34, 0.26);
+  border: 1px solid rgba(34, 34, 34, 0.2);
   border-radius: 8px;
-  background: rgba(255, 254, 250, 0.72);
-  padding: 10px;
+  background: rgba(255, 253, 250, 0.72);
+  box-shadow: 0 4px 10px rgba(37, 33, 29, 0.06);
+  padding: 9px;
 }
 
 .canvas-stage.hide-controls .drawing-toolbar {
@@ -1831,31 +1813,6 @@ button.lobby-cta-card {
   min-height: 32px;
   border-radius: 999px;
   padding: 0;
-}
-
-.canvas-header {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  color: #4f463c;
-  font-weight: 900;
-}
-
-.canvas-header > div {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.canvas-header small {
-  flex: 1 1 180px;
-  color: #6b6258;
-  font-size: 0.8rem;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-  text-align: right;
 }
 
 .canvas-placeholder {
@@ -1994,7 +1951,10 @@ button.lobby-cta-card {
 .chat-panel .chat-list {
   min-height: 0;
   max-height: none;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -2075,6 +2035,38 @@ button.lobby-cta-card {
 
 .chat-card .round-meter {
   display: none;
+}
+
+.chat-card .card-heading h2,
+.chat-panel .card-heading h2 {
+  font-size: clamp(1.35rem, 2vw, 1.55rem);
+}
+
+.chat-card .card-heading h2::after,
+.chat-panel .card-heading h2::after,
+.chat-card .chat-form label::before,
+.chat-panel .chat-form label::before,
+.chat-card .chat-form .primary-button::after,
+.chat-panel .chat-form .primary-button::after,
+.chat-card .chat-list .empty-copy::after,
+.chat-panel .chat-list .empty-copy::after {
+  content: none;
+  display: none;
+}
+
+.chat-card .chat-form label,
+.chat-panel .chat-form label {
+  font-size: 0.9rem;
+}
+
+.chat-card .chat-form .primary-button,
+.chat-panel .chat-form .primary-button {
+  font-size: 1rem;
+}
+
+.chat-card .chat-list .empty-copy,
+.chat-panel .chat-list .empty-copy {
+  font-size: 0.95rem;
 }
 
 .play-participants-card {
@@ -2174,19 +2166,19 @@ button.lobby-cta-card {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  background: var(--paper-light);
-  box-shadow: 3px 3px 0 var(--shadow);
-  padding: 10px 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
   color: #4f463c;
   font-weight: 800;
 }
 
 .gallery-toolbar span:first-child {
   font-family: "Gaegu", "Pretendard", sans-serif;
-  font-size: 1.35rem;
+  font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 900;
 }
 
@@ -2195,7 +2187,10 @@ button.lobby-cta-card {
   display: grid;
   gap: 14px;
   justify-items: center;
-  padding: 18px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .featured-result-card .download-link {
@@ -2242,6 +2237,31 @@ button.lobby-cta-card {
   gap: 12px;
   align-content: start;
   min-height: 100%;
+}
+
+button.result-card {
+  width: 100%;
+  border-color: rgba(34, 34, 34, 0.22);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+button.result-card:hover,
+button.result-card:focus-visible {
+  border-color: var(--yellow);
+  box-shadow: 3px 3px 0 rgba(247, 197, 72, 0.35);
+  outline: none;
+}
+
+button.result-card.selected {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 2px rgba(247, 197, 72, 0.35);
+}
+
+button.result-card .result-preview {
+  margin-bottom: 0;
 }
 
 .result-card .summary-list {
@@ -2402,6 +2422,7 @@ button.lobby-cta-card {
 
   .chat-card,
   .room-layout > .chat-panel,
+  .play-layout > .chat-panel,
   .gallery-layout > .chat-panel {
     order: 3;
   }
@@ -2412,6 +2433,7 @@ button.lobby-cta-card {
   .room-main,
   .gallery-main,
   .room-layout > .chat-panel,
+  .play-layout > .chat-panel,
   .gallery-layout > .chat-panel,
   .play-layout > .timer-bar,
   .room-layout > .timer-bar,
@@ -2469,6 +2491,7 @@ button.lobby-cta-card {
   .upload-card,
   .participants-card,
   .room-layout > .chat-panel,
+  .play-layout > .chat-panel,
   .gallery-layout > .chat-panel,
   .room-main,
   .gallery-main,
@@ -2485,6 +2508,7 @@ button.lobby-cta-card {
   .play-layout > .chat-panel,
   .gallery-layout > .chat-panel,
   .play-layout > .chat-card {
+    height: auto;
     min-height: auto;
   }
 
@@ -2535,15 +2559,6 @@ button.lobby-cta-card {
 
   .login-panel .hero-copy {
     font-size: 1rem;
-  }
-
-  .header-actions {
-    gap: 8px;
-  }
-
-  .header-lobby-button {
-    min-height: 36px;
-    padding: 0 10px;
   }
 
   .image-list {

@@ -6,7 +6,6 @@ import {
   LogIn,
   LogOut,
   MessageCircle,
-  Palette,
   Pencil,
   Play,
   Plus,
@@ -189,9 +188,14 @@ export function App() {
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
   const socketRef = useRef<Socket | null>(null);
+  const roomStatusRef = useRef<string | null>(null);
 
   const activeToken = firebaseToken;
   const isAuthenticated = Boolean(authUser && activeToken.trim());
+
+  useEffect(() => {
+    roomStatusRef.current = room?.status ?? null;
+  }, [room?.status]);
 
   const api = useMemo(
     () =>
@@ -245,15 +249,32 @@ export function App() {
     });
 
     socket.on("room-updated", (payload: { room: RoomDetail }) => {
+      const isReusedWaitingRoom = roomStatusRef.current !== "waiting" && payload.room.status === "waiting";
+      roomStatusRef.current = payload.room.status;
       setRoom(payload.room);
       markRoomReady(payload.room);
       if (payload.room.status === "waiting") {
         setGameStarting(null);
         setActiveRound(null);
+        setActiveRoundImageUrl(null);
         setRoundEnded(null);
         setGameFinishedAt(null);
         setResultSaveStatus("idle");
         setDrawStrokes([]);
+        setRemainingSec(null);
+        setRemainingMs(null);
+        if (isReusedWaitingRoom) {
+          setImages([]);
+          setResults([]);
+          setNextResultCursor(null);
+          setUploadedImagePreviewUrl((currentUrl) => {
+            if (currentUrl) {
+              URL.revokeObjectURL(currentUrl);
+            }
+
+            return null;
+          });
+        }
         setViewMode("room");
       }
       void refreshRoomImages(payload.room.roomCode);
@@ -980,7 +1001,6 @@ export function App() {
       <AppHeader
         authUser={authUser}
         profile={profile}
-        onReturnToLobby={viewMode !== "lobby" ? () => setViewMode("lobby") : undefined}
         onOpenNickname={() => setActiveModal("nickname")}
         onSignOut={() => void handleSignOut()}
       />
@@ -1576,7 +1596,6 @@ function LoggedOutView(props: LoggedOutViewProps) {
 interface AppHeaderProps {
   authUser: User | null;
   profile: UserProfile | null;
-  onReturnToLobby?: () => void;
   onOpenNickname: () => void;
   onSignOut: () => void;
 }
@@ -1588,28 +1607,20 @@ function AppHeader(props: AppHeaderProps) {
   return (
     <header className="app-header">
       <strong>DOODLE</strong>
-      <div className="header-actions">
-        {props.onReturnToLobby ? (
-          <button className="header-lobby-button" onClick={props.onReturnToLobby} type="button">
-            <LogIn size={17} />
-            로비
+      <div className="profile-menu">
+        <button className="profile-button" type="button">
+          {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{displayName.slice(0, 1)}</span>}
+          <strong>{displayName}</strong>
+        </button>
+        <div className="profile-popover" role="menu">
+          <button onClick={props.onOpenNickname} role="menuitem" type="button">
+            <Save size={16} />
+            닉네임 변경
           </button>
-        ) : null}
-        <div className="profile-menu">
-          <button className="profile-button" type="button">
-            {avatarUrl ? <img alt="" src={avatarUrl} /> : <span>{displayName.slice(0, 1)}</span>}
-            <strong>{displayName}</strong>
+          <button onClick={props.onSignOut} role="menuitem" type="button">
+            <LogOut size={16} />
+            로그아웃
           </button>
-          <div className="profile-popover" role="menu">
-            <button onClick={props.onOpenNickname} role="menuitem" type="button">
-              <Save size={16} />
-              닉네임 변경
-            </button>
-            <button onClick={props.onSignOut} role="menuitem" type="button">
-              <LogOut size={16} />
-              로그아웃
-            </button>
-          </div>
         </div>
       </div>
     </header>
@@ -2284,48 +2295,46 @@ function CountdownModal({ countdownSec, remainingSec }: { countdownSec: number; 
 
 function TimerBarFixed(props: TimerBarProps) {
   const totalRounds = Math.max(1, props.imageCount);
-  let title = "라운드 대기";
-  let meta = "사진이 준비되면 게임을 시작할 수 있습니다.";
-  let progress = 0;
+  let label = "Round -";
+  let remainingLabel = "";
+  let progressRatio = 1;
   let tone: "idle" | "starting" | "playing" | "ended" | "finished" = "idle";
 
   if (props.gameStarting) {
     const remaining = props.countdownRemainingSec ?? props.gameStarting.countdownSec;
-    title = `${remaining}초 후 시작`;
-    meta = "카운트다운 중에는 이미지를 바꿀 수 없고 채팅은 계속할 수 있습니다.";
-    progress =
-      props.gameStarting.countdownSec > 0
-        ? Math.min(100, Math.max(0, (remaining / props.gameStarting.countdownSec) * 100))
-        : 100;
+    label = "시작 대기";
+    remainingLabel = `${remaining}초`;
+    progressRatio = props.gameStarting.countdownSec > 0 ? remaining / props.gameStarting.countdownSec : 1;
     tone = "starting";
   } else if (props.gameFinishedAt) {
-    title = "게임 종료";
-    meta = "결과 갤러리에서 이미지를 확인하고 다운로드할 수 있습니다.";
-    progress = 100;
+    label = "게임 종료";
+    remainingLabel = "";
+    progressRatio = 0;
     tone = "finished";
   } else if (props.roundEnded) {
-    title = `Round ${props.roundEnded.roundIndex + 1} 종료`;
-    meta = props.resultSaveStatus === "saved" ? "결과 저장이 완료되었습니다." : "결과를 저장하는 중입니다.";
-    progress = 100;
+    label = `Round ${props.roundEnded.roundIndex + 1}`;
+    remainingLabel = props.resultSaveStatus === "saved" ? "저장 완료" : "저장 중";
+    progressRatio = 0;
     tone = "ended";
   } else if (props.activeRound) {
     const durationMs = props.activeRound.durationSec * 1000;
     const remainingMs = props.remainingMs ?? (props.remainingSec ?? props.activeRound.durationSec) * 1000;
     const remaining = Math.ceil(remainingMs / 1000);
-    title = `Round ${props.activeRound.roundIndex + 1} / ${totalRounds}`;
-    meta = `${remaining}초 남음 · 현재 사진: ${props.activeRound.image.uploadedBy.nickname ?? "익명 참가자"}`;
-    progress = durationMs > 0 ? Math.min(100, Math.max(0, (remainingMs / durationMs) * 100)) : 0;
+    label = `Round ${props.activeRound.roundIndex + 1} / ${totalRounds}`;
+    remainingLabel = `남은 시간 ${remaining}초`;
+    progressRatio = durationMs > 0 ? remainingMs / durationMs : 1;
     tone = "playing";
   }
+  const clampedProgress = Math.min(1, Math.max(0, progressRatio));
 
   return (
     <section className={`timer-bar ${tone}`} aria-label="라운드 타이머">
-      <div>
-        <strong>{title}</strong>
-        <span>{meta}</span>
+      <div className="timer-labels">
+        <strong>{label}</strong>
+        {remainingLabel ? <span>{remainingLabel}</span> : null}
       </div>
       <div className="timer-progress" aria-hidden="true">
-        <span style={{ width: `${progress}%` }} />
+        <span style={{ transform: `scaleX(${clampedProgress})` }} />
       </div>
     </section>
   );
@@ -2679,13 +2688,6 @@ function CanvasPanel(props: CanvasPanelProps) {
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="canvas-header">
-        <div>
-          <Palette size={20} />
-          <span>{props.title}</span>
-        </div>
-        <small>{props.subtitle}</small>
-      </div>
       <div className="drawing-toolbar" aria-label="드로잉 도구">
         <div className="tool-group" role="group" aria-label="도구 선택">
           <button
@@ -2837,7 +2839,6 @@ function GalleryView(props: GalleryViewProps) {
           <article className="paper-card result-card" key={result.id}>
             <div className="result-preview">
               <ResultPreviewImage resultId={result.id} loadPreview={props.onLoadResultPreview} />
-              <RoughDecoration className="rough-result" seed={result.roundIndex + 61} variant="result" />
               <span>Round {result.roundIndex + 1}</span>
             </div>
             <dl className="summary-list">
@@ -2868,7 +2869,20 @@ function GalleryView(props: GalleryViewProps) {
 
 function GalleryViewPolished(props: GalleryViewProps) {
   const canPrepareNextGame = props.room?.status === "finished" && props.isCurrentUserHost;
-  const featuredResult = props.results[0];
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(props.results[0]?.id ?? null);
+  const featuredResult =
+    props.results.find((result) => result.id === selectedResultId) ?? props.results[0];
+
+  useEffect(() => {
+    if (props.results.length === 0) {
+      setSelectedResultId(null);
+      return;
+    }
+
+    if (!selectedResultId || !props.results.some((result) => result.id === selectedResultId)) {
+      setSelectedResultId(props.results[0].id);
+    }
+  }, [props.results, selectedResultId]);
 
   if (props.state !== "ready" || props.results.length === 0 || !featuredResult) {
     return <GalleryView {...props} />;
@@ -2887,7 +2901,6 @@ function GalleryViewPolished(props: GalleryViewProps) {
       <main className="gallery-main">
         <section className="gallery-toolbar" aria-label="결과 갤러리 상태">
           <span>게임 종료</span>
-          <span>{props.results.length}개 결과를 확인할 수 있습니다.</span>
           {canPrepareNextGame ? (
             <button className="secondary-button" disabled={props.isBusy} onClick={props.onPrepareNextGame} type="button">
               <RefreshCw size={18} />
@@ -2898,7 +2911,6 @@ function GalleryViewPolished(props: GalleryViewProps) {
         <article className="paper-card featured-result-card">
           <div className="result-preview featured-result-preview">
             <ResultPreviewImage resultId={featuredResult.id} loadPreview={props.onLoadResultPreview} />
-            <RoughDecoration className="rough-result" seed={featuredResult.roundIndex + 61} variant="result" />
             <span>Round {featuredResult.roundIndex + 1}</span>
           </div>
           <button className="download-link" disabled={props.isBusy} onClick={() => props.onDownload(featuredResult.id)} type="button">
@@ -2909,27 +2921,17 @@ function GalleryViewPolished(props: GalleryViewProps) {
         <h2 className="section-title">라운드 기록</h2>
         <section className="gallery-grid">
           {props.results.map((result) => (
-            <article className="paper-card result-card" key={result.id}>
+            <button
+              className={result.id === featuredResult.id ? "paper-card result-card selected" : "paper-card result-card"}
+              key={result.id}
+              onClick={() => setSelectedResultId(result.id)}
+              type="button"
+            >
               <div className="result-preview">
                 <ResultPreviewImage resultId={result.id} loadPreview={props.onLoadResultPreview} />
-                <RoughDecoration className="rough-result" seed={result.roundIndex + 61} variant="result" />
                 <span>Round {result.roundIndex + 1}</span>
               </div>
-              <dl className="summary-list">
-                <div>
-                  <dt>stroke</dt>
-                  <dd>{result.strokeCount}</dd>
-                </div>
-                <div>
-                  <dt>created</dt>
-                  <dd>{formatDateTime(result.createdAt)}</dd>
-                </div>
-              </dl>
-              <button className="download-link" disabled={props.isBusy} onClick={() => props.onDownload(result.id)} type="button">
-                <Download size={18} />
-                PNG 다운로드
-              </button>
-            </article>
+            </button>
           ))}
           {props.nextCursor ? (
             <button className="secondary-button gallery-more" disabled={props.isBusy} onClick={props.onLoadMore} type="button">

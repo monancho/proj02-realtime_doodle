@@ -2093,3 +2093,13 @@
 - 사용자 피드백: 네비게이션바와 아래 패널 사이 간격이 어색하고, `로비`/`방 준비` 설명성 탭은 제거하는 편이 좋음.
 - 조치: 실제 앱의 `mode-tabs`를 제거하고, `로비` 이동을 AppHeader의 오른쪽 액션 버튼으로 옮겼다. 헤더와 게임 shell 사이 margin도 줄였다.
 - 검증: web typecheck/build 통과, room preview HTTP 200 확인.
+
+## 2026-06-07 - Play/gallery shell polish and gallery selection
+
+- 사용자 피드백: 게임 진행 중 채팅이 길어지면 중앙 드로잉 도구/캔버스가 아래로 밀리고, 종료 후 라운드 기록 이미지가 클릭되지 않아 대표 preview/다운로드 대상 변경이 되지 않았다.
+- 조치: 채팅 패널 높이를 shell 안에서 고정하고 `.chat-list`만 내부 스크롤되게 보정했다. 진행 화면 timer bar는 full 상태에서 시작해 `scaleX`로 줄어드는 방식으로 정리했다.
+- 조치: 상단 헤더의 `로비` 버튼을 제거하고, 진행/종료 중앙 패널에서 참고 이미지에 없는 캔버스 헤더/Rough 결과 장식/반복 metadata를 제거했다.
+- 조치: `GalleryViewPolished`에 선택된 result 상태를 추가해 라운드 기록 카드를 클릭하면 대표 결과와 PNG 다운로드 대상이 바뀌게 했다.
+- 조치: `prepare-next-game` 후 `waiting`으로 돌아올 때 이전 라운드/결과/미리보기 상태를 비워 stale 이미지가 남지 않게 했다.
+- 검증: web typecheck/build 통과, preview play HTTP 200 확인. Browser screenshot QA는 Windows sandbox runtime 오류로 실패했다.
+- 주의: backend maxPlayers 4 계약과 prepare-next-game 시 active image 정리는 별도 backend 작업으로 확인이 필요하다.
