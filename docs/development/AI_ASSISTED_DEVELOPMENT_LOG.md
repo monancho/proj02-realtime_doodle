@@ -1905,3 +1905,54 @@
   - backend/API/Socket/Firebase 계약 변경 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
   - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 LOGIN-AND-HEADLINE-VISUAL-POLISH
+
+- Agent: `qa-frontend`
+- 목표: 사용자가 지적한 headline 줄바꿈 어색함을 줄이고, 로그인 화면을 참고 이미지 톤으로 개선했다.
+- 수행 내용:
+  - login headline을 3줄 split 구조로 변경했다.
+  - lobby/login 공통 `split-headline` 스타일을 추가해 각 줄이 내부에서 다시 줄바꿈되지 않도록 했다.
+  - login card, brand, hero copy, marker underline, Google button 크기/색/그림자를 참고 이미지 방향으로 보정했다.
+  - mobile login layout 보정을 추가했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 LOGIN-FRAMELESS-MARKER-POLISH
+
+- Agent: `qa-frontend`
+- 목표: 로그인 화면을 프레임 없는 중앙 콘텐츠형 UI로 정리하고, 노란 marker line 길이를 headline 글자 폭과 맞췄다.
+- 수행 내용:
+  - login panel border/background/shadow를 제거했다.
+  - login button 아래 message 문구를 제거하고 `LoggedOutView`의 message prop을 정리했다.
+  - login/lobby headline과 marker line을 `headline-stack`으로 묶었다.
+  - marker line width를 `100%`로 두어 headline-stack 폭을 따르게 했다.
+  - login/lobby headline font-size와 nowrap을 보정했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 LOGIN-BUTTON-TYPOGRAPHY-POLISH
+
+- Agent: `qa-frontend`
+- 목표: login button UI/UX와 전체 login typography scale을 점검하고 미세 조정했다.
+- 수행 내용:
+  - login brand/headline font-size를 소폭 낮췄다.
+  - Google button width/height/font-size/border/shadow/icon size/gap을 조정했다.
+  - mobile login button/headline 크기를 별도 보정했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.

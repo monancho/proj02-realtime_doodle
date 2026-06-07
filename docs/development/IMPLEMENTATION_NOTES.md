@@ -803,3 +803,24 @@
 
 - lobby headline을 `같이 그리고,` / `같이 망치고,` / `같이 저장하기` 3줄 고정 구조로 변경했다.
 - headline span block과 line-height/gap을 조정해 손글씨 리듬이 더 명확하게 보이도록 했다.
+
+### 2026-06-07 LOGIN-AND-HEADLINE-VISUAL-POLISH
+
+- login 화면을 참고 이미지에 맞춰 더 큰 중앙 card, 큰 `DOODLE`, 3줄 headline, marker underline, 노란 Google login button 구조로 다듬었다.
+- login headline도 `같이 그리고,` / `같이 망치고,` / `같이 저장하기` 3줄 고정 구조로 변경했다.
+- lobby/login headline에 공통 `split-headline` 스타일을 적용하고 각 줄에 `white-space: nowrap`을 적용해 폰트 크기로 인한 줄 내부 재줄바꿈을 방지했다.
+- lobby headline font-size/line-height/max-width를 보정해 3줄 리듬이 더 자연스럽게 보이도록 했다.
+- mobile login card/headline 크기를 별도로 낮춰 좁은 화면 overflow 가능성을 줄였다.
+
+### 2026-06-07 LOGIN-FRAMELESS-MARKER-POLISH
+
+- login 화면은 별도 card frame 없이 노트 배경 위에 중앙 콘텐츠만 배치하는 방향으로 조정했다.
+- login/lobby headline과 marker line을 `headline-stack`으로 묶어 노란 마커 길이가 headline 글자 폭과 같이 움직이도록 했다.
+- login button 아래 보조 문구는 제거해 첫 화면을 더 단순하게 만들었다.
+- login/lobby headline 각 줄은 `white-space: nowrap`으로 내부 재줄바꿈을 막고, font-size를 낮춰 줄바꿈 어색함을 줄였다.
+
+### 2026-06-07 LOGIN-BUTTON-TYPOGRAPHY-POLISH
+
+- frameless login 화면 기준으로 전체 typography scale을 조금 낮춰 headline/button 비율을 안정화했다.
+- Google login button 폭/높이/font-size/box-shadow를 줄이고, icon과 text 사이 gap을 늘렸다.
+- mobile에서 login headline, Google button, Google mark 크기를 별도로 낮춰 좁은 화면에서 답답함을 줄였다.

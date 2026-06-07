@@ -1530,3 +1530,58 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 LOGIN-AND-HEADLINE-VISUAL-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - login 화면을 참고 이미지 기반 중앙 card 구조로 보정했다.
+  - login/lobby headline 줄 내부 재줄바꿈을 막기 위해 `split-headline`과 `white-space: nowrap`을 적용했다.
+  - mobile login card/headline 크기 보정을 추가했다.
+- 미실행/제외:
+  - 실제 브라우저 screenshot 검증은 이전과 동일하게 로컬 도구 한계가 있어 사용자의 수동 확인이 필요하다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 LOGIN-FRAMELESS-MARKER-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - login 화면 card frame을 제거했다.
+  - login button 아래 보조 문구를 제거했다.
+  - headline marker line이 글자 폭을 따르도록 `headline-stack` 구조를 적용했다.
+  - headline font-size와 nowrap을 조정했다.
+- 미실행/제외:
+  - 실제 브라우저 screenshot 검증은 사용자의 로컬 수동 확인이 필요하다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 LOGIN-BUTTON-TYPOGRAPHY-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - login button width/height/font-size/icon size/gap을 조정했다.
+  - login brand/headline font-size를 조금 낮춰 전체 위계를 점검했다.
+  - mobile login button/headline 크기를 보정했다.
+- 미실행/제외:
+  - 실제 브라우저 screenshot 검증은 사용자의 로컬 수동 확인이 필요하다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.

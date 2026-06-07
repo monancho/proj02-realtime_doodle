@@ -962,7 +962,6 @@ export function App() {
     return (
       <LoggedOutView
         isBusy={isBusy}
-        message={message}
         onSignInWithGoogle={() => void handleSignInWithGoogle()}
       />
     );
@@ -1161,7 +1160,6 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
     return (
       <LoggedOutView
         isBusy={false}
-        message="Preview mode: 실제 Firebase 로그인 없이 로그인 화면만 확인합니다."
         onSignInWithGoogle={noop}
       />
     );
@@ -1506,7 +1504,6 @@ const preventSubmit = (event: FormEvent<HTMLFormElement>) => {
 
 interface LoggedOutViewProps {
   isBusy: boolean;
-  message: string;
   onSignInWithGoogle: () => void;
 }
 
@@ -1516,8 +1513,14 @@ function LoggedOutView(props: LoggedOutViewProps) {
       <section className="login-panel" aria-labelledby="login-title">
         <p className="eyebrow">Realtime Doodle Relay</p>
         <div className="login-brand">DOODLE</div>
-        <h1 id="login-title">같이 그리고, 같이 망치고, 같이 저장하기</h1>
-        <RoughDecoration className="rough-underline" seed={29} variant="underline" />
+        <div className="headline-stack">
+          <h1 id="login-title" className="split-headline">
+            <span>같이 그리고,</span>
+            <span>같이 망치고,</span>
+            <span>같이 저장하기</span>
+          </h1>
+          <span className="lobby-marker-line login-marker-line" aria-hidden="true" />
+        </div>
         <p className="hero-copy">Google로 로그인하면 바로 방을 만들거나 초대 코드로 입장할 수 있습니다.</p>
         <button className="primary-button google-button" disabled={props.isBusy} onClick={props.onSignInWithGoogle} type="button">
           <span className="google-mark" aria-hidden="true">
@@ -1525,9 +1528,6 @@ function LoggedOutView(props: LoggedOutViewProps) {
           </span>
           Google로 로그인
         </button>
-        <p className="login-message" aria-live="polite">
-          {props.isBusy ? "로그인 중입니다." : props.message}
-        </p>
       </section>
     </main>
   );
@@ -1581,12 +1581,14 @@ function LobbyView(props: LobbyViewProps) {
     <section className="lobby-page" aria-label="로비">
       <div className="lobby-copy-panel">
         <p className="lobby-kicker">Realtime Doodle Relay</p>
-        <h2>
-          <span>같이 그리고,</span>
-          <span>같이 망치고,</span>
-          <span>같이 저장하기</span>
-        </h2>
-        <span className="lobby-marker-line" aria-hidden="true" />
+        <div className="headline-stack">
+          <h2 className="split-headline">
+            <span>같이 그리고,</span>
+            <span>같이 망치고,</span>
+            <span>같이 저장하기</span>
+          </h2>
+          <span className="lobby-marker-line" aria-hidden="true" />
+        </div>
         <p>
           방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
         </p>
