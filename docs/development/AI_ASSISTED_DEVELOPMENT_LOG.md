@@ -487,7 +487,7 @@
   - `docs/DATABASE_API_SOCKET.md`, IMPLEMENTATION_NOTES.md, TEST_REPORT.md 갱신.
 - 결정 사항:
   - 방 제목 기본값은 `Untitled Room`.
-  - 기본 room settings는 `roundDurationSec=60`, `maxPlayers=8`, `maxImagesPerUser=3`.
+  - 기본 room settings는 `roundDurationSec=60`, `maxPlayers=4`, `maxImagesPerUser=1`.
   - `GET /api/rooms/:roomCode`는 인증된 사용자라면 참가 전에도 조회 가능.
 - 의도적으로 제외:
   - Drawing, Chat, Upload, Timer feature.
@@ -2103,3 +2103,12 @@
 - 조치: `prepare-next-game` 후 `waiting`으로 돌아올 때 이전 라운드/결과/미리보기 상태를 비워 stale 이미지가 남지 않게 했다.
 - 검증: web typecheck/build 통과, preview play HTTP 200 확인. Browser screenshot QA는 Windows sandbox runtime 오류로 실패했다.
 - 주의: backend maxPlayers 4 계약과 prepare-next-game 시 active image 정리는 별도 backend 작업으로 확인이 필요하다.
+
+## 2026-06-07 - Max players and upload confirmation follow-up
+
+- 사용자 요청: 일정 전, 백엔드 최대 인원 4명 적용과 프론트 업로드 미리보기 난잡함 개선 중 바로 가능한 일을 진행하고, 나머지는 사용자가 돌아와 볼 수 있게 문서화해야 함.
+- 조치: `apps/server/src/rooms/routes.ts`의 기본 `maxPlayers`를 4로 변경하고 테스트 기대값을 갱신했다.
+- 조치: web dev preview mock room도 4명 기준으로 변경했다.
+- 조치: RoomView 업로드 영역에서 파일 선택 시 `이미지 추가` 패널 아래에 별도 확인 패널을 쌓지 않고, 동일 위치를 업로드 확인 패널로 교체하도록 수정했다.
+- 조치: `docs/development/NEXT_REVIEW_ACTIONS.md`를 추가해 닉네임 최초 설정, 닉네임 중복 체크, 프로필 이미지 URL 저장/표시, 결과 preview 디자인 통일, 한글 문구 깨짐 정리를 후속 작업으로 기록했다.
+- 검증: server typecheck/test, web typecheck/build 통과.

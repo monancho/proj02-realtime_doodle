@@ -1739,7 +1739,7 @@
   - 이미지 추가/이미지 변경 문구와 이미지 목록 카드 레이아웃 보정
   - `game-starting` 수신 시 숫자 countdown modal 표시
 - 미실행/주의:
-  - 실제 backend maxPlayers는 아직 변경하지 않았다. 현재 작업은 frontend UI 표기만 4명 기준으로 맞췄다.
+  - 이후 backend 기본 maxPlayers도 4명 기준으로 변경했다.
   - 실제 브라우저 육안 확인은 사용자 로컬에서 추가 확인이 필요하다.
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
@@ -1789,4 +1789,22 @@
   - 실제 Google 로그인 2인 플레이에서 채팅 장문 누적, 다시 준비 후 이미지 초기화, 라운드 선택 다운로드는 사용자 로컬에서 추가 확인이 필요하다.
 - 보안:
   - `.env`, token, private key, MongoDB URI 값은 출력하지 않았다.
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - 최대 인원 4명 및 업로드 확인 패널 검증
+
+- PASS: corepack pnpm --filter @doodle/server typecheck
+- PASS: corepack pnpm --filter @doodle/server test
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- 확인 범위:
+  - 신규 room 기본 maxPlayers 4명 적용
+  - room route 기본값 테스트 갱신
+  - web preview mock maxPlayers 4명 적용
+  - 업로드 파일 선택 후 추가 패널 누적 대신 확인 패널 교체 렌더링 적용
+- 미실행/주의:
+  - 실제 브라우저 시각 QA는 이번 턴에서 수행하지 않았다.
+  - 닉네임 중복 체크와 최초 닉네임 강제 설정은 별도 backend/frontend 계약 작업이 필요하다.
+- 보안:
+  - `.env`, token, Firebase private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.

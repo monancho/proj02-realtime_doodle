@@ -93,7 +93,7 @@ describe("Room routes", () => {
       title: "Untitled Room",
       settings: {
         roundDurationSec: 60,
-        maxPlayers: 8,
+        maxPlayers: 4,
         maxImagesPerUser: 1
       }
     });

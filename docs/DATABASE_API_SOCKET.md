@@ -648,8 +648,8 @@ update:
   title: "Untitled Room",
   settings: {
     roundDurationSec: 60,
-    maxPlayers: 8,
-    maxImagesPerUser: 3
+    maxPlayers: 4,
+    maxImagesPerUser: 1
   }
 }
 ```

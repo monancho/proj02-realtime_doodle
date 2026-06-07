@@ -1471,6 +1471,10 @@ button.lobby-cta-card {
   padding: 10px;
 }
 
+.upload-preview-inline {
+  margin-top: 0;
+}
+
 .upload-preview img {
   width: 96px;
   height: 72px;
@@ -1489,6 +1493,13 @@ button.lobby-cta-card {
   color: #6b6258;
   font-weight: 800;
   margin-top: 4px;
+}
+
+.upload-preview p {
+  margin: 6px 0 0;
+  color: #5f5a52;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .preview-actions {

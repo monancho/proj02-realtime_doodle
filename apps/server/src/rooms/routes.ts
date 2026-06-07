@@ -15,7 +15,7 @@ import type { RoomRepository } from "./repository";
 const DEFAULT_ROOM_TITLE = "Untitled Room";
 const DEFAULT_ROOM_SETTINGS: RoomSettings = {
   roundDurationSec: 60,
-  maxPlayers: 8,
+  maxPlayers: 4,
   maxImagesPerUser: 1
 };
 

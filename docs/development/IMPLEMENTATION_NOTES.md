@@ -222,7 +222,7 @@
 - `createApp()`은 `roomRepository` dependency를 받으며 기본값으로 `InMemoryRoomRepository`를 사용한다.
 - `createServerDependencies()`는 MongoDB `rooms` collection에 index를 보장한 뒤 `MongoRoomRepository`를 app에 주입한다.
 - `POST /api/rooms`는 인증 context의 `firebaseUid`, `nickname`, `avatarUrl`을 host 정보로 사용한다.
-- 방 생성 기본값은 `Untitled Room`, `roundDurationSec=60`, `maxPlayers=8`, `maxImagesPerUser=3`이다.
+- 방 생성 기본값은 `Untitled Room`, `roundDurationSec=60`, `maxPlayers=4`, `maxImagesPerUser=1`이다.
 - `GET /api/rooms/:roomCode`는 MVP에서 인증된 사용자라면 참가 전에도 조회 가능하게 구현했다.
 - `RoomDomainError`는 shared `ApiErrorResponse` shape로 변환한다.
 - route 테스트는 `InMemoryRoomRepository` 중심으로 추가했다.
@@ -910,7 +910,7 @@
 - 대기 화면 초대 코드 영역에서 Rough.js badge 장식과 테이프 pseudo 장식을 제거했다.
 - `시작하기` 후 backend의 `game-starting` 상태는 기존 inline timer bar 대신 숫자 중심 countdown modal로 표시하도록 변경했다.
 - 이미지 추가 CTA는 업로드 후 `이미지 변경` 흐름으로 보이도록 문구를 조정했다.
-- 참가 최대 인원은 이번 작업에서 backend 계약을 바꾸지 않고 UI 표기만 `n/4명`으로 반영했다. 실제 제한은 후속 backend 작업이 필요하다.
+- 참가 최대 인원은 이후 backend 기본 room settings까지 4명으로 반영했다.
 
 ## 2026-06-07 - 대기 패널 순서/4슬롯 보정
 
@@ -943,3 +943,12 @@
 - 종료 화면의 라운드 기록 카드를 다시 선택 가능한 버튼으로 복구했다.
 - 라운드 기록 카드를 클릭하면 대표 결과 preview가 해당 라운드로 바뀌고, 상단 `PNG 다운로드` 버튼도 선택된 결과를 다운로드한다.
 - 선택된 라운드 카드는 노란 강조선으로 표시해 현재 대표 결과와 연결되도록 했다.
+
+## 2026-06-07 - 최대 인원 4명 및 업로드 확인 패널 보정
+
+- room 생성 기본 `maxPlayers`를 8에서 4로 변경했다.
+- room route 테스트의 기본 settings 기대값을 4명으로 갱신했다.
+- 프론트 dev preview mock room도 4명 기준으로 맞췄다.
+- 이미지 파일 선택 시 `이미지 추가` 패널 아래에 확인 패널이 추가로 쌓이지 않고, 같은 위치가 업로드 확인 패널로 교체되도록 RoomView 렌더링을 정리했다.
+- 업로드 확인 패널에 선택 이미지 preview, 파일명, 크기, 업로드/취소 액션을 표시한다.
+- 닉네임 최초 설정, 닉네임 중복 체크, 프로필 이미지 URL 저장/표시 정합성, 결과 preview polish는 `docs/development/NEXT_REVIEW_ACTIONS.md`에 후속 작업으로 분리했다.

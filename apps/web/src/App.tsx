@@ -1405,11 +1405,11 @@ const mockRoom: RoomDetail = {
   hostUid: mockProfile.firebaseUid,
   settings: {
     roundDurationSec: 90,
-    maxPlayers: 8,
+    maxPlayers: 4,
     maxImagesPerUser: 1
   },
   participantCount: 4,
-  maxPlayers: 8,
+  maxPlayers: 4,
   createdAt: mockCreatedAt,
   updatedAt: mockCreatedAt,
   participants: [
@@ -1815,7 +1815,24 @@ function RoomView(props: RoomViewProps) {
           <ImagePlus size={20} />
           <h2>이미지 업로드</h2>
         </div>
-        {props.myUploadedImage ? (
+        {props.uploadPreview ? (
+          <section className="upload-preview upload-preview-inline" aria-label="업로드 확인">
+            <img alt="" src={props.uploadPreview.url} />
+            <div>
+              <strong>{props.uploadPreview.file.name}</strong>
+              <small>{formatBytes(props.uploadPreview.file.size)}</small>
+              <p>이 이미지로 업로드할까요?</p>
+            </div>
+            <div className="preview-actions">
+              <button className="primary-button" disabled={props.isBusy} onClick={props.onConfirmUpload} type="button">
+                업로드
+              </button>
+              <button className="secondary-button" disabled={props.isBusy} onClick={props.onCancelUploadPreview} type="button">
+                취소
+              </button>
+            </div>
+          </section>
+        ) : props.myUploadedImage ? (
           <section className="uploaded-image-card" aria-label="업로드한 이미지">
             {props.uploadedImagePreviewUrl ? (
               <img alt="" src={props.uploadedImagePreviewUrl} />
@@ -1846,7 +1863,7 @@ function RoomView(props: RoomViewProps) {
           <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
             <Upload size={28} />
             <strong>이미지 추가</strong>
-            <span>JPG, PNG, WebP 이미지를 선택하세요. 선택 후 미리보기에서 확인합니다.</span>
+            <span>JPG, PNG, WebP 이미지를 선택하세요. 선택 후 확인 패널에서 업로드합니다.</span>
             <input
               accept="image/jpeg,image/png,image/webp"
               disabled={uploadDisabled}
@@ -1858,23 +1875,6 @@ function RoomView(props: RoomViewProps) {
             />
           </label>
         )}
-        {props.uploadPreview ? (
-          <section className="upload-preview" aria-label="업로드 미리보기">
-            <img alt="" src={props.uploadPreview.url} />
-            <div>
-              <strong>{props.uploadPreview.file.name}</strong>
-              <small>{formatBytes(props.uploadPreview.file.size)}</small>
-            </div>
-            <div className="preview-actions">
-              <button className="primary-button" disabled={props.isBusy} onClick={props.onConfirmUpload} type="button">
-                업로드
-              </button>
-              <button className="secondary-button" disabled={props.isBusy} onClick={props.onCancelUploadPreview} type="button">
-                취소
-              </button>
-            </div>
-          </section>
-        ) : null}
         {props.uploadError ? <p className="error-copy">{props.uploadError}</p> : null}
         <ImageList
           error={props.resourceErrors.images}
