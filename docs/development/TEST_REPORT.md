@@ -706,6 +706,27 @@
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
 
+### 2026-06-07 PHASE-FE-REAL-FLOW-VISUAL-QA-FIX
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `Invoke-WebRequest http://localhost:5173/?preview=login|lobby|room|play|gallery`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - preview URL 5종: 모두 HTTP 200 응답 확인.
+- 수정:
+  - 참가자 ready 상태 표기를 `준비`/`대기`로 변경했다.
+  - canvas lock 안내에서 일반 사용자에게 불필요한 `Socket` 직접 노출을 제거했다.
+  - 업로드 안내 문구, preview action 버튼, 갤러리 다운로드 버튼 정렬을 CSS로 보정했다.
+- 미실행:
+  - 실제 Google 로그인 후 방 생성/입장/업로드/플레이/다운로드 조작은 사용자 계정 조작이 필요해 자동 수행하지 않았다.
+  - 백엔드 서버와 실제 Socket 연결을 통한 2인 E2E는 이번 자동 검증 범위에서 수행하지 않았다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
 ### 2026-06-06 PHASE-LOCAL-MANUAL-E2E-SMOKE
 
 - 실행 명령: `corepack pnpm --filter @doodle/server typecheck`

@@ -1122,6 +1122,29 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 PHASE-FE-REAL-FLOW-VISUAL-QA-FIX
+
+- Agent: `qa-frontend`
+- 목표: 실제 Google 로그인 이후 사용자 흐름을 기준으로 남은 시각 깨짐과 UX 마찰을 최소 수정.
+- 수행 내용:
+  - 실제 Google 로그인 조작은 사용자 계정이 필요해 자동 수행하지 않고, 실제 플로우 컴포넌트와 preview 검증으로 대체했다.
+  - 방 준비 화면의 참가자 ready 상태를 `Ready`/`Waiting`에서 `준비`/`대기`로 변경했다.
+  - play 화면의 canvas lock 안내에서 `Socket` 직접 노출을 제거했다.
+  - 업로드 안내 문구 줄바꿈, preview action 버튼 균형, 갤러리 다운로드 버튼 하단 정렬을 CSS로 보정했다.
+  - 백엔드 인증/API/Socket 계약과 Firebase auth 흐름은 변경하지 않았다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `http://localhost:5173/?preview=login|lobby|room|play|gallery`: 각 200 응답 확인.
+- 의도적으로 제외:
+  - 백엔드 인증/API/Socket 변경.
+  - Firebase auth 우회.
+  - 실제 Google 계정 조작 자동화.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 충돌/주의:
   - 기존 미추적 `package-lock.json`은 건드리지 않았다.
   - `pnpm-lock.yaml`은 pnpm workspace 의존성 추가로 갱신되었다.

@@ -714,3 +714,14 @@
 - chat form은 버튼 최소 폭을 보장하고 mobile에서는 기존 단일 column 흐름을 유지했다.
 - gallery card는 결과 정보가 갤러리 카드처럼 읽히도록 내부 간격과 summary grid를 정리했다.
 - mobile status strip의 좌우 padding을 복구해 안내 문구가 카드 테두리에 붙지 않도록 했다.
+
+### 2026-06-07 PHASE-FE-REAL-FLOW-VISUAL-QA-FIX
+
+- 실제 Google 로그인 후 E2E 조작은 사용자 계정 조작이 필요해 자동 수행하지 못했다.
+- 실제 사용자 플로우 코드 기준으로 로그인, 로비, 방 준비, 플레이, 갤러리 화면의 남은 UX 마찰을 점검했다.
+- 백엔드 인증/API/Socket 계약과 Firebase auth 흐름은 변경하지 않았다.
+- 일반 사용자에게 불필요한 기술 용어가 보이지 않도록 canvas lock 안내에서 `Socket` 직접 노출을 제거했다.
+- 참가자 ready 상태 표기를 `Ready`/`Waiting`에서 `준비`/`대기`로 변경해 방 준비 화면의 문맥을 맞췄다.
+- 업로드 안내 문구가 카드 안에서 안정적으로 줄바꿈되도록 upload box text style을 보정했다.
+- 업로드 preview 확인/취소 버튼은 같은 줄에서 균형 있게 배치되도록 flex sizing을 보정했다.
+- 갤러리 결과 카드의 다운로드 버튼은 카드 하단에서 일관되게 보이도록 full-width와 auto margin을 적용했다.

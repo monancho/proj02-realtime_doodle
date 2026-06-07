@@ -693,6 +693,15 @@ button:disabled {
   font-size: 1.35rem;
 }
 
+.upload-box span {
+  max-width: 32rem;
+  color: #5f5a52;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .upload-box.disabled {
   cursor: not-allowed;
   opacity: 0.64;
@@ -739,6 +748,10 @@ button:disabled {
   flex-wrap: wrap;
   grid-column: 1 / -1;
   gap: 8px;
+}
+
+.preview-actions button {
+  flex: 1 1 120px;
 }
 
 .start-button {
@@ -1198,11 +1211,17 @@ button:disabled {
   display: grid;
   gap: 12px;
   align-content: start;
+  min-height: 100%;
 }
 
 .result-card .summary-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 0;
+}
+
+.result-card .download-link {
+  width: 100%;
+  margin-top: auto;
 }
 
 .result-preview span {

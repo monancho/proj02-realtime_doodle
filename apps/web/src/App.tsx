@@ -1660,7 +1660,7 @@ function ParticipantPanel({
                 {participant.nickname ?? "익명 참가자"}
                 {participant.firebaseUid === currentFirebaseUid ? <small>나</small> : null}
               </span>
-              <strong>{uploadedFirebaseUids.has(participant.firebaseUid) ? "Ready" : "Waiting"}</strong>
+              <strong>{uploadedFirebaseUids.has(participant.firebaseUid) ? "준비" : "대기"}</strong>
               {participant.isHost ? <em>Host</em> : null}
             </li>
           ))}
@@ -2021,7 +2021,7 @@ function CanvasPanel(props: CanvasPanelProps) {
           lastSentPointRef.current = null;
         }}
       />
-      {props.disabled ? <p className="canvas-lock">Socket 연결과 playing 상태가 준비되면 그림을 그릴 수 있습니다.</p> : null}
+      {props.disabled ? <p className="canvas-lock">라운드가 시작되고 연결이 준비되면 그림을 그릴 수 있습니다.</p> : null}
     </div>
   );
 }
