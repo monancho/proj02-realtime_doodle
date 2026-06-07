@@ -1657,3 +1657,10 @@
 - PASS: corepack pnpm --filter @doodle/web build
 - 미실행: 실제 2인 브라우저 플레이 수동 확인은 사용자가 로컬에서 이어서 확인 필요.
 
+
+## 2026-06-07 - 게임 중 타이머/로비 복귀/프로필 메뉴 검증
+
+- FAIL/PASS: corepack pnpm --filter @doodle/web typecheck - 최초 실행에서 lobby 네비게이션 조건 변경으로 타입 좁힘 오류 1건 발생, 수정 후 통과.
+- PASS: corepack pnpm --filter @doodle/web build
+- 미실행: 실제 브라우저 2인 플레이에서 게임 중 timer progress와 프로필 hover 동작은 사용자가 로컬에서 확인 필요.
+

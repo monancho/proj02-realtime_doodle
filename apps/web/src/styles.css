@@ -503,6 +503,16 @@ textarea {
   min-width: 0;
 }
 
+.profile-menu::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  display: none;
+  height: 10px;
+}
+
 .profile-button {
   max-width: min(320px, 48vw);
   min-height: 46px;
@@ -547,6 +557,11 @@ textarea {
 .profile-menu:focus-within .profile-popover {
   display: grid;
   gap: 8px;
+}
+
+.profile-menu:hover::after,
+.profile-menu:focus-within::after {
+  display: block;
 }
 
 .profile-popover button {

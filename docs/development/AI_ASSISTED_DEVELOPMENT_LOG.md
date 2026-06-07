@@ -2029,3 +2029,10 @@
 - 조치: 프론트 TimerBarFixed에서 active round startedAt/durationSec 기준으로 progress를 250ms마다 재계산하도록 수정.
 - 검증: web typecheck/build 통과. 실제 브라우저 플레이 확인은 후속 수동 QA 필요.
 
+
+## 2026-06-07 - In-game timer and lobby UI follow-up
+
+- 사용자 피드백: countdown bar는 동작하지만 게임 중 timer bar가 여전히 움직이지 않음, 로비 복귀 후 버튼 잔존, profile popover hover gap 발생.
+- 조치: active round remainingMs를 App 상태에서 250ms 갱신하도록 countdown 방식과 맞췄고, lobby 화면에서 mode tabs를 숨기며 profile popover hover bridge를 추가.
+- 검증: web typecheck/build 통과. 실제 로컬 브라우저 확인은 후속 수동 QA 필요.
+

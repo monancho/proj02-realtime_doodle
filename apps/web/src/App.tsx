@@ -185,6 +185,7 @@ export function App() {
   const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>("idle");
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
   const [resourceState, setResourceState] = useState<ResourceState>(initialResourceState);
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
   const socketRef = useRef<Socket | null>(null);
@@ -282,6 +283,8 @@ export function App() {
     socket.on("round-started", (payload: RoundStartedPayload) => {
       setGameStarting(null);
       setCountdownRemainingSec(null);
+      setRemainingSec(payload.durationSec);
+      setRemainingMs(payload.durationSec * 1000);
       setActiveRound({ ...payload, endedAt: null });
       setRoundEnded(null);
       setGameFinishedAt(null);
@@ -343,17 +346,22 @@ export function App() {
   useEffect(() => {
     if (!activeRound || activeRound.endedAt) {
       setRemainingSec(null);
+      setRemainingMs(null);
       return;
     }
 
     const updateRemaining = () => {
       const startedAtMs = new Date(activeRound.startedAt).getTime();
-      const elapsedSec = Math.floor((Date.now() - startedAtMs) / 1000);
-      setRemainingSec(Math.max(0, activeRound.durationSec - elapsedSec));
+      const durationMs = activeRound.durationSec * 1000;
+      const nextRemainingMs =
+        Number.isFinite(startedAtMs) && durationMs > 0 ? Math.max(0, durationMs - (Date.now() - startedAtMs)) : durationMs;
+
+      setRemainingMs(nextRemainingMs);
+      setRemainingSec(Math.ceil(nextRemainingMs / 1000));
     };
 
     updateRemaining();
-    const intervalId = window.setInterval(updateRemaining, 1000);
+    const intervalId = window.setInterval(updateRemaining, 250);
 
     return () => window.clearInterval(intervalId);
   }, [activeRound]);
@@ -989,9 +997,9 @@ export function App() {
         </section>
       ) : null}
 
-      {room ? (
+      {room && viewMode !== "lobby" ? (
         <nav className="mode-tabs" aria-label="방 화면 전환">
-          <TabButton isActive={viewMode === "lobby"} onClick={() => setViewMode("lobby")} icon={<LogIn size={18} />}>
+          <TabButton isActive={false} onClick={() => setViewMode("lobby")} icon={<LogIn size={18} />}>
             로비
           </TabButton>
           {room.status === "waiting" && !isCurrentUserSpectator ? (
@@ -1068,6 +1076,7 @@ export function App() {
           imageCount={activeImages.length}
           isCurrentUserSpectator={isCurrentUserSpectator}
           gameStarting={gameStarting}
+          remainingMs={remainingMs}
           remainingSec={remainingSec}
           room={room}
           roundEnded={roundEnded}
@@ -1250,6 +1259,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           imageCount={mockImages.length}
           isCurrentUserSpectator={false}
           gameStarting={null}
+          remainingMs={83_000}
           remainingSec={83}
           room={mockPlayingRoom}
           roundEnded={null}
@@ -1760,6 +1770,7 @@ function RoomView(props: RoomViewProps) {
           gameFinishedAt={null}
           gameStarting={props.gameStarting}
           imageCount={props.images.length}
+          remainingMs={null}
           remainingSec={null}
           resultSaveStatus="idle"
           roundEnded={null}
@@ -2107,6 +2118,7 @@ interface PlayViewProps {
   roundEnded: RoundEndedPayload | null;
   resultSaveStatus: ResultSaveStatus;
   gameFinishedAt: string | null;
+  remainingMs: number | null;
   remainingSec: number | null;
   countdownRemainingSec: number | null;
   gameStarting: GameStartingPayload | null;
@@ -2138,6 +2150,7 @@ function PlayView(props: PlayViewProps) {
         gameFinishedAt={props.gameFinishedAt}
         gameStarting={props.gameStarting}
         imageCount={props.imageCount}
+        remainingMs={props.remainingMs}
         remainingSec={props.remainingSec}
         resultSaveStatus={props.resultSaveStatus}
         roundEnded={props.roundEnded}
@@ -2211,6 +2224,7 @@ interface TimerBarProps {
   gameFinishedAt: string | null;
   gameStarting: GameStartingPayload | null;
   imageCount: number;
+  remainingMs: number | null;
   remainingSec: number | null;
   resultSaveStatus: ResultSaveStatus;
   roundEnded: RoundEndedPayload | null;
@@ -2269,23 +2283,11 @@ function TimerBar(props: TimerBarProps) {
 void TimerBar;
 
 function TimerBarFixed(props: TimerBarProps) {
-  const [nowMs, setNowMs] = useState(() => Date.now());
   const totalRounds = Math.max(1, props.imageCount);
   let title = "라운드 대기";
   let meta = "사진이 준비되면 게임을 시작할 수 있습니다.";
   let progress = 0;
   let tone: "idle" | "starting" | "playing" | "ended" | "finished" = "idle";
-
-  useEffect(() => {
-    if (!props.activeRound || props.activeRound.endedAt || props.roundEnded || props.gameFinishedAt) {
-      return;
-    }
-
-    setNowMs(Date.now());
-    const intervalId = window.setInterval(() => setNowMs(Date.now()), 250);
-
-    return () => window.clearInterval(intervalId);
-  }, [props.activeRound?.roundId, props.activeRound?.endedAt, props.roundEnded, props.gameFinishedAt]);
 
   if (props.gameStarting) {
     const remaining = props.countdownRemainingSec ?? props.gameStarting.countdownSec;
@@ -2308,10 +2310,7 @@ function TimerBarFixed(props: TimerBarProps) {
     tone = "ended";
   } else if (props.activeRound) {
     const durationMs = props.activeRound.durationSec * 1000;
-    const startedAtMs = new Date(props.activeRound.startedAt).getTime();
-    const fallbackRemainingMs = (props.remainingSec ?? props.activeRound.durationSec) * 1000;
-    const remainingMs =
-      Number.isFinite(startedAtMs) && durationMs > 0 ? Math.max(0, durationMs - (nowMs - startedAtMs)) : fallbackRemainingMs;
+    const remainingMs = props.remainingMs ?? (props.remainingSec ?? props.activeRound.durationSec) * 1000;
     const remaining = Math.ceil(remainingMs / 1000);
     title = `Round ${props.activeRound.roundIndex + 1} / ${totalRounds}`;
     meta = `${remaining}초 남음 · 현재 사진: ${props.activeRound.image.uploadedBy.nickname ?? "익명 참가자"}`;
