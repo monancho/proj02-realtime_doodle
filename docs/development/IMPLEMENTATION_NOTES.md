@@ -960,3 +960,11 @@
 - Added local-only scratch pads to login and lobby. They do not call Firebase, API, or Socket.
 - Added local powder particles and remote cursor overlay to the play canvas. Drawing stroke payloads and result save flow remain unchanged.
 - Revert checkpoint before this work: local tag checkpoint/pre-cursor-effects.
+
+## 2026-06-07 - Max Participants and Profile Setup Plan
+
+- Backend 구현 전 정책으로 room의 MVP 플레이 가능 인원을 4명으로 정리했다.
+- `maxPlayers`는 non-spectator participant 기준이며, `waiting` join에서 4명 초과 시 `ROOM_PARTICIPANTS_FULL`을 사용한다.
+- 최초 로그인 후 닉네임 설정 필요 조건은 `nickname` 없음/blank 또는 `profileSetupCompletedAt` 없음으로 정리했다.
+- 닉네임 중복 체크는 `nicknameNormalized` unique 기준을 권장한다.
+- 프로필 이미지 URL은 `users.avatarUrl`에 저장하고 room participant snapshot 및 `profile-updated` -> `room-updated` 흐름으로 반영한다.

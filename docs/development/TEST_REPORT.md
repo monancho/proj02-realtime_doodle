@@ -1938,3 +1938,12 @@
 - Source change: 추가 코드 보정은 필요하지 않아 문서 기록만 남겼다.
 - Manual QA needed: 실제 2인 플레이에서 결과 저장 preview 표시와 5초 후 모달 해제/다음 라운드 전환을 확인해야 한다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-07 - Max Participants and Profile Setup Plan
+
+- Scope: 구현 없이 최대 참가자 4명, 최초 닉네임 설정, 닉네임 중복 체크, 프로필 이미지 URL 저장 정책을 문서화했다.
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- `git status --short`: 문서 변경과 기존 미추적 `package-lock.json` 확인. `package-lock.json`은 수정/삭제/commit하지 않는다.
+- Implementation note: room max players는 non-spectator participant 기준 4명이며 초과 시 `ROOM_PARTICIPANTS_FULL`을 권장한다.
+- Implementation note: nickname은 `nicknameNormalized` unique index와 `USER_NICKNAME_DUPLICATE` error code를 권장한다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
