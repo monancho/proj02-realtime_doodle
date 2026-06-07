@@ -1222,3 +1222,27 @@
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.
+
+### 2026-06-07 PHASE-FE-DEV-UI-PREVIEW-MODE
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 실행 명령: `Invoke-WebRequest http://localhost:5173/?preview=login|lobby|room|play|gallery`
+- 결과:
+  - `web typecheck`: 통과.
+  - `web build`: 통과. Vite production build 생성 확인.
+  - preview URL 5종: 모두 HTTP 200 응답 확인.
+- 자동 점검/수정:
+  - dev-only preview mode를 추가했다.
+  - preview mode는 mock data를 사용하고 실제 Firebase/API/Socket 요청을 실행하지 않는다.
+  - `?preview=login`, `?preview=lobby`, `?preview=room`, `?preview=play`, `?preview=gallery`를 지원한다.
+- Browser 시각 QA:
+  - Browser skill 지침에 따라 in-app browser 연결을 2회 시도했다.
+  - 두 시도 모두 Windows sandbox `spawn setup refresh` 실패로 node-backed browser runtime이 종료되어 screenshot 검증을 완료하지 못했다.
+  - 대체 검증으로 dev server preview URL HTTP 200, TypeScript compile, production build를 확인했다.
+- 미실행:
+  - 실제 desktop/mobile screenshot 기반 시각 QA는 Browser 런타임 복구 후 수행해야 한다.
+- secret 출력 여부:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정, 삭제, commit 대상에 포함하지 않는다.

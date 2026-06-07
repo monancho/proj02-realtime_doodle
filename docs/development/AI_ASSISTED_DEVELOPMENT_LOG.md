@@ -1603,3 +1603,29 @@
   - push.
 - secret 처리:
   - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.
+
+### 2026-06-07 PHASE-FE-DEV-UI-PREVIEW-MODE
+
+- Agent: `frontend`
+- 목표: 로그인 없이 로컬 브라우저 시각 QA를 수행할 수 있는 dev-only UI preview mode 추가.
+- 수행 내용:
+  - `?preview=login|lobby|room|play|gallery` query를 지원하는 `PreviewApp` 분기를 추가했다.
+  - preview mode는 `import.meta.env.DEV` 또는 `VITE_ENABLE_UI_PREVIEW=true`일 때만 활성화된다.
+  - mock user, room, participants, images, active round, chat messages, drawing strokes, results를 추가했다.
+  - preview branch는 실제 앱 hook/API/Socket 초기화 전에 return하여 Firebase/API/Socket 요청을 실행하지 않는다.
+  - preview 화면 action은 no-op 또는 submit prevent로 처리한다.
+  - `dev preview` badge를 추가해 실제 앱 상태와 구분한다.
+- 검증 결과:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+  - `http://localhost:5173/?preview=login|lobby|room|play|gallery`: 각 200 응답 확인.
+- 의도적으로 제외:
+  - 백엔드 인증/API/Socket 변경.
+  - Firebase auth 우회.
+  - 실제 저장/업로드/다운로드 기능 mock 이상 구현.
+  - `package-lock.json` 변경/삭제/commit.
+  - push.
+- 참고:
+  - Browser 런타임 연결은 Windows sandbox `spawn setup refresh` 실패로 완료하지 못했다.
+- secret 처리:
+  - `.env`, MongoDB URI, Firebase private key, token 값은 출력하지 않았다.

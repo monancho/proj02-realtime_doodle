@@ -679,3 +679,18 @@
 - 업로드 이미지 목록은 가짜 큰 thumbnail 느낌을 줄이고 작은 이미지 marker가 있는 metadata card로 정리했다.
 - canvas, drawing toolbar, chat list, gallery card의 radius/border/shadow를 통일했다.
 - chat form은 input/button 2열 구조로 정리하고 좁은 화면에서는 기존 responsive 흐름을 유지한다.
+
+### 2026-06-07 PHASE-FE-DEV-UI-PREVIEW-MODE
+
+- 로그인 없이 로컬 UI 시각 QA를 할 수 있도록 프론트엔드 dev-only preview mode를 추가했다.
+- preview mode는 `import.meta.env.DEV` 또는 `VITE_ENABLE_UI_PREVIEW=true`일 때만 `?preview=` query를 인식한다.
+- 지원 URL:
+  - `?preview=login`
+  - `?preview=lobby`
+  - `?preview=room`
+  - `?preview=play`
+  - `?preview=gallery`
+- preview mode에서는 mock user, room, participants, images, active round, chat messages, strokes, results를 사용한다.
+- preview branch는 실제 Firebase auth, API request, Socket connection hooks보다 먼저 return하므로 외부 요청을 실행하지 않는다.
+- preview 화면의 button action은 no-op 또는 submit prevent로 처리한다.
+- 백엔드 인증/API/Socket 동작은 변경하지 않았다.

@@ -426,6 +426,16 @@ button:disabled {
   transform: none;
 }
 
+.preview-badge {
+  flex: 0 0 auto;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--yellow);
+  padding: 3px 10px;
+  font-family: "Gaegu", "Pretendard", sans-serif;
+  font-weight: 900;
+}
+
 .lobby-actions,
 .room-layout,
 .play-layout,

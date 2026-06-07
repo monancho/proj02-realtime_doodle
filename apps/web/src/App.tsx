@@ -27,6 +27,7 @@ import { RoughDecoration } from "./components/RoughDecoration";
 type ViewMode = "lobby" | "room" | "play" | "gallery";
 type ModalMode = "create-room" | "join-room" | "nickname";
 type LoadState = "idle" | "loading" | "ready" | "error";
+type PreviewMode = "login" | "lobby" | "room" | "play" | "gallery";
 
 interface ResourceState {
   room: LoadState;
@@ -126,6 +127,7 @@ const maxStrokePointsPerPayload = 128;
 const maxRenderedStrokeBatches = 10000;
 const drawingColors = ["#222222", "#e85d75", "#f4b942", "#4f9d69", "#4f80d9", "#8b6fd6"];
 const drawingWidths = [3, 6, 10];
+const isPreviewEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_UI_PREVIEW === "true";
 const initialResourceState: ResourceState = {
   room: "idle",
   participants: "idle",
@@ -140,6 +142,12 @@ const initialResourceErrors: ResourceErrors = {
 };
 
 export function App() {
+  const previewMode = getPreviewMode();
+
+  if (previewMode) {
+    return <PreviewApp mode={previewMode} />;
+  }
+
   const [firebaseToken, setFirebaseToken] = useState("");
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -969,6 +977,298 @@ export function App() {
     </main>
   );
 }
+
+function PreviewApp({ mode }: { mode: PreviewMode }) {
+  const currentFirebaseUid = mockProfile.firebaseUid;
+  const viewMode: ViewMode = mode === "play" || mode === "gallery" ? mode : mode === "room" ? "room" : "lobby";
+  const room = mode === "lobby" ? null : mockRoom;
+  const activeRound = mode === "play" ? mockActiveRound : null;
+
+  if (mode === "login") {
+    return (
+      <LoggedOutView
+        isBusy={false}
+        message="Preview mode: 실제 Firebase 로그인 없이 로그인 화면만 확인합니다."
+        onSignInWithGoogle={noop}
+      />
+    );
+  }
+
+  return (
+    <main className="app-shell preview-shell">
+      <AppHeader authUser={mockAuthUser} profile={mockProfile} onOpenNickname={noop} onSignOut={noop} />
+
+      <section className="intro-panel" aria-labelledby="app-title">
+        <div>
+          <p className="eyebrow">UI Preview Mode</p>
+          <h1 id="app-title">로그인 없이 화면만 확인하기</h1>
+          <RoughDecoration className="rough-underline" seed={21} variant="underline" />
+          <p className="hero-copy">
+            이 화면은 로컬 UI QA 전용 mock preview입니다. 실제 API, Firebase, Socket 요청은 실행하지 않습니다.
+          </p>
+        </div>
+      </section>
+
+      {room ? (
+        <nav className="mode-tabs" aria-label="Preview 화면 전환">
+          <TabButton isActive={viewMode === "lobby"} onClick={noop} icon={<LogIn size={18} />}>
+            로비
+          </TabButton>
+          <TabButton isActive={viewMode === "room"} onClick={noop} icon={<Users size={18} />}>
+            방 준비
+          </TabButton>
+        </nav>
+      ) : null}
+
+      <section className="status-strip" aria-live="polite">
+        <span>{getPreviewMessage(mode)}</span>
+        <span className="preview-badge">dev preview</span>
+      </section>
+
+      {viewMode === "lobby" ? <LobbyView isBusy={false} onOpenCreateRoom={noop} onOpenJoinRoom={noop} /> : null}
+
+      {viewMode === "room" ? (
+        <RoomView
+          activeRoomCode={mockRoom.roomCode}
+          canUseRoomActions={canUseRoomActions}
+          images={mockImages}
+          isBusy={false}
+          resourceErrors={initialResourceErrors}
+          resourceState={readyResourceState}
+          room={mockRoom}
+          areAllParticipantsReady={areAllParticipantsReady}
+          currentFirebaseUid={currentFirebaseUid}
+          isCurrentUserHost={isCurrentUserHost}
+          myUploadedImage={mockImages[0]}
+          readyParticipantCount={mockRoom.participants.length}
+          uploadPreview={null}
+          uploadError={null}
+          onCancelUploadPreview={noop}
+          onCopyRoomCode={noop}
+          onConfirmUpload={noop}
+          onRefreshRoom={noop}
+          onSelectUploadFile={noopSelectFile}
+          onStartGame={noop}
+        />
+      ) : null}
+
+      {viewMode === "play" ? (
+        <PlayView
+          activeRound={activeRound}
+          activeRoundImageUrl={mockRoundImageUrl}
+          chatDraft=""
+          chatMessages={mockChatMessages}
+          drawStrokes={mockDrawStrokes}
+          gameFinishedAt={null}
+          imageCount={mockImages.length}
+          remainingSec={83}
+          room={mockPlayingRoom}
+          roundEnded={null}
+          resultSaveStatus="idle"
+          socketError={null}
+          socketStatus="connected"
+          onChatDraftChange={noopString}
+          onDrawStroke={noopDrawStroke}
+          onSendMessage={preventSubmit}
+        />
+      ) : null}
+
+      {viewMode === "gallery" ? (
+        <GalleryView
+          isBusy={false}
+          nextCursor={null}
+          results={mockResults}
+          state="ready"
+          error={null}
+          onDownload={noopString}
+          onLoadMore={noop}
+          onRefresh={noop}
+        />
+      ) : null}
+    </main>
+  );
+}
+
+function getPreviewMode(): PreviewMode | null {
+  if (!isPreviewEnabled || typeof window === "undefined") {
+    return null;
+  }
+
+  const preview = new URLSearchParams(window.location.search).get("preview");
+  return isPreviewMode(preview) ? preview : null;
+}
+
+function isPreviewMode(value: string | null): value is PreviewMode {
+  return value === "login" || value === "lobby" || value === "room" || value === "play" || value === "gallery";
+}
+
+function getPreviewMessage(mode: PreviewMode): string {
+  const messages: Record<PreviewMode, string> = {
+    login: "로그인 화면 preview입니다.",
+    lobby: "로비 preview입니다. 방 만들기/방 입장 CTA 배치를 확인하세요.",
+    room: "방 준비 preview입니다. 참가자 ready, 업로드 카드, 시작 버튼 배치를 확인하세요.",
+    play: "드로잉 preview입니다. 참가자, 캔버스, 도구, 채팅 배치를 확인하세요.",
+    gallery: "결과 갤러리 preview입니다. 라운드 카드와 다운로드 버튼을 확인하세요."
+  };
+
+  return messages[mode];
+}
+
+const mockCreatedAt = "2026-06-07T08:00:00.000Z";
+const mockProfile: UserProfile = {
+  firebaseUid: "preview-user-1",
+  email: "preview@example.com",
+  nickname: "민지",
+  avatarUrl: null,
+  createdAt: mockCreatedAt,
+  updatedAt: mockCreatedAt
+};
+const mockAuthUser = {
+  uid: mockProfile.firebaseUid,
+  email: mockProfile.email,
+  displayName: mockProfile.nickname,
+  photoURL: null
+} as User;
+const mockRoom: RoomDetail = {
+  roomCode: "ABC123",
+  title: "풍경 드로잉 함께해요",
+  status: "waiting",
+  hostUid: mockProfile.firebaseUid,
+  settings: {
+    roundDurationSec: 90,
+    maxPlayers: 8,
+    maxImagesPerUser: 1
+  },
+  participantCount: 4,
+  maxPlayers: 8,
+  createdAt: mockCreatedAt,
+  updatedAt: mockCreatedAt,
+  participants: [
+    { firebaseUid: "preview-user-1", nickname: "민지", avatarUrl: null, isHost: true, joinedAt: mockCreatedAt },
+    { firebaseUid: "preview-user-2", nickname: "초호", avatarUrl: null, isHost: false, joinedAt: mockCreatedAt },
+    { firebaseUid: "preview-user-3", nickname: "지훈", avatarUrl: null, isHost: false, joinedAt: mockCreatedAt },
+    { firebaseUid: "preview-user-4", nickname: "소연", avatarUrl: null, isHost: false, joinedAt: mockCreatedAt }
+  ],
+  currentRoundIndex: 1
+};
+const mockPlayingRoom: RoomDetail = {
+  ...mockRoom,
+  status: "playing"
+};
+const mockImages: ImageMetadata[] = mockRoom.participants.map((participant, index) => ({
+  id: `preview-image-${index + 1}`,
+  roomCode: mockRoom.roomCode,
+  uploadedBy: {
+    firebaseUid: participant.firebaseUid,
+    nickname: participant.nickname,
+    avatarUrl: participant.avatarUrl
+  },
+  originalName: ["mountain-lake.jpg", "sunny-beach.webp", "city-walk.png", "flower-garden.jpg"][index],
+  mimeType: index === 1 ? "image/webp" : index === 2 ? "image/png" : "image/jpeg",
+  size: 1024 * 1024 * (index + 1),
+  storageType: "gridfs",
+  fileId: `preview-file-${index + 1}`,
+  width: 1200,
+  height: 900,
+  used: index === 1,
+  createdAt: mockCreatedAt
+}));
+const mockActiveRound: ActiveRound = {
+  roomCode: mockRoom.roomCode,
+  roundId: "preview-round-2",
+  roundIndex: 1,
+  image: mockImages[1],
+  durationSec: 90,
+  startedAt: mockCreatedAt,
+  endedAt: null
+};
+const mockResults: ResultMetadata[] = [0, 1, 2, 3].map((index) => ({
+  id: `preview-result-${index + 1}`,
+  roomCode: mockRoom.roomCode,
+  roundId: `preview-round-${index + 1}`,
+  roundIndex: index,
+  sourceImageId: mockImages[index]?.id ?? mockImages[0].id,
+  sourceImageFileId: mockImages[index]?.fileId ?? mockImages[0].fileId,
+  resultFileId: `preview-result-file-${index + 1}`,
+  thumbnailFileId: null,
+  mimeType: "image/png",
+  width: 960,
+  height: 720,
+  strokeCount: 24 + index * 11,
+  createdAt: `2026-06-07T08:0${index}:30.000Z`
+}));
+const mockChatMessages: ChatMessage[] = [
+  {
+    roomCode: mockRoom.roomCode,
+    type: "chat",
+    firebaseUid: "preview-user-2",
+    nickname: "초호",
+    avatarUrl: null,
+    message: "색감 좋아요!",
+    createdAt: mockCreatedAt
+  },
+  {
+    roomCode: mockRoom.roomCode,
+    type: "chat",
+    firebaseUid: "preview-user-1",
+    nickname: "민지",
+    avatarUrl: null,
+    message: "왼쪽 산 위에 화살표 추가할게요.",
+    createdAt: "2026-06-07T08:00:12.000Z"
+  }
+];
+const mockDrawStrokes: DrawStroke[] = [
+  {
+    strokeId: "preview-stroke-1",
+    tool: "pen",
+    color: "#e85d75",
+    width: 6,
+    points: [
+      { x: 0.2, y: 0.32, t: 1 },
+      { x: 0.34, y: 0.25, t: 2 },
+      { x: 0.48, y: 0.36, t: 3 }
+    ]
+  },
+  {
+    strokeId: "preview-stroke-2",
+    tool: "pen",
+    color: "#4f9d69",
+    width: 10,
+    points: [
+      { x: 0.14, y: 0.72, t: 1 },
+      { x: 0.3, y: 0.62, t: 2 },
+      { x: 0.52, y: 0.66, t: 3 },
+      { x: 0.74, y: 0.56, t: 4 }
+    ]
+  }
+];
+const mockRoundImageUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720">
+  <defs><linearGradient id="sky" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#b7dcf4"/><stop offset="1" stop-color="#f7f3ec"/></linearGradient></defs>
+  <rect width="960" height="720" fill="url(#sky)"/>
+  <path d="M0 430 L180 250 L310 420 L470 210 L640 430 Z" fill="#ccd5c4"/>
+  <path d="M130 430 L300 280 L430 430 L590 260 L820 430 Z" fill="#9eb4a0"/>
+  <rect y="430" width="960" height="290" fill="#9fc8d5"/>
+  <path d="M0 520 C180 470 300 560 470 510 C640 462 760 548 960 500 L960 720 L0 720 Z" fill="#6fa7b8"/>
+  <circle cx="760" cy="130" r="54" fill="#ffe28a"/>
+</svg>
+`)}`;
+const readyResourceState: ResourceState = {
+  room: "ready",
+  participants: "ready",
+  images: "ready",
+  results: "ready"
+};
+const canUseRoomActions = true;
+const areAllParticipantsReady = true;
+const isCurrentUserHost = true;
+const noop = () => undefined;
+const noopString = (_value: string) => undefined;
+const noopSelectFile = (_file: File | null) => undefined;
+const noopDrawStroke = (_stroke: DrawStroke) => undefined;
+const preventSubmit = (event: FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+};
 
 interface LoggedOutViewProps {
   isBusy: boolean;
