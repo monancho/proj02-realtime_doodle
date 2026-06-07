@@ -2206,3 +2206,10 @@
 - 참가자 목록에서 Host 배지가 완료/준비/대기 상태 배지보다 먼저 표시되도록 순서를 변경했다.
 - 채팅 메시지의 닉네임과 시간을 한 줄 메타 영역으로 정리하고, 채팅 시간은 날짜 전체 대신 시간 중심으로 표시하도록 분리했다.
 - 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.
+
+## 2026-06-07 - Game Side Panels Visual QA
+
+- 참가자 목록의 Host/상태 배지가 줄바꿈 없이 수평 정렬되도록 보강했다.
+- 채팅 리스트가 패널 높이 안에서 `height: 100%`를 갖고 내부 스크롤되도록 CSS 제약을 보강했다.
+- Browser runtime은 Windows sandbox 오류로 자동 시각 확인이 중단되어 TEST_REPORT에 미실행 사유를 기록했다.
+- 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.

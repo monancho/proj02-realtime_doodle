@@ -1913,3 +1913,13 @@
 - `corepack pnpm --filter @doodle/web build`: PASS
 - Manual QA: 실제 대기실/플레이 화면에서 Host 배지가 상태 배지보다 먼저 보이는지, 채팅 메시지가 닉네임/시간 한 줄 + 본문 구조로 자연스럽게 보이는지 확인이 필요하다.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.
+
+## 2026-06-07 - Game Side Panels Visual QA
+
+- Scope: 참가자/채팅 좌우 패널의 정렬과 스크롤 제약을 점검하고 최소 CSS 보정을 적용했다.
+- Local preview: `http://localhost:5180/?preview=room` 응답 200 확인.
+- Browser visual QA: Browser runtime이 Windows sandbox `spawn setup refresh` 오류로 중단되어 자동 스크린샷 확인은 수행하지 못했다. 코드 기반 CSS 점검과 preview 서버 응답 확인으로 대체했다.
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Manual QA needed: 대기/진행/종료 화면에서 채팅 메시지가 많을 때 채팅 패널 내부에서만 스크롤되고 중앙 패널이 밀리지 않는지 실제 브라우저에서 확인해야 한다.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI 값은 출력/기록하지 않았다.

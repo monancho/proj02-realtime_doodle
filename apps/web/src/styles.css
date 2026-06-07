@@ -1790,6 +1790,7 @@ button.lobby-cta-card {
 
 .participant-list em {
   grid-column: auto;
+  align-self: center;
   justify-self: end;
   color: #5f5a52;
   font-size: 0.78rem;
@@ -1808,6 +1809,11 @@ button.lobby-cta-card {
   color: #6b6258;
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.participant-list strong,
+.participant-list em {
+  white-space: nowrap;
 }
 
 .canvas-stage {
@@ -2095,6 +2101,7 @@ button.lobby-cta-card {
 
 .chat-card .chat-list,
 .chat-panel .chat-list {
+  height: 100%;
   min-height: 0;
   max-height: none;
   overflow-x: hidden;
@@ -2156,6 +2163,7 @@ button.lobby-cta-card {
   align-self: end;
   margin-top: 0;
   padding-top: 10px;
+  min-height: 62px;
 }
 
 .chat-card .chat-form input,
