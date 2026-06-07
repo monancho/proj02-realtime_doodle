@@ -952,3 +952,11 @@
 - 이미지 파일 선택 시 `이미지 추가` 패널 아래에 확인 패널이 추가로 쌓이지 않고, 같은 위치가 업로드 확인 패널로 교체되도록 RoomView 렌더링을 정리했다.
 - 업로드 확인 패널에 선택 이미지 preview, 파일명, 크기, 업로드/취소 액션을 표시한다.
 - 닉네임 최초 설정, 닉네임 중복 체크, 프로필 이미지 URL 저장/표시 정합성, 결과 preview polish는 `docs/development/NEXT_REVIEW_ACTIONS.md`에 후속 작업으로 분리했다.
+
+## 2026-06-07 - Cursor effects and scratch pad implementation notes
+
+- Added volatile Socket.IO cursor-move event for active drawing rounds. The event validates Firebase socket auth context, room membership, playing status, active round id, normalized roomCode, normalized cursor coordinates, tool, color, and width.
+- cursor-move is not persisted and does not affect recent stroke batches, result save, upload, timer, or room repository state.
+- Added local-only scratch pads to login and lobby. They do not call Firebase, API, or Socket.
+- Added local powder particles and remote cursor overlay to the play canvas. Drawing stroke payloads and result save flow remain unchanged.
+- Revert checkpoint before this work: local tag checkpoint/pre-cursor-effects.

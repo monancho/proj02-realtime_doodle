@@ -135,6 +135,48 @@ a {
   font-weight: 800;
 }
 
+.doodle-scratch-pad {
+  position: relative;
+  overflow: hidden;
+  width: min(100%, 480px);
+  margin: 6px auto 0;
+  border: 2px dashed rgba(37, 33, 29, 0.32);
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(37, 33, 29, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 33, 29, 0.035) 1px, transparent 1px),
+    rgba(255, 253, 250, 0.82);
+  background-size: 20px 20px;
+  box-shadow: 0 8px 20px rgba(37, 33, 29, 0.08);
+}
+
+.lobby-copy-panel .doodle-scratch-pad {
+  width: min(100%, 420px);
+  margin: 18px 0 0;
+}
+
+.doodle-scratch-pad canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: none;
+  touch-action: none;
+}
+
+.scratch-cursor {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  color: var(--ink);
+  pointer-events: none;
+  filter: drop-shadow(1px 2px 0 rgba(37, 33, 29, 0.18));
+  transform: translate(4px, -20px) rotate(-18deg);
+}
+
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -1761,6 +1803,63 @@ button.lobby-cta-card {
   cursor: crosshair;
   box-shadow: 0 8px 18px rgba(37, 33, 29, 0.08);
   touch-action: none;
+}
+
+.cursor-effects-layer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.remote-cursor {
+  position: absolute;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 3px 7px 3px 3px;
+  border: 1px solid rgba(37, 33, 29, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 253, 250, 0.9);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 2px 3px 0 rgba(37, 33, 29, 0.12);
+  transform: translate(8px, -28px) rotate(-2deg);
+  white-space: nowrap;
+}
+
+.remote-cursor.eraser {
+  transform: translate(8px, -28px) rotate(2deg);
+}
+
+.doodle-particle {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--particle-color, var(--yellow));
+  box-shadow: 0 0 0 1px rgba(37, 33, 29, 0.12);
+  animation: doodle-powder 700ms ease-out forwards;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes doodle-powder {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--particle-x, 0px)), calc(-50% + var(--particle-y, 0px))) scale(0.35);
+  }
 }
 
 .drawing-toolbar {

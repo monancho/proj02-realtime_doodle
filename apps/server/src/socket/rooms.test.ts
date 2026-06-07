@@ -13,6 +13,7 @@ import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
 import { InMemoryUserRepository } from "../users/in-memory-user-repository";
 import {
   createSocketRoomName,
+  handleCursorMove,
   handleDrawStroke,
   handleGameCountdownExpired,
   handleJoinRoom,
@@ -487,6 +488,83 @@ describe("room membership socket handlers", () => {
     expect(recentStrokeBatches.list("abc123", " round-1 ")).toEqual([
       expectedStrokeBatch
     ]);
+  });
+
+  it("broadcasts cursor-move for participants in the active round", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })]
+    });
+    const io = createMockIo();
+    const socket = createMockSocket(hostAuth);
+    const roundState = new RoundRuntimeStateStore();
+    roundState.startRound({
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: createImageMetadata({ id: "image-current" })
+    });
+
+    await handleCursorMove(
+      createDrawingDependencies({ io, repository, socket, roundState }),
+      {
+        roomCode: " abc123 ",
+        roundId: " round-1 ",
+        x: 0.25,
+        y: 0.75,
+        tool: "pen",
+        color: "#123ABC",
+        width: 6
+      }
+    );
+
+    expect(io.to).toHaveBeenCalledWith("room:ABC123");
+    expect(io.emitToRoom).toHaveBeenCalledWith("cursor-move", {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      x: 0.25,
+      y: 0.75,
+      tool: "pen",
+      color: "#123ABC",
+      width: 6,
+      firebaseUid: "host-uid",
+      nickname: "Host",
+      avatarUrl: null,
+      updatedAt: "2026-06-06T00:00:00.000Z"
+    });
+  });
+
+  it("rejects invalid cursor-move payloads", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })]
+    });
+    const io = createMockIo();
+    const socket = createMockSocket(hostAuth);
+
+    await handleCursorMove(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      x: 1.1,
+      y: 0.5,
+      tool: "pen",
+      color: "#123ABC",
+      width: 6
+    });
+    await handleCursorMove(createDrawingDependencies({ io, repository, socket }), {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      x: 0.5,
+      y: 0.5,
+      tool: "brush",
+      color: "#123ABC",
+      width: 6
+    });
+
+    expect(io.emitToRoom).not.toHaveBeenCalled();
+    expect(socket.emit).toHaveBeenCalledTimes(2);
+    expect(socket.emit).toHaveBeenCalledWith(
+      "socket-error",
+      expect.objectContaining({ code: "CURSOR_PAYLOAD_INVALID" })
+    );
   });
 
   it("rejects draw-stroke for ended rounds", async () => {

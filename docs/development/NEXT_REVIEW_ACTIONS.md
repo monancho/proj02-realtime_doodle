@@ -61,3 +61,10 @@
 4. `PHASE-FE-KOREAN-COPY-CLEANUP`
 5. `PHASE-FE-GALLERY-PREVIEW-VISUAL-POLISH`
 
+
+## Cursor effects follow-up
+
+- Local revert checkpoint before this feature: checkpoint/pre-cursor-effects.
+- Real QA needed: run two logged-in browsers in the same room, start a round, move both cursors over the canvas, and verify peer cursor labels/tools stay aligned with the visible canvas image.
+- Tune later if needed: cursor throttle interval, particle count, scratch pad placement, and whether spectator cursors should be visible.
+- The cursor-move event is intentionally volatile and not stored in MongoDB/GridFS.

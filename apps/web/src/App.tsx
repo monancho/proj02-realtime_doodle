@@ -15,7 +15,7 @@ import {
   Users
 } from "lucide-react";
 import { FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { ImageMetadata, ListRoomResultsResponse, ResultMetadata, RoomDetail, UserProfile } from "@doodle/shared";
 import type { User } from "firebase/auth";
 import { io, type Socket } from "socket.io-client";
@@ -72,6 +72,23 @@ interface DrawStroke {
 }
 
 type DrawingTool = DrawStroke["tool"];
+
+interface CanvasCursorUpdate {
+  x: number;
+  y: number;
+  tool: DrawingTool;
+  color: string;
+  width: number;
+}
+
+interface RemoteCursor extends CanvasCursorUpdate {
+  roomCode: string;
+  roundId: string;
+  firebaseUid: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  updatedAt: string;
+}
 
 interface DrawStrokePayload {
   roomCode: string;
@@ -175,6 +192,7 @@ export function App() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatDraft, setChatDraft] = useState("");
   const [drawStrokes, setDrawStrokes] = useState<DrawStroke[]>([]);
+  const [remoteCursors, setRemoteCursors] = useState<Record<string, RemoteCursor>>({});
   const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
   const [activeRoundImageUrl, setActiveRoundImageUrl] = useState<string | null>(null);
   const [uploadedImagePreviewUrl, setUploadedImagePreviewUrl] = useState<string | null>(null);
@@ -261,6 +279,7 @@ export function App() {
         setGameFinishedAt(null);
         setResultSaveStatus("idle");
         setDrawStrokes([]);
+        setRemoteCursors({});
         setRemainingSec(null);
         setRemainingMs(null);
         if (isReusedWaitingRoom) {
@@ -291,6 +310,18 @@ export function App() {
       ]);
     });
 
+    socket.on("cursor-move", (payload: RemoteCursor) => {
+      const selfUid = authUser?.uid ?? profile?.firebaseUid ?? null;
+      if (payload.firebaseUid === selfUid) {
+        return;
+      }
+
+      setRemoteCursors((currentCursors) => ({
+        ...currentCursors,
+        [payload.firebaseUid]: payload
+      }));
+    });
+
     socket.on("game-starting", (payload: GameStartingPayload) => {
       setRoom(payload.room);
       markRoomReady(payload.room);
@@ -311,6 +342,7 @@ export function App() {
       setGameFinishedAt(null);
       setResultSaveStatus("idle");
       setDrawStrokes([]);
+      setRemoteCursors({});
       setViewMode("play");
       setMessage(`Round ${payload.roundIndex + 1}이 시작되었습니다.`);
     });
@@ -332,6 +364,7 @@ export function App() {
       setNextResultCursor(null);
       setResourceState((current) => ({ ...current, results: "ready" }));
       setResultSaveStatus("saved");
+      setRemoteCursors({});
       setViewMode("gallery");
       setMessage(`Round ${payload.roundIndex + 1} 결과가 저장되었습니다.`);
     });
@@ -742,6 +775,26 @@ export function App() {
     }
   }
 
+  function handleCursorMove(cursor: CanvasCursorUpdate) {
+    if (
+      !room ||
+      !activeRound ||
+      !socketRef.current ||
+      socketStatus !== "connected" ||
+      room.status !== "playing" ||
+      activeRound.endedAt ||
+      isCurrentUserSpectator
+    ) {
+      return;
+    }
+
+    socketRef.current.emit("cursor-move", {
+      roomCode: normalizeRoomCode(room.roomCode),
+      roundId: activeRound.roundId,
+      ...cursor
+    });
+  }
+
   function handleStartGame() {
     if (!room || !socketRef.current || socketStatus !== "connected") {
       setSocketError("방 연결이 준비되면 시작할 수 있습니다.");
@@ -1080,6 +1133,7 @@ export function App() {
           chatMessages={chatMessages}
           countdownRemainingSec={countdownRemainingSec}
           drawStrokes={drawStrokes}
+          remoteCursors={Object.values(remoteCursors)}
           gameFinishedAt={gameFinishedAt}
           imageCount={activeImages.length}
           images={activeImages}
@@ -1094,6 +1148,7 @@ export function App() {
           socketError={socketError}
           socketStatus={socketStatus}
           onChatDraftChange={setChatDraft}
+          onCursorMove={handleCursorMove}
           onDrawStroke={handleDrawStroke}
           onSendMessage={handleSendMessage}
         />
@@ -1273,6 +1328,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           chatMessages={mockChatMessages}
           countdownRemainingSec={null}
           drawStrokes={mockDrawStrokes}
+          remoteCursors={[]}
           gameFinishedAt={null}
           imageCount={mockImages.length}
           images={mockImages}
@@ -1287,6 +1343,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           socketError={null}
           socketStatus="connected"
           onChatDraftChange={noopString}
+          onCursorMove={noop}
           onDrawStroke={noopDrawStroke}
           onSendMessage={preventSubmit}
         />
@@ -1588,8 +1645,118 @@ function LoggedOutView(props: LoggedOutViewProps) {
             <span className="sr-only">Google로 로그인</span>
           </div>
         </button>
+        <DoodleScratchPad />
       </section>
     </main>
+  );
+}
+
+function DoodleScratchPad() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
+  const [particles, setParticles] = useState<DoodleParticle[]>([]);
+
+  function getPoint(event: PointerEvent<HTMLCanvasElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    return {
+      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
+    };
+  }
+
+  function drawLine(from: { x: number; y: number }, to: { x: number; y: number }) {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+
+    if (!canvas || !context) {
+      return;
+    }
+
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#222222";
+    context.lineWidth = 5;
+    context.beginPath();
+    context.moveTo(from.x * canvas.width, from.y * canvas.height);
+    context.lineTo(to.x * canvas.width, to.y * canvas.height);
+    context.stroke();
+  }
+
+  function burst(point: { x: number; y: number }) {
+    const colors = ["#222222", "#f4b942", "#e85d75", "#4f9d69"];
+    const nextParticles = Array.from({ length: 8 }, (_, index) => ({
+      id: `pad-${Date.now()}-${index}-${Math.random()}`,
+      x: point.x,
+      y: point.y,
+      dx: Math.cos((Math.PI * 2 * index) / 8) * (8 + Math.random() * 14),
+      dy: Math.sin((Math.PI * 2 * index) / 8) * (8 + Math.random() * 14),
+      color: colors[index % colors.length]
+    }));
+
+    setParticles((currentParticles) => [...currentParticles.slice(-20), ...nextParticles]);
+    window.setTimeout(() => {
+      setParticles((currentParticles) =>
+        currentParticles.filter(
+          (particle) => !nextParticles.some((nextParticle) => nextParticle.id === particle.id)
+        )
+      );
+    }, 700);
+  }
+
+  return (
+    <div className="doodle-scratch-pad" aria-label="doodle scratch pad">
+      <canvas
+        ref={canvasRef}
+        width={480}
+        height={180}
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          const point = getPoint(event);
+          lastPointRef.current = point;
+          setCursorPoint(point);
+          burst(point);
+        }}
+        onPointerMove={(event) => {
+          const point = getPoint(event);
+          setCursorPoint(point);
+
+          if (lastPointRef.current) {
+            drawLine(lastPointRef.current, point);
+            lastPointRef.current = point;
+          }
+        }}
+        onPointerUp={() => {
+          lastPointRef.current = null;
+        }}
+        onPointerCancel={() => {
+          lastPointRef.current = null;
+        }}
+      />
+      {cursorPoint ? (
+        <span
+          className="scratch-cursor"
+          style={{ left: `${cursorPoint.x * 100}%`, top: `${cursorPoint.y * 100}%` }}
+          aria-hidden="true"
+        >
+          <Pencil size={18} />
+        </span>
+      ) : null}
+      {particles.map((particle) => (
+        <i
+          className="doodle-particle"
+          key={particle.id}
+          style={{
+            left: `${particle.x * 100}%`,
+            top: `${particle.y * 100}%`,
+            "--particle-color": particle.color,
+            "--particle-x": `${particle.dx}px`,
+            "--particle-y": `${particle.dy}px`
+          } as CSSProperties}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -1652,6 +1819,7 @@ function LobbyView(props: LobbyViewProps) {
         <p>
           방을 만들거나 초대 코드를 입력해 입장한 뒤, 이미지를 올리고 같은 캔버스 위에서 실시간으로 낙서를 이어가세요.
         </p>
+        <DoodleScratchPad />
       </div>
 
       <div className="lobby-cta-stack">
@@ -2098,7 +2266,9 @@ interface PlayViewProps {
   countdownRemainingSec: number | null;
   gameStarting: GameStartingPayload | null;
   isCurrentUserSpectator: boolean;
+  remoteCursors: RemoteCursor[];
   onChatDraftChange: (value: string) => void;
+  onCursorMove: (cursor: CanvasCursorUpdate) => void;
   onDrawStroke: (stroke: DrawStroke) => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
@@ -2153,6 +2323,7 @@ function PlayView(props: PlayViewProps) {
         backgroundImageUrl={props.activeRoundImageUrl}
         hideControls={props.isCurrentUserSpectator}
         lockMessage={lockMessage}
+        remoteCursors={props.remoteCursors}
         strokes={props.drawStrokes}
         title={props.activeRound ? `Round ${props.activeRound.roundIndex + 1}` : "캔버스 준비 중"}
         subtitle={
@@ -2160,6 +2331,7 @@ function PlayView(props: PlayViewProps) {
             ? `현재 사진: ${props.activeRound.image.uploadedBy.nickname ?? "익명 참가자"} 업로드`
             : "라운드가 시작되면 사진이 표시됩니다."
         }
+        onCursorMove={props.onCursorMove}
         onDrawStroke={props.onDrawStroke}
       />
       <aside className="paper-card chat-card">
@@ -2564,10 +2736,21 @@ interface CanvasPanelProps {
   backgroundImageUrl: string | null;
   hideControls?: boolean;
   lockMessage?: string;
+  remoteCursors: RemoteCursor[];
   strokes: DrawStroke[];
   title: string;
   subtitle: string;
+  onCursorMove: (cursor: CanvasCursorUpdate) => void;
   onDrawStroke: (stroke: DrawStroke) => void;
+}
+
+interface DoodleParticle {
+  id: string;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  color: string;
 }
 
 function CanvasPanel(props: CanvasPanelProps) {
@@ -2579,6 +2762,8 @@ function CanvasPanel(props: CanvasPanelProps) {
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("pen");
   const [drawingColor, setDrawingColor] = useState(drawingColors[0]);
   const [drawingWidth, setDrawingWidth] = useState(drawingWidths[1]);
+  const [particles, setParticles] = useState<DoodleParticle[]>([]);
+  const lastCursorSentAtRef = useRef(0);
 
   useEffect(() => {
     if (!props.backgroundImageUrl) {
@@ -2633,16 +2818,24 @@ function CanvasPanel(props: CanvasPanelProps) {
 
     event.currentTarget.setPointerCapture(event.pointerId);
     const point = createPoint(event);
+    emitCursor(point);
+    burstParticles(point, drawingColor);
     draftPointsRef.current = [point];
     lastSentPointRef.current = point;
   }
 
   function handlePointerMove(event: PointerEvent<HTMLCanvasElement>) {
-    if (props.disabled || draftPointsRef.current.length === 0) {
+    if (props.disabled) {
       return;
     }
 
     const point = createPoint(event);
+    emitCursor(point);
+
+    if (draftPointsRef.current.length === 0) {
+      return;
+    }
+
     const previousPoint = lastSentPointRef.current;
 
     draftPointsRef.current = [...draftPointsRef.current, point];
@@ -2676,6 +2869,42 @@ function CanvasPanel(props: CanvasPanelProps) {
     } else {
       props.onDrawStroke(createDrawStroke(points, drawingTool, drawingColor, drawingWidth));
     }
+  }
+
+  function emitCursor(point: DrawPoint) {
+    const now = Date.now();
+    if (now - lastCursorSentAtRef.current < 80) {
+      return;
+    }
+
+    lastCursorSentAtRef.current = now;
+    props.onCursorMove({
+      x: point.x,
+      y: point.y,
+      tool: drawingTool,
+      color: drawingTool === "eraser" ? "#222222" : drawingColor,
+      width: drawingWidth
+    });
+  }
+
+  function burstParticles(point: DrawPoint, color: string) {
+    const nextParticles = Array.from({ length: 10 }, (_, index) => ({
+      id: `${Date.now()}-${index}-${Math.random()}`,
+      x: point.x,
+      y: point.y,
+      dx: Math.cos((Math.PI * 2 * index) / 10) * (10 + Math.random() * 18),
+      dy: Math.sin((Math.PI * 2 * index) / 10) * (10 + Math.random() * 18),
+      color
+    }));
+
+    setParticles((currentParticles) => [...currentParticles.slice(-30), ...nextParticles]);
+    window.setTimeout(() => {
+      setParticles((currentParticles) =>
+        currentParticles.filter(
+          (particle) => !nextParticles.some((nextParticle) => nextParticle.id === particle.id)
+        )
+      );
+    }, 700);
   }
 
   return (
@@ -2749,6 +2978,35 @@ function CanvasPanel(props: CanvasPanelProps) {
           lastSentPointRef.current = null;
         }}
       />
+      <div className="cursor-effects-layer" aria-hidden="true">
+        {props.remoteCursors.map((cursor) => (
+          <div
+            className={`remote-cursor ${cursor.tool}`}
+            key={cursor.firebaseUid}
+            style={{
+              left: `${cursor.x * 100}%`,
+              top: `${cursor.y * 100}%`,
+              color: cursor.tool === "eraser" ? "#222222" : cursor.color
+            }}
+          >
+            {cursor.tool === "eraser" ? <Eraser size={18} /> : <Pencil size={18} />}
+            <span>{cursor.nickname ?? "Guest"}</span>
+          </div>
+        ))}
+        {particles.map((particle) => (
+          <i
+            className="doodle-particle"
+            key={particle.id}
+            style={{
+              left: `${particle.x * 100}%`,
+              top: `${particle.y * 100}%`,
+              "--particle-color": particle.color,
+              "--particle-x": `${particle.dx}px`,
+              "--particle-y": `${particle.dy}px`
+            } as CSSProperties}
+          />
+        ))}
+      </div>
       {props.disabled ? (
         <p className="canvas-lock">
           {props.lockMessage ?? "라운드가 시작되고 연결이 준비되면 그림을 그릴 수 있습니다."}

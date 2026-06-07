@@ -30,6 +30,7 @@ export interface SocketErrorPayload {
     | "CHAT_MESSAGE_EMPTY"
     | "CHAT_MESSAGE_TOO_LONG"
     | "CHAT_PAYLOAD_INVALID"
+    | "CURSOR_PAYLOAD_INVALID"
     | "DRAW_ROUND_CLOSED"
     | "DRAW_PAYLOAD_INVALID"
     | "ROOM_HOST_REQUIRED"
@@ -88,6 +89,23 @@ export interface DrawStrokePayload {
 export interface DrawStrokeBroadcastPayload extends DrawStrokePayload {
   firebaseUid: string;
   createdAt: string;
+}
+
+export interface CursorMovePayload {
+  roomCode: string;
+  roundId: string;
+  x: number;
+  y: number;
+  tool: DrawStroke["tool"];
+  color: string;
+  width: number;
+}
+
+export interface CursorMoveBroadcastPayload extends CursorMovePayload {
+  firebaseUid: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  updatedAt: string;
 }
 
 export interface StartGamePayload {
@@ -371,6 +389,20 @@ export function registerRoomMembershipHandlers(
 
     socket.on("draw-stroke", (payload: unknown) => {
       void handleDrawStroke(
+        {
+          io,
+          repository,
+          socket,
+          recentStrokeBatches,
+          roundState,
+          now: () => new Date()
+        },
+        payload
+      );
+    });
+
+    socket.on("cursor-move", (payload: unknown) => {
+      void handleCursorMove(
         {
           io,
           repository,
@@ -699,6 +731,87 @@ export async function handleDrawStroke(
   dependencies.io
     .to(createSocketRoomName(room.roomCode))
     .emit("draw-stroke", strokeBatch);
+}
+
+export async function handleCursorMove(
+  dependencies: DrawingEventDependencies,
+  payload: unknown
+): Promise<void> {
+  const auth = getSocketAuth(dependencies.socket);
+  if (!auth) {
+    emitSocketError(dependencies.socket, {
+      code: "AUTH_TOKEN_MISSING",
+      message: "Authentication is required."
+    });
+    return;
+  }
+
+  const parsedPayload = parseCursorMovePayload(payload);
+  if (!parsedPayload) {
+    emitSocketError(dependencies.socket, {
+      code: "CURSOR_PAYLOAD_INVALID",
+      message: "cursor-move payload is invalid."
+    });
+    return;
+  }
+
+  const room = await dependencies.repository.findRoomByCode(
+    parsedPayload.roomCode
+  );
+  if (!room) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_NOT_FOUND",
+      message: "Room was not found."
+    });
+    return;
+  }
+
+  const participant = room.participants.find(
+    (roomParticipant) =>
+      roomParticipant.firebaseUid === auth.user.firebaseUid
+  );
+  if (!participant) {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_ACCESS_DENIED",
+      message: "Join the room before sharing cursor position."
+    });
+    return;
+  }
+
+  if (room.status !== "playing") {
+    emitSocketError(dependencies.socket, {
+      code: "ROOM_STATE_INVALID",
+      message: "Cursor sharing is only available while the room is playing."
+    });
+    return;
+  }
+
+  const activeRound = dependencies.roundState.getActiveRound(room.roomCode);
+  if (activeRound?.roundId !== parsedPayload.roundId) {
+    emitSocketError(dependencies.socket, {
+      code: dependencies.roundState.isRoundClosed(
+        room.roomCode,
+        parsedPayload.roundId
+      )
+        ? "DRAW_ROUND_CLOSED"
+        : "ROUND_STATE_INVALID",
+      message: "The drawing round is not active."
+    });
+    return;
+  }
+
+  const cursorMove: CursorMoveBroadcastPayload = {
+    ...parsedPayload,
+    roomCode: room.roomCode,
+    firebaseUid: participant.firebaseUid,
+    nickname: participant.nickname,
+    avatarUrl: participant.avatarUrl,
+    updatedAt: dependencies.now().toISOString()
+  };
+
+  dependencies.io
+    .to(createSocketRoomName(room.roomCode))
+    .emit("cursor-move", cursorMove);
 }
 
 export async function handleStartGame(
@@ -1260,6 +1373,65 @@ function parseDrawStrokePayload(payload: unknown): DrawStrokePayload | null {
     roomCode: normalizedRoomCode,
     roundId: normalizedRoundId,
     stroke: parsedStroke
+  };
+}
+
+function parseCursorMovePayload(payload: unknown): CursorMovePayload | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const { roomCode, roundId, x, y, tool, color, width } = payload as {
+    roomCode?: unknown;
+    roundId?: unknown;
+    x?: unknown;
+    y?: unknown;
+    tool?: unknown;
+    color?: unknown;
+    width?: unknown;
+  };
+
+  if (
+    typeof roomCode !== "string" ||
+    typeof roundId !== "string" ||
+    typeof x !== "number" ||
+    typeof y !== "number" ||
+    typeof tool !== "string" ||
+    typeof color !== "string" ||
+    typeof width !== "number"
+  ) {
+    return null;
+  }
+
+  const normalizedRoomCode = normalizeRoomCode(roomCode);
+  const normalizedRoundId = roundId.trim();
+
+  if (
+    normalizedRoomCode.length === 0 ||
+    normalizedRoundId.length === 0 ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    x < 0 ||
+    x > 1 ||
+    y < 0 ||
+    y > 1 ||
+    (tool !== "pen" && tool !== "eraser") ||
+    !DRAW_COLOR_PATTERN.test(color) ||
+    !Number.isFinite(width) ||
+    width <= 0 ||
+    width > 32
+  ) {
+    return null;
+  }
+
+  return {
+    roomCode: normalizedRoomCode,
+    roundId: normalizedRoundId,
+    x,
+    y,
+    tool,
+    color,
+    width
   };
 }
 

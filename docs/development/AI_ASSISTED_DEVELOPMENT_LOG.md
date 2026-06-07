@@ -2112,3 +2112,12 @@
 - 조치: RoomView 업로드 영역에서 파일 선택 시 `이미지 추가` 패널 아래에 별도 확인 패널을 쌓지 않고, 동일 위치를 업로드 확인 패널로 교체하도록 수정했다.
 - 조치: `docs/development/NEXT_REVIEW_ACTIONS.md`를 추가해 닉네임 최초 설정, 닉네임 중복 체크, 프로필 이미지 URL 저장/표시, 결과 preview 디자인 통일, 한글 문구 깨짐 정리를 후속 작업으로 기록했다.
 - 검증: server typecheck/test, web typecheck/build 통과.
+
+## 2026-06-07 - Cursor effects and scratch pad pass
+
+- User request: while away, add playful drawing elements to login/lobby, pencil-like cursor feedback, click powder effects, and visible peer cursors during active games.
+- Safety/revert: created local checkpoint tag checkpoint/pre-cursor-effects before implementation; changes are intended to be kept in one separate commit.
+- Backend: added cursor-move socket event with auth, membership, room status, active round, and payload validation; event is broadcast only to the Socket.IO room and is not persisted.
+- Frontend: added dev/runtime local scratch pad on login/lobby, canvas powder particles, cursor throttling, and remote cursor overlay on the play canvas.
+- Validation passed: server typecheck/test and web typecheck/build.
+- Notes: real two-browser cursor visual QA is still needed. package-lock.json remains untracked and untouched.

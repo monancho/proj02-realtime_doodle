@@ -1808,3 +1808,14 @@
 - 보안:
   - `.env`, token, Firebase private key, MongoDB URI 값은 출력하지 않았다.
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit하지 않았다.
+
+## 2026-06-07 - Cursor effects and scratch pad validation
+- PASS: corepack pnpm --filter @doodle/server typecheck
+- PASS: corepack pnpm --filter @doodle/server test
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Scope: added server cursor-move room broadcast, login/lobby local scratch pad, play canvas powder particles, and remote cursor overlay.
+- Revert checkpoint: local git tag checkpoint/pre-cursor-effects was created before implementation.
+- Manual QA still needed: two-browser remote cursor visual position/frequency during real play.
+- Security: .env, token, Firebase private key, MongoDB URI were not printed.
+- package-lock.json was not modified, deleted, or committed.
