@@ -1121,6 +1121,10 @@ button:disabled {
   padding: 10px;
 }
 
+.canvas-stage.hide-controls .drawing-toolbar {
+  display: none;
+}
+
 .tool-group {
   display: inline-flex;
   flex: 0 1 auto;
@@ -1300,6 +1304,23 @@ button:disabled {
   margin-top: 0;
 }
 
+.participant-divider {
+  width: 100%;
+  margin: 14px 0 10px;
+  border: 0;
+  border-top: 2px dashed var(--ink);
+}
+
+.participant-subheading {
+  margin-bottom: 8px;
+  color: #6b6258;
+  font-weight: 900;
+}
+
+.spectator-list li {
+  opacity: 0.82;
+}
+
 .chat-message {
   display: grid;
   gap: 4px;
@@ -1410,7 +1431,8 @@ button:disabled {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #fffefa;
 }
 
 .result-card {
@@ -1442,6 +1464,7 @@ button:disabled {
 .rough-result {
   position: absolute;
   z-index: 1;
+  opacity: 0.38;
   inset: 6px;
   width: calc(100% - 12px);
   height: calc(100% - 12px);

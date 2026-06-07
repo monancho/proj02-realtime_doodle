@@ -93,6 +93,52 @@ describe("room membership socket handlers", () => {
     expect(io.emitToRoom).toHaveBeenCalledTimes(2);
   });
 
+  it("replays the active round snapshot and recent strokes when joining during play", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123",
+      now: () => new Date("2026-06-06T00:00:00.000Z")
+    });
+    await createRoom(repository);
+    await repository.startGame({ roomCode: "ABC123" });
+    const room = await repository.beginGame({ roomCode: "ABC123" });
+    const roundState = new RoundRuntimeStateStore();
+    const recentStrokeBatches = new RecentStrokeBatchStore();
+    const image = createImageMetadata({ id: "image-current" });
+    const activeRound = {
+      roomCode: room.roomCode,
+      roundId: "round-current",
+      roundIndex: room.currentRoundIndex,
+      image,
+      durationSec: 60,
+      startedAt: "2026-06-06T00:00:10.000Z"
+    };
+    roundState.startRound(activeRound);
+    recentStrokeBatches.append({
+      roomCode: room.roomCode,
+      roundId: activeRound.roundId,
+      stroke: createValidStroke(),
+      firebaseUid: "host-uid",
+      createdAt: "2026-06-06T00:00:11.000Z"
+    });
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleJoinRoom(
+      { io, repository, socket, recentStrokeBatches, roundState },
+      { roomCode: "ABC123" }
+    );
+
+    expect(socket.join).toHaveBeenCalledWith("room:ABC123");
+    expect(socket.emit).toHaveBeenCalledWith("round-started", activeRound);
+    expect(socket.emit).toHaveBeenCalledWith(
+      "draw-stroke",
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-current"
+      })
+    );
+  });
+
   it("rejects join-room when the auth user is not a participant", async () => {
     const repository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "ABC123"
@@ -141,12 +187,44 @@ describe("room membership socket handlers", () => {
     );
   });
 
-  it("leaves a socket room and emits room-updated without removing participants", async () => {
+  it("removes a waiting participant when leaving the socket room", async () => {
     const repository = new InMemoryRoomRepository({
       roomCodeGenerator: () => "ABC123",
       now: () => new Date("2026-06-06T00:00:00.000Z")
     });
-    const room = await createRoom(repository);
+    await createRoom(repository);
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [createImageMetadata({ id: "image-host" })]
+    });
+    const socket = createMockSocket(hostAuth);
+    const io = createMockIo();
+
+    await handleLeaveRoom(
+      { io, imageRepository, repository, socket },
+      { roomCode: "abc123" }
+    );
+    const persistedRoom = await repository.findRoomByCode("ABC123");
+    const activeImages = await imageRepository.listImagesByRoomCode("ABC123");
+
+    expect(socket.leave).toHaveBeenCalledWith("room:ABC123");
+    expect(io.emitToRoom).toHaveBeenCalledWith("room-updated", {
+      room: expect.objectContaining({
+        participantCount: 0,
+        participants: []
+      })
+    });
+    expect(persistedRoom?.participantCount).toBe(0);
+    expect(activeImages).toHaveLength(0);
+  });
+
+  it("keeps participants when leaving during an active game", async () => {
+    const repository = new InMemoryRoomRepository({
+      roomCodeGenerator: () => "ABC123",
+      now: () => new Date("2026-06-06T00:00:00.000Z")
+    });
+    await createRoom(repository);
+    await repository.startGame({ roomCode: "ABC123" });
+    const room = await repository.beginGame({ roomCode: "ABC123" });
     const socket = createMockSocket(hostAuth);
     const io = createMockIo();
 

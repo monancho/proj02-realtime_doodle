@@ -137,11 +137,16 @@ export interface ActiveRoundState {
   roundId: string;
   roundIndex: number;
   image: ImageMetadata;
+  durationSec?: number;
+  startedAt?: string;
 }
 
 interface RoomEventDependencies {
   io: Pick<Server, "to">;
+  imageRepository?: ImageRepository;
   repository: RoomRepository;
+  recentStrokeBatches?: RecentStrokeBatchStore;
+  roundState?: RoundRuntimeStateStore;
   socket: Pick<Socket, "data" | "emit" | "join" | "leave">;
 }
 
@@ -341,11 +346,14 @@ export function registerRoomMembershipHandlers(
 
   io.on("connection", (socket) => {
     socket.on("join-room", (payload: unknown) => {
-      void handleJoinRoom({ io, repository, socket }, payload);
+      void handleJoinRoom(
+        { io, repository, socket, recentStrokeBatches, roundState },
+        payload
+      );
     });
 
     socket.on("leave-room", (payload: unknown) => {
-      void handleLeaveRoom({ io, repository, socket }, payload);
+      void handleLeaveRoom({ io, imageRepository, repository, socket }, payload);
     });
 
     socket.on("send-message", (payload: unknown) => {
@@ -481,6 +489,7 @@ export async function handleJoinRoom(
 
   await dependencies.socket.join(socketRoomName);
   emitRoomUpdated(dependencies.io, room);
+  emitActiveRoundSnapshotIfAvailable(dependencies, room);
 }
 
 export async function handleLeaveRoom(
@@ -506,6 +515,24 @@ export async function handleLeaveRoom(
   }
 
   await dependencies.socket.leave(createSocketRoomName(room.roomCode));
+  const auth = getSocketAuth(dependencies.socket);
+
+  if (room.status === "waiting" && auth) {
+    await dependencies.imageRepository?.deactivateActiveImagesByUploader({
+      roomCode: room.roomCode,
+      firebaseUid: auth.user.firebaseUid
+    });
+
+    const nextRoom =
+      await dependencies.repository.removeWaitingParticipant({
+        roomCode: room.roomCode,
+        firebaseUid: auth.user.firebaseUid
+      });
+
+    emitRoomUpdated(dependencies.io, nextRoom ?? room);
+    return;
+  }
+
   emitRoomUpdated(dependencies.io, room);
 }
 
@@ -1102,6 +1129,38 @@ function createDisabledResultSaveService(): Pick<
 
 export function createSocketRoomName(roomCode: string): string {
   return `${SOCKET_ROOM_PREFIX}${normalizeRoomCode(roomCode)}`;
+}
+
+function emitActiveRoundSnapshotIfAvailable(
+  dependencies: RoomEventDependencies,
+  room: RoomDetail
+): void {
+  if (room.status !== "playing") {
+    return;
+  }
+
+  const activeRound = dependencies.roundState?.getActiveRound(room.roomCode);
+  if (!activeRound?.durationSec || !activeRound.startedAt) {
+    return;
+  }
+
+  const payload: RoundStartedPayload = {
+    roomCode: activeRound.roomCode,
+    roundId: activeRound.roundId,
+    roundIndex: activeRound.roundIndex,
+    image: activeRound.image,
+    durationSec: activeRound.durationSec,
+    startedAt: activeRound.startedAt
+  };
+
+  dependencies.socket.emit("round-started", payload);
+
+  for (const strokeBatch of dependencies.recentStrokeBatches?.list(
+    activeRound.roomCode,
+    activeRound.roundId
+  ) ?? []) {
+    dependencies.socket.emit("draw-stroke", strokeBatch);
+  }
 }
 
 function emitRoomUpdated(io: Pick<Server, "to">, room: RoomDetail): void {

@@ -13,6 +13,7 @@ import type {
   FinishGameInput,
   JoinRoomInput,
   PrepareNextGameInput,
+  RemoveWaitingParticipantInput,
   RoomRepository,
   StartGameInput,
   UpdateParticipantProfileInput
@@ -300,6 +301,43 @@ export class InMemoryRoomRepository implements RoomRepository {
             }
           : participant
       ),
+      updatedAt: this.now().toISOString()
+    });
+
+    this.roomsByCode.set(normalizedRoomCode, nextRoom);
+
+    return cloneRoom(nextRoom);
+  }
+
+  public async removeWaitingParticipant(
+    input: RemoveWaitingParticipantInput
+  ): Promise<RoomDetail | null> {
+    const normalizedRoomCode = normalizeRoomCode(input.roomCode);
+    const room = this.roomsByCode.get(normalizedRoomCode);
+
+    if (!room || room.status !== "waiting") {
+      return room ? cloneRoom(room) : null;
+    }
+
+    const nextParticipants = room.participants.filter(
+      (participant) => participant.firebaseUid !== input.firebaseUid
+    );
+
+    if (nextParticipants.length === room.participants.length) {
+      return cloneRoom(room);
+    }
+
+    const nextHostUid =
+      room.hostUid === input.firebaseUid
+        ? nextParticipants[0]?.firebaseUid ?? room.hostUid
+        : room.hostUid;
+    const nextRoom = createRoomDetail({
+      ...room,
+      hostUid: nextHostUid,
+      participants: nextParticipants.map((participant) => ({
+        ...participant,
+        isHost: participant.firebaseUid === nextHostUid
+      })),
       updatedAt: this.now().toISOString()
     });
 

@@ -21,6 +21,7 @@ import type {
   FinishGameInput,
   JoinRoomInput,
   PrepareNextGameInput,
+  RemoveWaitingParticipantInput,
   RoomRepository,
   StartGameInput,
   UpdateParticipantProfileInput
@@ -337,6 +338,47 @@ export class MongoRoomRepository implements RoomRepository {
           "participants.$.nickname": input.nickname,
           "participants.$.avatarUrl": input.avatarUrl,
           updatedAt: now
+        }
+      } as UpdateFilter<RoomDocument>,
+      { returnDocument: "after" }
+    );
+
+    return updatedRoom ? mapRoomDocumentToDetail(updatedRoom) : null;
+  }
+
+  public async removeWaitingParticipant(
+    input: RemoveWaitingParticipantInput
+  ): Promise<RoomDetail | null> {
+    const roomCode = normalizeRoomCode(input.roomCode);
+    const existingRoom = await this.collection.findOne({
+      roomCode,
+      status: "waiting"
+    });
+
+    if (!existingRoom) {
+      const latestRoom = await this.collection.findOne({ roomCode });
+      return latestRoom ? mapRoomDocumentToDetail(latestRoom) : null;
+    }
+
+    const nextParticipants = existingRoom.participants.filter(
+      (participant) => participant.firebaseUid !== input.firebaseUid
+    );
+
+    if (nextParticipants.length === existingRoom.participants.length) {
+      return mapRoomDocumentToDetail(existingRoom);
+    }
+
+    const nextHostUid =
+      existingRoom.hostUid === input.firebaseUid
+        ? nextParticipants[0]?.firebaseUid ?? existingRoom.hostUid
+        : existingRoom.hostUid;
+    const updatedRoom = await this.collection.findOneAndUpdate(
+      { roomCode, status: "waiting" },
+      {
+        $set: {
+          hostUid: nextHostUid,
+          participants: nextParticipants,
+          updatedAt: new Date()
         }
       } as UpdateFilter<RoomDocument>,
       { returnDocument: "after" }

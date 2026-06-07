@@ -1794,3 +1794,28 @@
   - backend test/typecheck는 이번 frontend-only 수정에서 재실행하지 않았다.
   - `.env`, token, private key, MongoDB URI 출력 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
+
+### 2026-06-07 PHASE-LOCAL-E2E-BUGFIX-WAITING-LEAVE-SPECTATOR-SNAPSHOT
+
+- Agent: `qa-frontend/backend`
+- 목표: 사용자의 로컬 QA 피드백을 바탕으로 waiting leave cleanup, spectator snapshot, 한글 깨짐, timer/result preview UX를 수정한다.
+- 수행 내용:
+  - `RoomRepository.removeWaitingParticipant`를 추가하고 InMemory/Mongo repository에 구현했다.
+  - waiting 상태에서 `leave-room`이 호출되면 participant를 제거하고 해당 사용자의 active image를 비활성화하도록 했다.
+  - waiting host가 나갈 때 남은 참가자가 있으면 첫 참가자를 host로 승격한다.
+  - playing/starting/finished 상태에서 leave는 영속 participant를 유지한다.
+  - playing 상태에서 join한 socket에 현재 active round `round-started` payload와 최근 `draw-stroke` batch를 replay한다.
+  - 중간 입장 spectator가 현재 원본 사진과 기존 stroke를 볼 수 있도록 했다.
+  - spectator UI에서는 drawing toolbar를 숨겼다.
+  - play participant panel은 참여자와 관전자/대기자를 divider로 구분한다.
+  - 대기실 채팅은 정상 한글 렌더링 컴포넌트로 교체했다.
+  - result preview는 `object-fit: contain`으로 조정해 잘림을 줄였다.
+- 검증:
+  - `corepack pnpm --filter @doodle/server typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/server test`: 통과. 19 files, 95 tests.
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - 실제 Google 계정 2개 기반 수동 QA는 사용자가 다시 확인해야 한다.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.

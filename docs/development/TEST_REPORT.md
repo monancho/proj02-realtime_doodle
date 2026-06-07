@@ -1416,3 +1416,38 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외한다.
+
+### 2026-06-07 PHASE-LOCAL-E2E-BUGFIX-WAITING-LEAVE-SPECTATOR-SNAPSHOT
+
+- 사용자 수동 QA 피드백:
+  - 대기실 채팅의 한글이 여전히 깨져 보인다.
+  - 게임 timer bar progress가 시간 감소와 함께 줄어드는 느낌이 부족하다.
+  - 결과 preview가 이상하게 보인다.
+  - countdown 중 대기실 UI가 어색하다.
+  - 대기실에서 사용자가 나가면 참가자와 업로드 이미지가 사라져야 한다.
+  - 게임 중 입장자는 현재 사진이 보이지 않고, 관전자에게 drawing 도구가 보이면 안 된다.
+  - 게임 중 입장자는 참여자와 대기자/관전자로 구분되어야 한다.
+- 수정 내용:
+  - `RoomRepository.removeWaitingParticipant` 계약을 추가했다.
+  - waiting 상태의 `leave-room`은 socket room leave 후 participant를 제거하고 해당 사용자의 active image를 비활성화한다.
+  - waiting host가 나가고 다른 참가자가 남아 있으면 다음 참가자를 host로 승격한다.
+  - playing/starting/finished 상태의 `leave-room`은 기존처럼 영속 participant를 유지한다.
+  - playing 중 `join-room` 성공 시 현재 active round snapshot과 최근 stroke batch를 해당 socket에 replay한다.
+  - spectator는 play 화면에서 drawing toolbar가 보이지 않도록 했다.
+  - play participant panel은 참여자와 관전자/대기자를 분리 표시한다.
+  - 대기실 채팅은 정상 한글 렌더링 컴포넌트로 교체했다.
+  - result preview는 crop이 덜한 `object-fit: contain` 기준으로 조정했다.
+- 실행 명령: `corepack pnpm --filter @doodle/server typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/server test`
+- 결과: 통과. 19 files, 95 tests.
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 미실행:
+  - 실제 2인 Google 로그인 수동 QA는 사용자가 다시 확인해야 한다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외한다.

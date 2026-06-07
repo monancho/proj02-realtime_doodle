@@ -44,6 +44,11 @@ export interface UpdateParticipantProfileInput {
   avatarUrl: string | null;
 }
 
+export interface RemoveWaitingParticipantInput {
+  roomCode: string;
+  firebaseUid: string;
+}
+
 export interface RoomRepository {
   createRoom(input: CreateRoomInput): Promise<RoomDetail>;
   findRoomByCode(roomCode: string): Promise<RoomDetail | null>;
@@ -53,6 +58,9 @@ export interface RoomRepository {
   advanceRound(input: AdvanceRoundInput): Promise<RoomDetail>;
   finishGame(input: FinishGameInput): Promise<RoomDetail>;
   prepareNextGame(input: PrepareNextGameInput): Promise<RoomDetail>;
+  removeWaitingParticipant(
+    input: RemoveWaitingParticipantInput
+  ): Promise<RoomDetail | null>;
   updateParticipantProfile(
     input: UpdateParticipantProfileInput
   ): Promise<RoomDetail | null>;

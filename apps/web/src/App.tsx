@@ -1818,7 +1818,7 @@ function RoomView(props: RoomViewProps) {
         room={props.room}
         state={props.resourceState.participants}
       />
-      <ChatPanel
+      <ChatPanelFixed
         chatDraft={props.chatDraft}
         chatMessages={props.chatMessages}
         socketError={props.socketError}
@@ -2052,10 +2052,11 @@ function PlayView(props: PlayViewProps) {
         resultSaveStatus={props.resultSaveStatus}
         roundEnded={props.roundEnded}
       />
-      <PlayParticipantsPanel room={props.room} />
+      <PlayParticipantsPanelFixed room={props.room} />
       <CanvasPanel
         disabled={drawingDisabled}
         backgroundImageUrl={props.activeRoundImageUrl}
+        hideControls={props.isCurrentUserSpectator}
         lockMessage={lockMessage}
         strokes={props.drawStrokes}
         title={props.activeRound ? `Round ${props.activeRound.roundIndex + 1}` : "캔버스 준비 중"}
@@ -2235,6 +2236,44 @@ interface ChatPanelProps {
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
+function ChatPanelFixed(props: ChatPanelProps) {
+  return (
+    <div className="chat-panel">
+      <div className="card-heading">
+        <MessageCircle size={20} />
+        <h2>{props.title}</h2>
+      </div>
+      {props.socketError ? <p className="error-copy">{props.socketError}</p> : null}
+      <div className="chat-list" aria-live="polite">
+        {props.chatMessages.length === 0 ? (
+          <p className="empty-copy">아직 메시지가 없습니다.</p>
+        ) : (
+          props.chatMessages.map((chatMessage, index) => (
+            <article className="chat-message" key={`${chatMessage.createdAt}-${index}`}>
+              <strong>{chatMessage.nickname ?? "익명 참가자"}</strong>
+              <p>{chatMessage.message}</p>
+              <time>{formatDateTime(chatMessage.createdAt)}</time>
+            </article>
+          ))
+        )}
+      </div>
+      <form className="chat-form" onSubmit={props.onSendMessage}>
+        <label>
+          메시지
+          <input
+            maxLength={maxChatMessageLength}
+            value={props.chatDraft}
+            onChange={(event) => props.onChatDraftChange(event.target.value)}
+          />
+        </label>
+        <button className="primary-button" disabled={props.socketStatus !== "connected"} type="submit">
+          보내기
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function ChatPanel(props: ChatPanelProps) {
   return (
     <div className="chat-panel">
@@ -2273,6 +2312,52 @@ function ChatPanel(props: ChatPanelProps) {
   );
 }
 
+void ChatPanel;
+
+function PlayParticipantsPanelFixed({ room }: { room: RoomDetail | null }) {
+  const drawingParticipants =
+    room?.participants.filter((participant) => participant.isSpectator !== true) ?? [];
+  const spectators =
+    room?.participants.filter((participant) => participant.isSpectator === true) ?? [];
+
+  return (
+    <aside className="paper-card play-participants-card" aria-label="라운드 참가자">
+      <div className="card-heading">
+        <Users size={20} />
+        <h2>참여자</h2>
+      </div>
+      {drawingParticipants.length > 0 ? (
+        <ul className="participant-list compact">
+          {drawingParticipants.map((participant) => (
+            <li key={participant.firebaseUid}>
+              <i aria-hidden="true" />
+              <span>{participant.nickname ?? "익명 참가자"}</span>
+              {participant.isHost ? <em>Host</em> : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="empty-copy">현재 그리기에 참여 중인 사용자가 없습니다.</p>
+      )}
+      {spectators.length > 0 ? (
+        <>
+          <hr className="participant-divider" />
+          <div className="participant-subheading">대기자</div>
+          <ul className="participant-list compact spectator-list">
+            {spectators.map((participant) => (
+              <li key={participant.firebaseUid}>
+                <i aria-hidden="true" />
+                <span>{participant.nickname ?? "익명 참가자"}</span>
+                <em>관전</em>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </aside>
+  );
+}
+
 function PlayParticipantsPanel({ room }: { room: RoomDetail | null }) {
   return (
     <aside className="paper-card play-participants-card" aria-label="라운드 참가자">
@@ -2296,6 +2381,8 @@ function PlayParticipantsPanel({ room }: { room: RoomDetail | null }) {
     </aside>
   );
 }
+
+void PlayParticipantsPanel;
 
 interface RoundStatusPanelProps {
   activeRound: ActiveRound | null;
@@ -2348,6 +2435,7 @@ function RoundStatusPanel(props: RoundStatusPanelProps) {
 interface CanvasPanelProps {
   disabled: boolean;
   backgroundImageUrl: string | null;
+  hideControls?: boolean;
   lockMessage?: string;
   strokes: DrawStroke[];
   title: string;
@@ -2464,7 +2552,15 @@ function CanvasPanel(props: CanvasPanelProps) {
   }
 
   return (
-    <div className={props.disabled ? "canvas-stage disabled" : "canvas-stage"}>
+    <div
+      className={[
+        "canvas-stage",
+        props.disabled ? "disabled" : "",
+        props.hideControls ? "hide-controls" : ""
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="canvas-header">
         <div>
           <Palette size={20} />
