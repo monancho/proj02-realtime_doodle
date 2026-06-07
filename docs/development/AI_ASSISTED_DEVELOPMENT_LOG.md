@@ -2200,3 +2200,9 @@
 - `round-ended` 수신 시 결과 모달을 열고, `result-saved` 수신 시 같은 모달에 저장된 결과 이미지를 반영한다.
 - 다음 라운드 시작 또는 게임 종료 이벤트가 오면 모달을 닫는다.
 - 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.
+
+## 2026-06-07 - Participant Badge and Chat Message Polish
+
+- 참가자 목록에서 Host 배지가 완료/준비/대기 상태 배지보다 먼저 표시되도록 순서를 변경했다.
+- 채팅 메시지의 닉네임과 시간을 한 줄 메타 영역으로 정리하고, 채팅 시간은 날짜 전체 대신 시간 중심으로 표시하도록 분리했다.
+- 검증: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build` 통과.

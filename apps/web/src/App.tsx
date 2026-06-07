@@ -2329,8 +2329,8 @@ function ParticipantPanel({
                 {participant.nickname ?? "익명 참가자"}
                 {participant.firebaseUid === currentFirebaseUid ? <small>나</small> : null}
               </span>
-              <strong>{getParticipantBadge(participant)}</strong>
               {participant.isHost ? <em>Host</em> : null}
+              <strong>{getParticipantBadge(participant)}</strong>
             </li>
           ))}
         </ul>
@@ -2459,9 +2459,11 @@ function PlayView(props: PlayViewProps) {
           ) : (
             props.chatMessages.map((chatMessage, index) => (
               <article className="chat-message" key={`${chatMessage.createdAt}-${index}`}>
-                <strong>{chatMessage.nickname ?? "익명 참가자"}</strong>
+                <div className="chat-message-meta">
+                  <strong>{chatMessage.nickname ?? "익명 참가자"}</strong>
+                  <time>{formatChatTime(chatMessage.createdAt)}</time>
+                </div>
                 <p>{chatMessage.message}</p>
-                <time>{formatDateTime(chatMessage.createdAt)}</time>
               </article>
             ))
           )}
@@ -2686,9 +2688,11 @@ function ChatPanelFixed(props: ChatPanelProps) {
         ) : (
           props.chatMessages.map((chatMessage, index) => (
             <article className="chat-message" key={`${chatMessage.createdAt}-${index}`}>
-              <strong>{chatMessage.nickname ?? "익명 참가자"}</strong>
+              <div className="chat-message-meta">
+                <strong>{chatMessage.nickname ?? "익명 참가자"}</strong>
+                <time>{formatChatTime(chatMessage.createdAt)}</time>
+              </div>
               <p>{chatMessage.message}</p>
-              <time>{formatDateTime(chatMessage.createdAt)}</time>
             </article>
           ))
         )}
@@ -2724,9 +2728,11 @@ function ChatPanel(props: ChatPanelProps) {
         ) : (
           props.chatMessages.map((chatMessage, index) => (
             <article className="chat-message" key={`${chatMessage.createdAt}-${index}`}>
-              <strong>{chatMessage.nickname ?? "?듬챸 李멸???"}</strong>
+              <div className="chat-message-meta">
+                <strong>{chatMessage.nickname ?? "?듬챸 李멸???"}</strong>
+                <time>{formatChatTime(chatMessage.createdAt)}</time>
+              </div>
               <p>{chatMessage.message}</p>
-              <time>{formatDateTime(chatMessage.createdAt)}</time>
             </article>
           ))
         )}
@@ -3616,6 +3622,13 @@ function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "short",
     timeStyle: "short"
+  }).format(new Date(value));
+}
+
+function formatChatTime(value: string): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "numeric",
+    minute: "2-digit"
   }).format(new Date(value));
 }
 

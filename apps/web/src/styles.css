@@ -2242,9 +2242,25 @@ button.lobby-cta-card {
 
 .chat-message {
   display: grid;
-  gap: 4px;
+  gap: 5px;
   border-bottom: 1px solid rgba(34, 34, 34, 0.12);
   padding-bottom: 8px;
+}
+
+.chat-message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.chat-message-meta strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
 }
 
 .chat-message p {
@@ -2253,10 +2269,12 @@ button.lobby-cta-card {
   line-height: 1.5;
 }
 
-.chat-message time {
+.chat-message time,
+.chat-message-meta time {
   color: #6b6258;
   font-size: 0.78rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .chat-form {
