@@ -1484,3 +1484,36 @@
   - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
 - 주의:
   - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 LOBBY-ENTRY-NOTICE-PROFILE-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - `방 입장` 카드의 input/button을 콘텐츠 컬럼 내부로 이동해 좌우 정렬 어긋남을 줄였다.
+  - lobby notice는 문제성 메시지일 때만 조건부 표시된다.
+  - profile button은 lobby에서 단독 블럭처럼 보이지 않도록 시각 무게를 낮췄다.
+- 미실행/제외:
+  - 실제 Google 로그인 기반 브라우저 수동 QA는 사용자가 로컬에서 확인해야 한다.
+  - backend 코드는 변경하지 않아 server test/typecheck는 실행하지 않았다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.
+
+### 2026-06-07 LOBBY-PROFILE-MICRO-POLISH
+
+- 실행 명령: `corepack pnpm --filter @doodle/web typecheck`
+- 결과: 통과.
+- 실행 명령: `corepack pnpm --filter @doodle/web build`
+- 결과: 통과. Vite production build 생성 확인.
+- 확인 범위:
+  - lobby profile menu를 오른쪽에서 살짝 안쪽으로 이동했다.
+  - avatar/name 간격을 늘렸다.
+  - mobile/narrow layout에서는 추가 오른쪽 여백을 제거했다.
+- secret 출력 여부:
+  - `.env`, Firebase private key, MongoDB URI, token 값은 출력하지 않았다.
+- 주의:
+  - 기존 미추적 `package-lock.json`은 수정/삭제/commit 대상에서 제외했다.

@@ -170,18 +170,22 @@ a {
 }
 
 .app-shell:has(.lobby-page) .profile-button {
-  min-height: 58px;
-  border-color: #8f8a83;
-  border-radius: 12px;
-  background: rgba(255, 253, 250, 0.9);
-  box-shadow: 3px 3px 0 rgba(37, 33, 29, 0.18);
-  padding-inline: 10px 16px;
+  gap: 12px;
+  min-height: 46px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+.app-shell:has(.lobby-page) .profile-menu {
+  margin-right: clamp(8px, 2vw, 24px);
 }
 
 .app-shell:has(.lobby-page) .profile-button img,
 .app-shell:has(.lobby-page) .profile-button span {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   background: #7650d6;
   color: #ffffff;
 }
@@ -822,7 +826,14 @@ button.lobby-cta-card {
 
 .lobby-join-card {
   display: grid;
-  align-items: stretch;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.lobby-join-content {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
 }
 
 .lobby-join-form {
@@ -831,8 +842,7 @@ button.lobby-cta-card {
   gap: 16px;
   align-items: center;
   width: min(100%, 560px);
-  margin-top: 6px;
-  margin-left: clamp(96px, 10vw, 136px);
+  margin: 0;
 }
 
 .lobby-join-form input {
@@ -1774,6 +1784,10 @@ button.lobby-cta-card {
     margin-bottom: 30px;
   }
 
+  .app-shell:has(.lobby-page) .profile-menu {
+    margin-right: 0;
+  }
+
   .room-summary {
     grid-template-columns: 1fr;
   }
@@ -1848,6 +1862,10 @@ button.lobby-cta-card {
 
   .lobby-cta-card {
     min-height: auto;
+  }
+
+  .lobby-join-card {
+    grid-template-columns: 1fr;
   }
 
   .lobby-join-form {

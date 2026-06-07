@@ -784,3 +784,17 @@
 - CTA card border, shadow, inner dashed line, icon bubble, spacing, headline 크기, marker underline을 참고 이미지 비율에 맞춰 조정했다.
 - mobile/narrow layout에서는 headline 크기, card stack, inline join form이 1단으로 자연스럽게 쌓이도록 보정했다.
 - 백엔드 코드, Firebase auth, API, Socket 계약, 로그인 전 Google login 화면은 변경하지 않았다.
+
+### 2026-06-07 LOBBY-ENTRY-NOTICE-PROFILE-POLISH
+
+- lobby의 `방 입장` 카드를 icon column + content column 구조로 정리해 input/button 정렬이 어긋나지 않도록 보정했다.
+- lobby 하단 dashed notice는 평소에는 렌더링하지 않고, 오류/입력 누락/권한/재시도 등 문제 메시지가 있을 때만 표시하도록 변경했다.
+- lobby preview에서는 notice를 기본 노출하지 않도록 했다.
+- lobby 상단 profile button은 별도 블럭 카드처럼 보이지 않도록 border/background/shadow를 제거하고 avatar + 이름 중심으로 축소했다.
+- backend, Firebase auth, API, Socket 계약은 변경하지 않았다.
+
+### 2026-06-07 LOBBY-PROFILE-MICRO-POLISH
+
+- lobby profile menu를 오른쪽 끝에서 8-24px 범위로 살짝 안쪽으로 이동했다.
+- lobby profile avatar와 이름 사이 간격을 조금 넓혀 단독으로 떠 있는 느낌을 줄였다.
+- mobile/narrow layout에서는 profile menu의 추가 오른쪽 여백을 제거해 폭 계산이 어긋나지 않게 했다.

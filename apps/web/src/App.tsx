@@ -1014,7 +1014,7 @@ export function App() {
         <LobbyView
           isBusy={isBusy}
           joinCode={joinCode}
-          notice={message}
+          notice={getLobbyNotice(message)}
           onJoinCodeChange={(value) => setJoinCode(normalizeRoomCode(value))}
           onJoinRoomSubmit={handleJoinRoom}
           onOpenCreateRoom={() => setActiveModal("create-room")}
@@ -1197,7 +1197,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
         <LobbyView
           isBusy={false}
           joinCode="ABC123"
-          notice={getPreviewMessage(mode)}
+          notice={null}
           onJoinCodeChange={noopString}
           onJoinRoomSubmit={preventSubmit}
           onOpenCreateRoom={noop}
@@ -1570,7 +1570,7 @@ function AppHeader(props: AppHeaderProps) {
 interface LobbyViewProps {
   isBusy: boolean;
   joinCode: string;
-  notice: string;
+  notice: string | null;
   onJoinCodeChange: (value: string) => void;
   onJoinRoomSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenCreateRoom: () => void;
@@ -1600,37 +1600,39 @@ function LobbyView(props: LobbyViewProps) {
         </button>
 
         <form className="paper-card lobby-cta-card lobby-join-card" onSubmit={props.onJoinRoomSubmit}>
-          <div className="lobby-card-heading">
-            <span className="lobby-icon-bubble lobby-icon-bubble--green" aria-hidden="true">
-              <LogIn size={32} />
-            </span>
+          <span className="lobby-icon-bubble lobby-icon-bubble--green" aria-hidden="true">
+            <LogIn size={32} />
+          </span>
+          <div className="lobby-join-content">
             <div>
               <h2>방 입장</h2>
               <p>초대 코드를 입력해 대기실에 들어갑니다.</p>
             </div>
-          </div>
-          <div className="lobby-join-form">
-            <label className="sr-only" htmlFor="inline-room-code">
-              초대 코드
-            </label>
-            <input
-              id="inline-room-code"
-              maxLength={6}
-              onChange={(event) => props.onJoinCodeChange(event.target.value)}
-              placeholder="초대 코드를 입력하세요"
-              value={props.joinCode}
-            />
-            <button className="primary-button" disabled={props.isBusy || props.joinCode.trim().length === 0} type="submit">
-              입장하기
-            </button>
+            <div className="lobby-join-form">
+              <label className="sr-only" htmlFor="inline-room-code">
+                초대 코드
+              </label>
+              <input
+                id="inline-room-code"
+                maxLength={6}
+                onChange={(event) => props.onJoinCodeChange(event.target.value)}
+                placeholder="초대 코드를 입력하세요"
+                value={props.joinCode}
+              />
+              <button className="primary-button" disabled={props.isBusy || props.joinCode.trim().length === 0} type="submit">
+                입장하기
+              </button>
+            </div>
           </div>
         </form>
       </div>
 
-      <aside className="lobby-notice" aria-label="로비 안내">
-        <span className="notice-icon">i</span>
-        <span>{props.notice}</span>
-      </aside>
+      {props.notice ? (
+        <aside className="lobby-notice" aria-label="로비 안내">
+          <span className="notice-icon">i</span>
+          <span>{props.notice}</span>
+        </aside>
+      ) : null}
     </section>
   );
 }
@@ -2908,6 +2910,22 @@ function formatSocketError(payload: SocketErrorPayload): string {
   };
 
   return messages[payload.code] ?? "Socket 요청을 처리하지 못했습니다.";
+}
+
+function getLobbyNotice(message: string): string | null {
+  const problemKeywords = [
+    "실패",
+    "오류",
+    "문제",
+    "못했습니다",
+    "없습니다",
+    "필요합니다",
+    "입력",
+    "권한",
+    "다시"
+  ];
+
+  return problemKeywords.some((keyword) => message.includes(keyword)) ? message : null;
 }
 
 function createPoint(event: PointerEvent<HTMLCanvasElement>): DrawPoint {

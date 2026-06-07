@@ -1857,3 +1857,36 @@
   - backend/API/Socket/Firebase 계약 변경 없음.
   - `package-lock.json` 수정/삭제/commit 없음.
   - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 LOBBY-ENTRY-NOTICE-PROFILE-POLISH
+
+- Agent: `qa-frontend`
+- 목표: 사용자가 지적한 lobby 방 입장 정렬, 하단 notice 과노출, profile block 과한 느낌을 최소 수정했다.
+- 수행 내용:
+  - `LobbyView` notice prop을 `string | null`로 변경하고 `getLobbyNotice` helper로 문제성 메시지만 표시하도록 했다.
+  - preview lobby에서는 기본 notice를 숨겼다.
+  - `lobby-join-content` 구조를 추가해 방 입장 text/input/button 정렬을 한 컬럼 안에서 맞췄다.
+  - lobby 전용 profile button에서 card-like border/background/shadow를 제거했다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
+
+### 2026-06-07 LOBBY-PROFILE-MICRO-POLISH
+
+- Agent: `qa-frontend`
+- 목표: 사용자가 지적한 lobby profile 위치와 avatar/name 간격을 미세 조정했다.
+- 수행 내용:
+  - lobby profile menu에 `margin-right: clamp(8px, 2vw, 24px)`를 적용해 오른쪽 끝에서 살짝 안쪽으로 옮겼다.
+  - lobby profile button gap을 12px로 늘렸다.
+  - mobile/narrow layout에서는 profile menu margin-right를 0으로 되돌렸다.
+- 검증:
+  - `corepack pnpm --filter @doodle/web typecheck`: 통과.
+  - `corepack pnpm --filter @doodle/web build`: 통과.
+- 제외:
+  - backend/API/Socket/Firebase 계약 변경 없음.
+  - `package-lock.json` 수정/삭제/commit 없음.
+  - `.env`, token, private key, MongoDB URI 출력 없음.
