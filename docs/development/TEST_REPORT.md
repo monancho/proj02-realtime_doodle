@@ -1883,3 +1883,10 @@
 - Scope: lobby CTA panels, lobby join input/button, and lobby header profile avatar only.
 - Note: package-lock.json was not modified or staged.
 - Follow-up: verified stronger lobby panel border thickness and more asymmetric lobby card/input/button radii with web typecheck/build.
+
+## 2026-06-07 - Game center panel handdrawn polish validation
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- Scope: center panels only for room waiting, playing, and gallery/finished views.
+- Note: participant and chat side panels were not changed in this pass.
+- Note: package-lock.json was not modified or staged.

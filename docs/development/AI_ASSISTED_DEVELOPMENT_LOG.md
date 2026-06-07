@@ -2180,3 +2180,10 @@
 - Added asymmetric profile avatar shape for the lobby header while preserving existing size/color.
 - Validation passed: web typecheck/build.
 - Follow-up: increased lobby CTA panel border thickness and pushed the asymmetric radii further for a more visible handdrawn card shape.
+
+## 2026-06-07 - Game center panel handdrawn polish
+- Limited polish to the center column of room waiting, playing, and gallery/finished screens.
+- Strengthened asymmetric borders and paper shadows for room code, upload preview, image slots, drawing toolbar, canvas frame, timer bar, and result cards.
+- Reduced the gradient-heavy result preview tone in favor of a flatter paper surface.
+- Left participant and chat side panels unchanged in this pass.
+- Validation passed: web typecheck/build.
