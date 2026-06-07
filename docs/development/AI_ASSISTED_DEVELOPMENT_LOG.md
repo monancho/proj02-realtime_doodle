@@ -2036,3 +2036,10 @@
 - 조치: active round remainingMs를 App 상태에서 250ms 갱신하도록 countdown 방식과 맞췄고, lobby 화면에서 mode tabs를 숨기며 profile popover hover bridge를 추가.
 - 검증: web typecheck/build 통과. 실제 로컬 브라우저 확인은 후속 수동 QA 필요.
 
+
+## 2026-06-07 - Game flow layout polish
+
+- 작업: 참고 이미지 기반으로 waiting/playing/finished 프론트 레이아웃을 참가자/중앙 콘텐츠/채팅 3열 구조로 정리.
+- 주요 변경: 공통 참가자 상태 배지, play 화면 공통 패널 적용, finished gallery polished layout 추가, responsive grid 보정.
+- 검증: web typecheck/build 통과. Browser preview 도구는 sandbox runtime 종료로 미실행 기록.
+

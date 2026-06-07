@@ -861,3 +861,11 @@
 - 로비로 돌아간 뒤 방 화면 전환 네비게이션이 남지 않도록 lobby 화면에서는 숨긴다.
 - 프로필 버튼과 popover 사이 hover bridge를 추가해 메뉴 이동 중 사라지는 현상을 줄였다.
 
+
+## 2026-06-07 - 게임 플로우 레이아웃 polish
+
+- 참고 이미지 방향에 맞춰 방 준비/게임 진행/게임 종료 화면을 참가자 패널, 중앙 콘텐츠, 채팅 패널의 3열 구조로 정리했다.
+- 공통 ParticipantPanel에 ready/playing/finished/spectator 상태 배지를 추가하고, 진행/종료 화면에서도 같은 패널을 사용하도록 변경했다.
+- 종료 화면은 대표 결과 preview, PNG 다운로드 CTA, 라운드 기록 그리드, 채팅을 함께 보여주는 polished gallery layout을 추가했다.
+- 백엔드 인증/API/Socket 계약은 변경하지 않았다.
+

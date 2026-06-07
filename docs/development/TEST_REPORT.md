@@ -1664,3 +1664,10 @@
 - PASS: corepack pnpm --filter @doodle/web build
 - 미실행: 실제 브라우저 2인 플레이에서 게임 중 timer progress와 프로필 hover 동작은 사용자가 로컬에서 확인 필요.
 
+
+## 2026-06-07 - 게임 플로우 레이아웃 polish 검증
+
+- PASS: corepack pnpm --filter @doodle/web typecheck
+- PASS: corepack pnpm --filter @doodle/web build
+- 미실행: in-app Browser preview 확인은 node/browser runtime이 sandbox 문제로 종료되어 수행하지 못했다. 실제 desktop/mobile 시각 QA는 로컬 브라우저에서 후속 확인 필요.
+

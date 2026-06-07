@@ -1074,6 +1074,8 @@ export function App() {
           drawStrokes={drawStrokes}
           gameFinishedAt={gameFinishedAt}
           imageCount={activeImages.length}
+          images={activeImages}
+          currentFirebaseUid={currentFirebaseUid}
           isCurrentUserSpectator={isCurrentUserSpectator}
           gameStarting={gameStarting}
           remainingMs={remainingMs}
@@ -1090,19 +1092,27 @@ export function App() {
       ) : null}
 
       {viewMode === "gallery" ? (
-        <GalleryView
+        <GalleryViewPolished
+          chatDraft={chatDraft}
+          chatMessages={chatMessages}
+          currentFirebaseUid={currentFirebaseUid}
+          images={activeImages}
           isBusy={isBusy}
           nextCursor={nextResultCursor}
           results={results}
           room={room}
           state={resourceState.results}
           error={resourceErrors.results}
+          socketError={socketError}
+          socketStatus={socketStatus}
           isCurrentUserHost={isCurrentUserHost}
+          onChatDraftChange={setChatDraft}
           onDownload={(resultId) => void handleDownloadResult(resultId)}
           onLoadResultPreview={loadResultPreview}
           onLoadMore={() => void handleLoadResults(nextResultCursor)}
           onPrepareNextGame={handlePrepareNextGame}
           onRefresh={() => void handleLoadResults(null)}
+          onSendMessage={handleSendMessage}
         />
       ) : null}
 
@@ -1257,6 +1267,8 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           drawStrokes={mockDrawStrokes}
           gameFinishedAt={null}
           imageCount={mockImages.length}
+          images={mockImages}
+          currentFirebaseUid={currentFirebaseUid}
           isCurrentUserSpectator={false}
           gameStarting={null}
           remainingMs={83_000}
@@ -1273,19 +1285,27 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
       ) : null}
 
       {viewMode === "gallery" ? (
-        <GalleryView
+        <GalleryViewPolished
+          chatDraft=""
+          chatMessages={mockChatMessages}
+          currentFirebaseUid={currentFirebaseUid}
+          images={mockImages}
           isBusy={false}
           nextCursor={null}
           results={mockResults}
           room={mockPlayingRoom}
           state="ready"
           error={null}
+          socketError={null}
+          socketStatus="connected"
           isCurrentUserHost={true}
+          onChatDraftChange={noopString}
           onDownload={noopString}
           onLoadResultPreview={loadMockPreviewBlob}
           onLoadMore={noop}
           onPrepareNextGame={noop}
           onRefresh={noop}
+          onSendMessage={preventSubmit}
         />
       ) : null}
     </main>
@@ -1776,6 +1796,15 @@ function RoomView(props: RoomViewProps) {
           roundEnded={null}
         />
       ) : null}
+      <ParticipantPanel
+        currentFirebaseUid={props.currentFirebaseUid}
+        error={props.resourceErrors.participants}
+        images={props.images}
+        room={props.room}
+        state={props.resourceState.participants}
+        variant="waiting"
+      />
+      <div className="room-main">
       <div className="paper-card room-summary">
         <div className="card-heading">
           <Users size={20} />
@@ -1911,14 +1940,7 @@ function RoomView(props: RoomViewProps) {
           onLoadPreview={props.onLoadImagePreview}
         />
       </div>
-
-      <ParticipantPanel
-        currentFirebaseUid={props.currentFirebaseUid}
-        error={props.resourceErrors.participants}
-        images={props.images}
-        room={props.room}
-        state={props.resourceState.participants}
-      />
+      </div>
       <ChatPanelFixed
         chatDraft={props.chatDraft}
         chatMessages={props.chatMessages}
@@ -2065,15 +2087,32 @@ function ParticipantPanel({
   error,
   images,
   room,
-  state
+  state,
+  variant = "waiting"
 }: {
   currentFirebaseUid: string | null;
   error: string | null;
   images: ImageMetadata[];
   room: RoomDetail | null;
   state: LoadState;
+  variant?: "waiting" | "playing" | "finished";
 }) {
   const uploadedFirebaseUids = new Set(images.map((image) => image.uploadedBy.firebaseUid));
+  const getParticipantBadge = (participant: RoomDetail["participants"][number]) => {
+    if (participant.isSpectator) {
+      return "관전 중";
+    }
+
+    if (variant === "finished") {
+      return "완료";
+    }
+
+    if (variant === "playing") {
+      return "참여 중";
+    }
+
+    return uploadedFirebaseUids.has(participant.firebaseUid) ? "준비" : "대기";
+  };
 
   return (
     <aside className="paper-card participants-card">
@@ -2087,12 +2126,16 @@ function ParticipantPanel({
         <ul className="participant-list">
           {room.participants.map((participant) => (
             <li key={participant.firebaseUid}>
-              <i aria-hidden="true" />
+              {participant.avatarUrl ? (
+                <img alt="" className="participant-avatar" src={participant.avatarUrl} />
+              ) : (
+                <i aria-hidden="true">{(participant.nickname ?? "?").slice(0, 1)}</i>
+              )}
               <span>
                 {participant.nickname ?? "익명 참가자"}
                 {participant.firebaseUid === currentFirebaseUid ? <small>나</small> : null}
               </span>
-              <strong>{uploadedFirebaseUids.has(participant.firebaseUid) ? "준비" : "대기"}</strong>
+              <strong>{getParticipantBadge(participant)}</strong>
               {participant.isHost ? <em>Host</em> : null}
             </li>
           ))}
@@ -2108,6 +2151,8 @@ function ParticipantPanel({
 interface PlayViewProps {
   room: RoomDetail | null;
   imageCount: number;
+  images: ImageMetadata[];
+  currentFirebaseUid: string | null;
   socketStatus: "idle" | "connecting" | "connected" | "error";
   socketError: string | null;
   chatMessages: ChatMessage[];
@@ -2155,7 +2200,14 @@ function PlayView(props: PlayViewProps) {
         resultSaveStatus={props.resultSaveStatus}
         roundEnded={props.roundEnded}
       />
-      <PlayParticipantsPanelFixed room={props.room} />
+      <ParticipantPanel
+        currentFirebaseUid={props.currentFirebaseUid}
+        error={null}
+        images={props.images}
+        room={props.room}
+        state="ready"
+        variant="playing"
+      />
       <CanvasPanel
         disabled={drawingDisabled}
         backgroundImageUrl={props.activeRoundImageUrl}
@@ -2463,6 +2515,8 @@ function PlayParticipantsPanelFixed({ room }: { room: RoomDetail | null }) {
   );
 }
 
+void PlayParticipantsPanelFixed;
+
 function PlayParticipantsPanel({ room }: { room: RoomDetail | null }) {
   return (
     <aside className="paper-card play-participants-card" aria-label="라운드 참가자">
@@ -2744,6 +2798,10 @@ function CanvasPanel(props: CanvasPanelProps) {
 }
 
 interface GalleryViewProps {
+  chatMessages: ChatMessage[];
+  chatDraft: string;
+  currentFirebaseUid: string | null;
+  images: ImageMetadata[];
   results: ResultMetadata[];
   room: RoomDetail | null;
   nextCursor: string | null;
@@ -2751,11 +2809,15 @@ interface GalleryViewProps {
   isBusy: boolean;
   state: LoadState;
   error: string | null;
+  socketStatus: "idle" | "connecting" | "connected" | "error";
+  socketError: string | null;
+  onChatDraftChange: (value: string) => void;
   onPrepareNextGame: () => void;
   onLoadResultPreview: (resultId: string) => Promise<Blob>;
   onLoadMore: () => void;
   onRefresh: () => void;
   onDownload: (resultId: string) => void;
+  onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
 }
 
 function GalleryView(props: GalleryViewProps) {
@@ -2842,6 +2904,92 @@ function GalleryView(props: GalleryViewProps) {
         ) : null}
       </section>
     </>
+  );
+}
+
+function GalleryViewPolished(props: GalleryViewProps) {
+  const canPrepareNextGame = props.room?.status === "finished" && props.isCurrentUserHost;
+  const featuredResult = props.results[0];
+
+  if (props.state !== "ready" || props.results.length === 0 || !featuredResult) {
+    return <GalleryView {...props} />;
+  }
+
+  return (
+    <section className="gallery-layout">
+      <ParticipantPanel
+        currentFirebaseUid={props.currentFirebaseUid}
+        error={null}
+        images={props.images}
+        room={props.room}
+        state="ready"
+        variant="finished"
+      />
+      <main className="gallery-main">
+        <section className="gallery-toolbar" aria-label="결과 갤러리 상태">
+          <span>게임 종료</span>
+          <span>{props.results.length}개 결과를 확인할 수 있습니다.</span>
+          {canPrepareNextGame ? (
+            <button className="secondary-button" disabled={props.isBusy} onClick={props.onPrepareNextGame} type="button">
+              <RefreshCw size={18} />
+              다시 준비
+            </button>
+          ) : null}
+        </section>
+        <article className="paper-card featured-result-card">
+          <div className="result-preview featured-result-preview">
+            <ResultPreviewImage resultId={featuredResult.id} loadPreview={props.onLoadResultPreview} />
+            <RoughDecoration className="rough-result" seed={featuredResult.roundIndex + 61} variant="result" />
+            <span>Round {featuredResult.roundIndex + 1}</span>
+          </div>
+          <button className="download-link" disabled={props.isBusy} onClick={() => props.onDownload(featuredResult.id)} type="button">
+            <Download size={18} />
+            PNG 다운로드
+          </button>
+        </article>
+        <h2 className="section-title">라운드 기록</h2>
+        <section className="gallery-grid">
+          {props.results.map((result) => (
+            <article className="paper-card result-card" key={result.id}>
+              <div className="result-preview">
+                <ResultPreviewImage resultId={result.id} loadPreview={props.onLoadResultPreview} />
+                <RoughDecoration className="rough-result" seed={result.roundIndex + 61} variant="result" />
+                <span>Round {result.roundIndex + 1}</span>
+              </div>
+              <dl className="summary-list">
+                <div>
+                  <dt>stroke</dt>
+                  <dd>{result.strokeCount}</dd>
+                </div>
+                <div>
+                  <dt>created</dt>
+                  <dd>{formatDateTime(result.createdAt)}</dd>
+                </div>
+              </dl>
+              <button className="download-link" disabled={props.isBusy} onClick={() => props.onDownload(result.id)} type="button">
+                <Download size={18} />
+                PNG 다운로드
+              </button>
+            </article>
+          ))}
+          {props.nextCursor ? (
+            <button className="secondary-button gallery-more" disabled={props.isBusy} onClick={props.onLoadMore} type="button">
+              <RefreshCw size={18} />
+              결과 더 보기
+            </button>
+          ) : null}
+        </section>
+      </main>
+      <ChatPanelFixed
+        chatDraft={props.chatDraft}
+        chatMessages={props.chatMessages}
+        socketError={props.socketError}
+        socketStatus={props.socketStatus}
+        title="채팅"
+        onChatDraftChange={props.onChatDraftChange}
+        onSendMessage={props.onSendMessage}
+      />
+    </section>
   );
 }
 
