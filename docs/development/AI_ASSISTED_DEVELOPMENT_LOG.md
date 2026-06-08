@@ -2339,3 +2339,13 @@
 - Made static frontend serving robust when Render `NODE_ENV` is missing or not applied.
 - Resolver now returns an existing `apps/web/dist` in both production and non-production; local split dev remains unchanged when dist is absent.
 - Validation passed with server typecheck/test and web build.
+
+## 2026-06-08 - Round Transition Delay and Uploaded Nickname Fix
+
+- Investigated deployed QA feedback that round transitions felt delayed after timer end.
+- Changed backend round-end flow so the post-round review/next transition timer is scheduled immediately after `round-ended`; result image save now runs asynchronously and emits `result-saved` when complete.
+- Investigated uploaded image metadata showing Google display names; image upload now prefers stored user profile nickname/avatarUrl from `UserRepository`.
+- Added regression coverage for slow result saving and stored-profile upload metadata.
+- Updated troubleshooting notes with the server-side delay cause and a future client-side composition preview option.
+- Validation passed with server test and typecheck.
+- Push intentionally not performed so the user can compare current deployed behavior with the local fix before remote deployment.

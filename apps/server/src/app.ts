@@ -108,7 +108,8 @@ export function createApp(dependencies: AppDependencies = {}): Express {
       imageRepository,
       imageStorage,
       roomUpdatePublisher: dependencies.roomUpdatePublisher,
-      roomRepository
+      roomRepository,
+      userRepository
     })
   );
 

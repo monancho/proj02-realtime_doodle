@@ -2099,3 +2099,15 @@
 - `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 108 tests passed
 - `corepack pnpm --filter @doodle/web build`: PASS
 - Live Render redeploy still required after push.
+
+## 2026-06-08 - Round Transition Delay and Uploaded Nickname Fix
+
+- Scope: 라운드 종료 후 다음 라운드/갤러리 전환이 결과 저장 시간에 밀리는 현상과 업로드 이미지 카드에 Google 실명이 표시될 수 있는 현상을 점검했다.
+- Backend fix: `round-ended` 직후 post-round review timer를 먼저 예약하고, result save는 비동기 백그라운드 작업으로 실행한 뒤 완료 시 기존처럼 `result-saved`를 emit하도록 조정했다.
+- Backend fix: image upload metadata 생성 시 auth token display name보다 저장된 `users` profile `nickname/avatarUrl`을 우선 사용하도록 조정했다.
+- Regression coverage: 느린 result save가 post-round transition scheduling을 막지 않는 테스트와 uploaded image metadata가 stored profile을 사용하는 테스트를 추가했다.
+- `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 110 tests passed
+- `corepack pnpm --filter @doodle/server typecheck`: PASS
+- Deployment note: 이전 배포 버전과 속도 비교를 위해 push는 수행하지 않았다.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI values were not printed or recorded.

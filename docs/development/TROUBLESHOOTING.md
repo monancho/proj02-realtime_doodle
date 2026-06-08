@@ -100,3 +100,36 @@ corepack pnpm --filter @doodle/server smoke:bootstrap
 - Symptom: single Web Service deployment starts backend successfully, but `GET /` still returns 404.
 - Cause: static frontend serving was initially gated by `NODE_ENV=production`. If Render env was missing or not applied, the existing `apps/web/dist` output was ignored.
 - Fix: static frontend root resolution now serves an existing `apps/web/dist` regardless of `NODE_ENV`; when dist is missing, non-production remains disabled and production still returns the expected candidate path.
+
+### Slow transition after round end
+
+- Phase: deployed play-flow QA
+- Symptom: after a round ends, the next round or final gallery feels delayed.
+- Likely cause:
+  - The server emits `round-ended`, then reads the source image from GridFS, composes a PNG result with drawing strokes, writes the result image to GridFS, stores result metadata, emits `result-saved`, and only then may continue the visible transition if the flow waits on result saving.
+  - On Render plus MongoDB Atlas/GridFS, source image read, PNG composition, and result GridFS write can be noticeable.
+- MVP fix direction:
+  - Keep `round-ended` immediate.
+  - Do not let result saving block the post-round review timer or next round transition.
+  - Emit `result-saved` when the async save finishes.
+  - If save fails, continue the game transition and show a recoverable UI state instead of blocking the round.
+- Client-side composition option:
+  - The browser already downloads the round source image to draw it on canvas.
+  - The browser can compose a fast local preview by combining the displayed source image and the local drawing layer.
+  - This can make the round-end modal feel instant.
+  - The server should still do authoritative async result storage, or at minimum verify any client-uploaded result against the selected image/round/stroke contract before storing it.
+- Recommended architecture:
+  - Short term: server authoritative async save, client shows optimistic/local preview while waiting for `result-saved`.
+  - Later optimization: client-generated preview/result upload can be considered, but only with server-side validation and fallback server composition.
+- Secret handling:
+  - Logs and docs must not include raw file ids, database URI, token, private key, or credential values.
+
+### Uploaded image shows Google real name instead of app nickname
+
+- Phase: deployed play-flow QA
+- Symptom: uploaded image cards may show the Google/Firebase display name instead of the nickname configured in the app.
+- Cause: image metadata can be created from the auth token context if the upload route does not fetch the latest stored user profile first.
+- Fix direction:
+  - When creating image metadata, prefer `UserRepository.findByFirebaseUid(firebaseUid)` and use the stored `nickname`/`avatarUrl`.
+  - Fall back to auth context only if no stored profile exists.
+  - Existing room participant profile updates should continue to use stored user profile data.

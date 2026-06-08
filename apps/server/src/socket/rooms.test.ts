@@ -1174,6 +1174,69 @@ describe("room membership socket handlers", () => {
     );
   });
 
+  it("schedules post-round transition before slow result saving completes", async () => {
+    const repository = new InMemoryRoomRepository({
+      initialRooms: [createRoomDetail({ status: "playing" })]
+    });
+    const imageRepository = new InMemoryImageRepository({
+      initialImages: [createImageMetadata({ id: "image-next" })]
+    });
+    const io = createMockIo();
+    const roundState = new RoundRuntimeStateStore();
+    const timerScheduler = createMockTimerScheduler();
+    const activeRound = {
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0,
+      image: createImageMetadata({ id: "image-used" })
+    };
+    const deferredResult = createDeferredResult({
+      roomCode: "ABC123",
+      roundId: "round-1",
+      roundIndex: 0
+    });
+    const resultSaveService = {
+      saveRoundResult: vi.fn().mockReturnValue(deferredResult.promise)
+    };
+    roundState.startRound(activeRound);
+
+    await handleRoundTimerExpired(
+      createTimerDependencies({
+        io,
+        repository,
+        imageRepository,
+        roundState,
+        resultSaveService,
+        timerScheduler,
+        roundIdGenerator: () => "round-2"
+      }),
+      activeRound
+    );
+
+    expect(timerScheduler.schedule).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-1:review",
+        durationSec: 5
+      })
+    );
+    expect(io.emitToRoom).not.toHaveBeenCalledWith(
+      "result-saved",
+      expect.anything()
+    );
+
+    deferredResult.resolve();
+    await flushPromises();
+
+    expect(io.emitToRoom).toHaveBeenCalledWith(
+      "result-saved",
+      expect.objectContaining({
+        roomCode: "ABC123",
+        roundId: "round-1"
+      })
+    );
+  });
+
   it("prepares a finished room for another game without removing results", async () => {
     const repository = new InMemoryRoomRepository({
       initialRooms: [createRoomDetail({ status: "finished" })],
@@ -1553,6 +1616,44 @@ function createMockResultSaveService(
           }
         : null
     )
+  };
+}
+
+function createDeferredResult(payload: {
+  roomCode: string;
+  roundId: string;
+  roundIndex: number;
+}) {
+  let resolvePromise: () => void = () => undefined;
+  const promise = new Promise<Awaited<ReturnType<ResultSaveService["saveRoundResult"]>>>(
+    (resolve) => {
+      resolvePromise = () => {
+        resolve({
+          ...payload,
+          result: {
+            id: `result-${payload.roundId}`,
+            roomCode: payload.roomCode,
+            roundId: payload.roundId,
+            roundIndex: payload.roundIndex,
+            sourceImageId: "image-used",
+            sourceImageFileId: "file-image-used",
+            resultFileId: "result-file-1",
+            thumbnailFileId: null,
+            mimeType: "image/png",
+            width: 1,
+            height: 1,
+            strokeCount: 0,
+            createdAt: "2026-06-06T00:01:00.000Z"
+          },
+          createdAt: "2026-06-06T00:01:01.000Z"
+        });
+      };
+    }
+  );
+
+  return {
+    promise,
+    resolve: resolvePromise
   };
 }
 

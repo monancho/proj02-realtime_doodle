@@ -1132,21 +1132,29 @@ export async function handleRoundTimerExpired(
   dependencies.io
     .to(createSocketRoomName(room.roomCode))
     .emit("round-ended", endedPayload);
-  const resultSavedPayload = await dependencies.resultSaveService.saveRoundResult(
-    {
-      round: endedPayload,
-      strokes: dependencies.recentStrokeBatches.list(
-        room.roomCode,
-        expiredRound.roundId
-      )
-    }
-  );
+  schedulePostRoundTransition(dependencies, expiredRound);
+  void saveRoundResultAndEmit(dependencies, {
+    round: endedPayload,
+    strokes: dependencies.recentStrokeBatches.list(
+      room.roomCode,
+      expiredRound.roundId
+    )
+  });
+}
+
+async function saveRoundResultAndEmit(
+  dependencies: RoundTimerDependencies,
+  input: {
+    round: RoundEndedPayload;
+    strokes: DrawStrokeBroadcastPayload[];
+  }
+): Promise<void> {
+  const resultSavedPayload =
+    await dependencies.resultSaveService.saveRoundResult(input);
 
   if (resultSavedPayload) {
     emitResultSaved(dependencies.io, resultSavedPayload);
   }
-
-  schedulePostRoundTransition(dependencies, expiredRound);
 }
 
 async function handlePostRoundReviewExpired(

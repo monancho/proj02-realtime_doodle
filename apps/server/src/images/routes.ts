@@ -10,6 +10,7 @@ import type { AuthenticatedRequest } from "../auth/http";
 import type { RoomUpdatePublisher } from "../rooms/broadcast";
 import type { RoomRepository } from "../rooms/repository";
 import { normalizeRoomCode } from "../rooms/room-code";
+import type { UserRepository } from "../users/repository";
 import { getImageErrorHttpStatus, ImageDomainError } from "./errors";
 import { parseSingleImageMultipart } from "./multipart";
 import type { ImageRepository } from "./repository";
@@ -28,6 +29,7 @@ export interface ImageRouterDependencies {
   imageStorage: ImageStorage;
   roomUpdatePublisher?: RoomUpdatePublisher;
   roomRepository: RoomRepository;
+  userRepository?: UserRepository;
 }
 
 export function createRoomImageRouter({
@@ -35,7 +37,8 @@ export function createRoomImageRouter({
   imageRepository,
   imageStorage,
   roomUpdatePublisher,
-  roomRepository
+  roomRepository,
+  userRepository
 }: ImageRouterDependencies): Router {
   const router = Router({ mergeParams: true });
 
@@ -96,12 +99,15 @@ export function createRoomImageRouter({
       });
 
       try {
+        const profile = await userRepository?.findByFirebaseUid(
+          auth.user.firebaseUid
+        );
         const image = await imageRepository.createImageMetadata({
           roomCode: room.roomCode,
           uploadedBy: {
             firebaseUid: auth.user.firebaseUid,
-            nickname: auth.user.nickname,
-            avatarUrl: auth.user.avatarUrl
+            nickname: profile?.nickname ?? auth.user.nickname,
+            avatarUrl: profile?.avatarUrl ?? auth.user.avatarUrl
           },
           originalName: sanitizeOriginalName(multipartFile.filename),
           mimeType,

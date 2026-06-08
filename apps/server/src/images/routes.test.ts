@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../app";
 import type { AuthenticatedRequest } from "../auth/http";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
+import { InMemoryUserRepository } from "../users/in-memory-user-repository";
 import { InMemoryImageRepository } from "./in-memory-image-repository";
 import { InMemoryImageStorage } from "./in-memory-image-storage";
 
@@ -66,6 +67,35 @@ describe("image routes", () => {
     expect(roomUpdatePublisher.publishRoomUpdated).toHaveBeenCalledWith(
       expect.objectContaining({ roomCode: "ABC123" })
     );
+  });
+
+  it("uses the stored user profile for uploaded image metadata", async () => {
+    const tokenAuthContext: AuthContext = {
+      user: {
+        firebaseUid: "host-uid",
+        email: "host@example.com",
+        nickname: "Google Real Name",
+        avatarUrl: "https://example.com/google.png"
+      }
+    };
+    const { app } = await createImageRouteTestApp(tokenAuthContext, undefined, {
+      nickname: "Doodle Nick",
+      avatarUrl: "https://example.com/doodle.png"
+    });
+
+    const response = await request(app)
+      .post("/api/rooms/abc123/images")
+      .attach("image", Buffer.from("png-bytes"), {
+        filename: "doodle.png",
+        contentType: "image/png"
+      })
+      .expect(201);
+
+    expect(response.body.image.uploadedBy).toMatchObject({
+      firebaseUid: "host-uid",
+      nickname: "Doodle Nick",
+      avatarUrl: "https://example.com/doodle.png"
+    });
   });
 
   it("lists room image metadata for participants", async () => {
@@ -206,7 +236,11 @@ describe("image routes", () => {
 
 async function createImageRouteTestApp(
   authContext: AuthContext,
-  initialRooms?: RoomDetail[]
+  initialRooms?: RoomDetail[],
+  storedProfile?: {
+    nickname?: string | null;
+    avatarUrl?: string | null;
+  }
 ) {
   const roomRepository = new InMemoryRoomRepository({
     initialRooms,
@@ -230,6 +264,19 @@ async function createImageRouteTestApp(
     now: () => new Date("2026-06-06T00:00:00.000Z")
   });
   const imageStorage = new InMemoryImageStorage();
+  const userRepository = new InMemoryUserRepository();
+  await userRepository.upsertByFirebaseUid({
+    firebaseUid: authContext.user.firebaseUid,
+    email: authContext.user.email,
+    nickname: storedProfile?.nickname ?? authContext.user.nickname,
+    nicknameNormalized: (
+      storedProfile?.nickname ?? authContext.user.nickname
+    )?.toLowerCase() ?? null,
+    avatarUrl: storedProfile?.avatarUrl ?? authContext.user.avatarUrl,
+    profileSetupCompletedAt: storedProfile?.nickname
+      ? "2026-06-06T00:00:00.000Z"
+      : null
+  });
   const roomUpdatePublisher = {
     publishRoomUpdated: vi.fn()
   };
@@ -238,7 +285,8 @@ async function createImageRouteTestApp(
     imageRepository,
     imageStorage,
     roomRepository,
-    roomUpdatePublisher
+    roomUpdatePublisher,
+    userRepository
   });
 
   return {
