@@ -2393,3 +2393,17 @@
 - App feature code changes: none.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-QA-ROUND-END-GALLERY-MANUAL-RESULT-RECORD
+
+- Agent: `qa-reviewer`
+- Goal: 사용자 직접 수행 1인/2인 라운드 종료/갤러리 수동 QA 결과를 문서화하고 남은 리스크를 정리한다.
+- 1인 local manual QA: login, room creation, image upload, round-end local preview, final gallery entry, and download passed. Image upload had some delay. The final round still showed copy implying the next round would continue.
+- 2인 local manual QA: two-account entry, upload/ready, drawing sync, round-end local preview, round transition, final gallery entry, and download passed. Upload had some delay, and the first gallery image display had some delay.
+- Clarification: `result-saved` server preview replacement is not expected to be visually obvious to users. The user-facing acceptance signal is that local preview appears promptly and the final gallery/download result works.
+- Remaining UX issue: final-round modal copy should avoid saying the next round will continue.
+- Remaining productization risk: the user noted problems usually appeared after deployment, so deployed-environment QA remains required even though local QA passed.
+- App feature code changes: none.
+- Files changed: `docs/development/TEST_REPORT.md`, `docs/development/AI_ASSISTED_DEVELOPMENT_LOG.md` only.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

@@ -2171,3 +2171,38 @@
   - result download validation: BLOCKED / manual QA required
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-QA-ROUND-END-GALLERY-MANUAL-RESULT-RECORD
+
+- Scope: 사용자 직접 수행 1인/2인 로컬 수동 QA 결과를 기록했다.
+- 1인 QA result:
+  - 로그인: PASS
+  - 방 생성: PASS
+  - 이미지 업로드: PASS, 약간의 delay 관찰
+  - 라운드 종료 modal local preview: PASS, 문제 없음
+  - `result-saved` 후 서버 preview 대체: NOT DISTINCT TO USER. 사용자 관점에서는 의미가 명확하지 않아 설명 필요
+  - 다음 라운드 전환: ISSUE. 마지막 라운드인데 다음 라운드 진행 안내 문구가 표시됨
+  - 최종 gallery 진입: PASS
+  - 다운로드: PASS
+  - 실패/이상 동작: 로컬 기준 기능 실패 없음
+- 2인 QA result:
+  - 두 계정 입장: PASS
+  - 이미지 업로드/ready: PASS, 약간의 delay 관찰
+  - 드로잉 동기화: PASS
+  - 라운드 종료 modal local preview: PASS
+  - `result-saved` 후 서버 preview 대체: NOT DISTINCT TO USER. 사용자 관점에서는 의미가 명확하지 않음
+  - 다음 라운드 전환: PASS
+  - 최종 gallery 진입: PASS, 첫 이미지 표시 시 delay 관찰
+  - 다운로드: PASS
+  - 실패/이상 동작: 로컬 기준 기능 실패 없음
+- Interpretation:
+  - `result-saved` 후 서버 preview 대체는 사용자가 반드시 눈으로 구분해야 하는 화면 기능이 아니라, local preview가 먼저 보이고 서버 저장 결과가 준비되면 authoritative 이미지로 동기화되는 내부 안정성 흐름이다.
+  - 사용자가 이해하기 쉬운 QA 기준은 "라운드 종료 직후 preview가 즉시 보이는가"와 "갤러리/다운로드 결과가 최종적으로 정상인가"로 보는 것이 적절하다.
+- Remaining issues / risks:
+  - 마지막 라운드에서 "다음 라운드" 안내가 표시되는 문구 문제를 수정 후보로 둔다.
+  - 이미지 업로드와 최종 gallery 첫 이미지 표시 delay는 제품화 성능/UX 개선 후보로 둔다.
+  - 사용자가 언급한 것처럼 주요 문제는 배포 환경에서 나타났으므로, 로컬 PASS만으로 배포 안정성을 확정하지 않는다.
+  - 배포 환경에서 동일 시나리오를 재검증해야 한다.
+- App feature code changes: none.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
