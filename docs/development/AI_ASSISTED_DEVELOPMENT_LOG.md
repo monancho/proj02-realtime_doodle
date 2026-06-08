@@ -2379,3 +2379,17 @@
 - Remaining manual QA: 실제 1인/2인 브라우저에서 round-ended modal, round-to-round 전환, final gallery 진입, result download를 확인해야 한다.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-QA-ROUND-END-GALLERY-E2E-CHECK
+
+- Agent: `qa-reviewer`
+- Goal: 라운드 종료/갤러리 안정화 변경 후 실제 1인/2인 브라우저 흐름에서 local preview, 서버 result preview 대체, 다음 라운드 전환, 최종 gallery 진입을 확인한다.
+- Local service readiness: backend `/health` returned HTTP 200 and frontend dev server returned HTTP 200.
+- Code-path review: verified the frontend wiring for `round-ended`, `composeLocalRoundPreview`, `result-saved`, `round-started`, `scheduleGalleryTransition`, and local preview URL cleanup paths in `apps/web/src/App.tsx`.
+- Browser E2E: not executed because the in-app browser automation connection failed with the Windows sandbox setup issue before navigation could start.
+- Manual account QA: not executed because real 1인/2인 Google login, room creation/join, image upload, drawing, round transition, gallery, and result download require user-controlled browser/account interaction.
+- Outcome: service readiness and static code-path review passed; actual 1인/2인 E2E remains manual QA required.
+- Files changed: `docs/development/TEST_REPORT.md`, `docs/development/AI_ASSISTED_DEVELOPMENT_LOG.md` only.
+- App feature code changes: none.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

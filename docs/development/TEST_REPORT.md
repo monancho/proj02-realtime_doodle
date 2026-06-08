@@ -2149,3 +2149,25 @@
 - Manual QA still required: 실제 1인/2인 브라우저 흐름에서 round-ended modal, 다음 round 전환, final gallery 진입, result download를 확인해야 한다.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-QA-ROUND-END-GALLERY-E2E-CHECK
+
+- Scope: 라운드 종료/갤러리 안정화 변경 후 1인/2인 실제 브라우저 E2E 확인을 시도했다.
+- Local service readiness:
+  - `Invoke-WebRequest -UseBasicParsing -Uri http://localhost:4000/health -TimeoutSec 3`: PASS, HTTP 200
+  - `Invoke-WebRequest -UseBasicParsing -Uri http://localhost:5173 -TimeoutSec 3`: PASS, HTTP 200
+- Code-path review:
+  - `round-ended` handler opens the result modal and starts local preview composition.
+  - `composeLocalRoundPreview` creates a 960x720 PNG preview from the loaded round image and current strokes.
+  - `result-saved` updates modal state so the server authoritative result preview can replace the local preview.
+  - `round-started`, waiting-room reset, gallery transition, room reset, and unmount paths revoke local preview object URLs.
+- Browser E2E result: NOT EXECUTED. The in-app browser automation connection failed with the Windows sandbox setup issue before navigation could start.
+- Manual account QA result: NOT EXECUTED. Real 1인/2인 Google login, room creation/join, upload, drawing, round transition, gallery, and download checks require user-controlled browser/account interaction.
+- Acceptance status:
+  - local service availability: PASS
+  - static code-path review for preview and cleanup: PASS
+  - actual 1인 browser flow: BLOCKED / manual QA required
+  - actual 2인 browser flow: BLOCKED / manual QA required
+  - result download validation: BLOCKED / manual QA required
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
