@@ -50,6 +50,35 @@ Inject runtime environment variables when the container starts. Use names and pu
 
 Do not bake runtime env values into the image. Pass them through Oracle container runtime configuration, a secret manager, or a host-managed env file that is never committed.
 
+## Oracle Runtime Template
+
+Use a container runtime command shaped like this. Replace placeholder references only on the Oracle host or in Oracle-managed runtime configuration. Do not commit the values.
+
+```bash
+docker run -d \
+  --name realtime-doodle-server \
+  --restart unless-stopped \
+  -p 4000:4000 \
+  -e NODE_ENV=production \
+  -e PORT=4000 \
+  -e CLIENT_URL="$CLOUDFLARE_FRONTEND_ORIGINS" \
+  -e SOCKET_CORS_ORIGIN="$CLOUDFLARE_FRONTEND_ORIGINS" \
+  -e MONGODB_URI="$MONGODB_URI" \
+  -e MONGODB_DB_NAME="$MONGODB_DB_NAME" \
+  -e FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID" \
+  -e FIREBASE_CLIENT_EMAIL="$FIREBASE_CLIENT_EMAIL" \
+  -e FIREBASE_PRIVATE_KEY="$FIREBASE_PRIVATE_KEY" \
+  realtime-doodle-server:local
+```
+
+Operational notes:
+
+- `CLIENT_URL` and `SOCKET_CORS_ORIGIN` may use a comma-separated origin list.
+- Keep the public user-facing backend URL HTTPS-only.
+- Prefer host-managed environment injection or a secret manager over long shell history commands.
+- If a host env file is used, keep it outside the repository and restrict file permissions.
+- Do not mount a persistent upload directory; image/result persistence belongs to MongoDB GridFS.
+
 ## Local Smoke Shape
 
 After starting the container with valid runtime env values, check:
@@ -85,6 +114,18 @@ Full `/health` smoke requires user-provided runtime environment values for Mongo
 - Ensure the Oracle runtime can reach MongoDB and Firebase Admin verification dependencies.
 - Keep secret rotation user-owned after deployment and QA are complete.
 
+## Reverse Proxy And WebSocket Checklist
+
+If using Nginx or another reverse proxy in front of Docker:
+
+- Proxy `/health`, `/api/*`, and `/socket.io/*` to the container port.
+- Preserve `Host`, `X-Forwarded-Proto`, and `X-Forwarded-For` headers.
+- Enable HTTP/1.1 proxying for Socket.IO.
+- Forward `Upgrade` and `Connection` headers for WebSocket upgrade.
+- Keep request body limits large enough for image upload payloads.
+- Confirm HTTPS certificates renew automatically.
+- Confirm the backend public origin exactly matches the value used by Cloudflare `VITE_API_BASE_URL` and `VITE_SOCKET_URL`.
+
 ## Cloudflare Pages Pairing
 
 Cloudflare Pages must set:
@@ -94,3 +135,77 @@ Cloudflare Pages must set:
 - Firebase web config variables for the same Firebase project used by the backend.
 
 Firebase Authentication authorized domains must include the Cloudflare production/custom frontend domain used by users.
+
+## Cloudflare Pages Checklist
+
+- Build command should build the web app from the monorepo workspace.
+- Publish directory should point to the Vite output for `apps/web`.
+- Set `VITE_API_BASE_URL` to the Oracle backend HTTPS origin.
+- Set `VITE_SOCKET_URL` to the same Oracle backend HTTPS origin unless Socket.IO is routed differently.
+- Set Firebase web config env names for the same Firebase project used by the backend.
+- Rebuild after env changes; Vite env values are baked into the static frontend bundle.
+- For preview deployments, add the preview origin to backend `CLIENT_URL` and `SOCKET_CORS_ORIGIN` if preview QA is required.
+
+## Firebase Checklist
+
+- Enable Google sign-in provider.
+- Add the Cloudflare production domain as an authorized domain.
+- Add the final custom frontend domain before public QA.
+- Add preview domains only if login must work on preview deployments.
+- Confirm frontend Firebase web app config and backend Firebase Admin credentials belong to the same project.
+- Do not paste Firebase Admin private key values into docs, chat, git commits, shell history, or Docker image layers.
+
+## MongoDB And GridFS Checklist
+
+- Confirm Oracle can reach MongoDB over the required network path.
+- Confirm MongoDB auth user has the minimum required access to the target database.
+- Confirm `MONGODB_DB_NAME` points to the intended production or staging database.
+- Confirm GridFS storage is used for uploaded originals and generated results.
+- Confirm room cleanup policy is understood before using production data.
+- Do not switch persistence to Oracle local filesystem.
+
+## Deployed Smoke QA Order
+
+Run these checks after deployment, in order:
+
+1. `GET /health` on the Oracle backend public HTTPS URL.
+2. Cloudflare frontend loads without static asset errors.
+3. Firebase login popup completes on the Cloudflare frontend domain.
+4. Authenticated API call succeeds, such as profile upsert or room fetch.
+5. Room create and room join work.
+6. Socket.IO connects from Cloudflare frontend to Oracle backend.
+7. Two browser drawing sync works.
+8. Image upload works and uploaded image metadata is visible.
+9. Round start, round end, local preview, and `result-saved` flow work.
+10. Final gallery loads.
+11. Result download works.
+
+If a step fails, stop and fix that layer before continuing.
+
+## Rollback And Triage
+
+Rollback triggers:
+
+- `/health` fails after container start.
+- Firebase login cannot complete on the production frontend domain.
+- API CORS preflight fails from the Cloudflare origin.
+- Socket.IO cannot connect or upgrade from the Cloudflare origin.
+- Image upload or result generation fails in deployed QA.
+- Gallery/download fails for saved results.
+
+First places to inspect:
+
+- Container status and restart count.
+- Container logs, while avoiding any secret value output.
+- Oracle firewall/security-list port rules.
+- Reverse proxy HTTPS and WebSocket upgrade configuration.
+- `CLIENT_URL` and `SOCKET_CORS_ORIGIN` origin spelling, scheme, and comma separation.
+- Cloudflare `VITE_API_BASE_URL` and `VITE_SOCKET_URL` values, followed by a Cloudflare rebuild.
+- Firebase authorized domains.
+- MongoDB network access and database name.
+
+Rollback options:
+
+- Stop the new container and restart the previous known-good image tag.
+- Temporarily point Cloudflare env back to the previous backend origin, then rebuild Cloudflare Pages.
+- Keep the previous image tag until deployed smoke QA passes.

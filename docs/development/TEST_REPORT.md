@@ -2285,3 +2285,20 @@
 - Backend API/Socket contract changes: none.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-ORACLE-RUNTIME-RUNBOOK
+
+- Scope: documented a secret-safe Oracle runtime runbook for the Dockerized backend before Cloudflare frontend pairing.
+- Changed:
+  - Extended `docs/development/ORACLE_DOCKER_BACKEND_DEPLOYMENT.md` with a `docker run` template using env variable names only.
+  - Added Oracle firewall/security-list, HTTPS reverse proxy, and `/socket.io` WebSocket upgrade checklist.
+  - Added Cloudflare Pages env checklist and Firebase authorized domain checklist.
+  - Added MongoDB/GridFS access checklist.
+  - Added deployed smoke QA order from `/health` through login, API, Socket.IO, upload, round end, gallery, and download.
+  - Added rollback triggers and triage order.
+- App feature code changes: none.
+- Backend API/Socket contract changes: none.
+- Validation:
+  - `git status --short --branch`: checked before work; only `package-lock.json` was untracked.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
