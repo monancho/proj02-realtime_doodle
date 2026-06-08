@@ -2111,3 +2111,14 @@
 - Deployment note: 이전 배포 버전과 속도 비교를 위해 push는 수행하지 않았다.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI values were not printed or recorded.
+
+## 2026-06-08 - Productization Roadmap and AGENTS Update
+
+- Scope: Documentation-only productization planning.
+- Added `docs/development/PRODUCTIZATION_ROADMAP.md` for deployment, performance, storage cleanup, lifecycle cleanup, security, and E2E QA planning.
+- Updated `AGENTS.md` with productization/operations working principles.
+- App feature code was not changed.
+- Secret values, tokens, private keys, and database URIs were not read, printed, or committed.
+- Validation to run: `corepack pnpm --filter @doodle/server typecheck`, `corepack pnpm --filter @doodle/web typecheck`.
+- Result: `corepack pnpm --filter @doodle/server typecheck` passed.
+- Result: `corepack pnpm --filter @doodle/web typecheck` passed.

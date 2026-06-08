@@ -70,3 +70,14 @@
   - MVP 범위를 벗어나는 기능 요청이 필요한 경우
   - 같은 blocking condition이 반복되어 더 이상 의미 있는 프론트 진행이 불가능한 경우
 - 자동 진행 중에도 `.env`, token, private key, MongoDB URI, credential 값은 출력하거나 commit하지 않는다.
+
+## Productization / Operations Phase
+
+- Productization tasks must read `docs/development/PRODUCTIZATION_ROADMAP.md` before implementation.
+- Productization work prioritizes stability, performance, deployment safety, security, observability, and UX recovery over additional MVP feature scope.
+- Deployment, infrastructure, branch push, service creation, or external environment changes must not be performed without explicit user confirmation.
+- Secret rotation is user-owned. AI must not create, output, store, or fill secret, token, private key, credential, MongoDB URI, Firebase Admin key, or deploy hook values.
+- Cloudflare, Oracle, and Render environment variables may be documented by name and purpose only. Values must never be written to docs, logs, commits, or chat output.
+- Socket.IO presence based room lifecycle cleanup must use status-specific grace periods. Rooms and GridFS data must not be deleted immediately on disconnect.
+- Image optimization must separate client-side cache/local preview for speed from server-authoritative storage, validation, and final download/gallery state.
+- Productization experiments should keep rollback and comparison paths, such as a test branch or separate test deployment, before replacing the current stable deployment.

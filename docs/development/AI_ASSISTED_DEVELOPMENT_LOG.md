@@ -2349,3 +2349,12 @@
 - Updated troubleshooting notes with the server-side delay cause and a future client-side composition preview option.
 - Validation passed with server test and typecheck.
 - Push intentionally not performed so the user can compare current deployed behavior with the local fix before remote deployment.
+
+## 2026-06-08 - PHASE-PRODUCTIZATION-ROADMAP-AND-AGENTS-UPDATE
+
+- Created productization roadmap document for post-MVP operational planning.
+- Added productization/operations rules to AGENTS.md.
+- Prioritized round transition/gallery stabilization, image preload/local preview, Socket.IO presence lifecycle cleanup, deployment split planning, real 2/4 person QA, and final secret rotation.
+- No application feature code was modified.
+- No secret values were output or stored in documentation.
+- Validation completed: server and web typecheck passed.
