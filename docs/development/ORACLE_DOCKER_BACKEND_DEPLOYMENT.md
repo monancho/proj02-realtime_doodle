@@ -62,6 +62,16 @@ Expected result: HTTP 200 with service status JSON.
 
 The Docker image also includes a container `HEALTHCHECK` that calls `/health` on the configured `PORT`.
 
+## Local Validation Result
+
+Latest local validation on 2026-06-08:
+
+- `docker build -f apps/server/Dockerfile -t realtime-doodle-server:local .`: PASS
+- Image exclusion check for `.env`, root `package-lock.json`, known local logs, and `.codex/server-local.log`: PASS
+- Runtime start without required environment values: expected failure. The container starts the server command and exits after reporting missing required env names only.
+
+Full `/health` smoke requires user-provided runtime environment values for MongoDB and Firebase Admin. Those values must be injected at container runtime and must not be committed or written to documentation.
+
 ## Oracle Cloud Checklist
 
 - Open only the required public port at the Oracle network/security-list layer.
@@ -84,4 +94,3 @@ Cloudflare Pages must set:
 - Firebase web config variables for the same Firebase project used by the backend.
 
 Firebase Authentication authorized domains must include the Cloudflare production/custom frontend domain used by users.
-

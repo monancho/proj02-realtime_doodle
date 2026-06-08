@@ -2270,3 +2270,18 @@
   - `docker build -f apps/server/Dockerfile -t realtime-doodle-server:local .`: NOT RUN TO COMPLETION. Docker daemon was unavailable at `dockerDesktopLinuxEngine`.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-DOCKER-BUILD-AND-RUNTIME-SMOKE
+
+- Scope: validate the Oracle backend Docker image build and secret-safe runtime smoke shape.
+- Validation:
+  - `corepack pnpm --filter @doodle/server typecheck`: PASS
+  - `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 115 tests passed
+  - `docker --version`: PASS, Docker CLI available
+  - `docker build -f apps/server/Dockerfile -t realtime-doodle-server:local .`: PASS
+  - Docker image exclusion check for `.env`, root `package-lock.json`, known local logs, and `.codex/server-local.log`: PASS
+  - `docker run --rm realtime-doodle-server:local`: expected failure without runtime env values; container reported missing env names only and did not print secret values.
+- Full `/health` smoke was not executed because valid MongoDB and Firebase Admin runtime secrets are user-owned and must not be filled by AI.
+- Backend API/Socket contract changes: none.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

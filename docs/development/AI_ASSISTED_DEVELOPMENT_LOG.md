@@ -2498,3 +2498,18 @@
 - Push/deploy: not performed.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-DOCKER-BUILD-AND-RUNTIME-SMOKE
+
+- Agent: `backend`
+- Goal: validate that the Oracle backend Docker image can build and that secret-safe runtime smoke boundaries are clear.
+- Docker build passed with `docker build -f apps/server/Dockerfile -t realtime-doodle-server:local .`.
+- Confirmed the built image does not contain `.env`, root `package-lock.json`, known local logs, or `.codex/server-local.log` by file-existence checks only.
+- Ran the container without runtime secrets; it started the server command and failed safely by reporting missing required env names only.
+- Full `/health` smoke remains user-gated because real MongoDB and Firebase Admin runtime values are required and AI must not create, read, print, or store those secrets.
+- Updated `docs/development/ORACLE_DOCKER_BACKEND_DEPLOYMENT.md` with local validation results.
+- Backend API/Socket event contract changes: none.
+- Validation passed: `corepack pnpm --filter @doodle/server typecheck`, `corepack pnpm --filter @doodle/server test`, `docker --version`, Docker build, and image exclusion check.
+- Push/deploy: not performed.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
