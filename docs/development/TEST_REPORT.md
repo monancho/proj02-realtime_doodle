@@ -2221,3 +2221,20 @@
 - Manual QA still required: deployed environment should recheck final-round modal copy, gallery delay, and download because previous issues often appeared after deployment.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-FE-APP-STRUCTURE-FIRST-SPLIT
+
+- Scope: first-pass frontend structure refactor before deployment infrastructure work. No user-facing behavior change intended.
+- Changed:
+  - Extracted `LoggedOutView`, `DoodlePageCanvas`, `AppHeader`, `LobbyView`, and `Modal` from `apps/web/src/App.tsx` into `apps/web/src/components`.
+  - Kept canvas/socket/round lifecycle logic in `App.tsx` for this pass.
+  - Removed confirmed unused legacy duplicate components: `TimerBar`, `ChatPanel`, `PlayParticipantsPanelFixed`, and `PlayParticipantsPanel`.
+  - Kept `GalleryView` because `GalleryViewPolished` still uses it as loading/error/empty fallback.
+- Validation:
+  - `corepack pnpm --filter @doodle/web typecheck`: PASS
+  - `corepack pnpm --filter @doodle/web build`: PASS
+- Backend/API/Socket contract changes: none.
+- PreviewApp mock preview: preserved by typecheck/build.
+- Remaining refactor candidates: `RoomView`, `ParticipantPanel`, `ImageList`, `ImagePreviewThumb`, gallery fallback split, and later canvas/play lifecycle separation after deployed QA risk is lower.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

@@ -2432,3 +2432,18 @@
 - No push, deploy, external service creation, or secret registration was performed.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-FE-APP-STRUCTURE-FIRST-SPLIT
+
+- Agent: `frontend`
+- Goal: split obvious UI-only pieces out of the oversized `apps/web/src/App.tsx` before deployment infrastructure work, without changing runtime behavior.
+- Frontend refactor:
+  - Moved `LoggedOutView`, `DoodlePageCanvas`, `AppHeader`, `LobbyView`, and `Modal` into `apps/web/src/components`.
+  - Updated `App.tsx` to import those components and keep app state, API, socket, canvas play logic, and round lifecycle logic in place.
+  - Removed confirmed unused legacy duplicate components: `TimerBar`, `ChatPanel`, `PlayParticipantsPanelFixed`, and `PlayParticipantsPanel`.
+  - Kept `GalleryView` because `GalleryViewPolished` still falls back to it for loading/error/empty states.
+- Backend/API/Socket contract changes: none.
+- Validation passed: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build`.
+- Remaining refactor candidates: `RoomView`, `ParticipantPanel`, `ImageList`, `ImagePreviewThumb`, gallery fallback extraction, and eventually canvas/play lifecycle separation after deployed QA risk is lower.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
