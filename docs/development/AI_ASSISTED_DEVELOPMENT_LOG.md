@@ -2484,3 +2484,17 @@
 - Push/deploy: not performed.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-ORACLE-BACKEND-DOCKERIZATION
+
+- Agent: `backend`
+- Goal: prepare backend Docker deployment artifacts for Oracle Cloud while keeping frontend deployment on Cloudflare Pages.
+- Added `apps/server/Dockerfile` using the repository root as build context and copying `apps/server` plus `packages/shared` for workspace dependency resolution.
+- Added root `.dockerignore` to keep `.env`, `.env.*`, logs, key/credential files, `node_modules`, build artifacts, and `package-lock.json` out of Docker build context.
+- Added `docs/development/ORACLE_DOCKER_BACKEND_DEPLOYMENT.md` with secret-safe runtime env names, health check instructions, Oracle port/WebSocket/CORS checklist, and Cloudflare frontend pairing notes.
+- Backend API/Socket event contract changes: none.
+- Validation passed: `corepack pnpm --filter @doodle/server typecheck`, `corepack pnpm --filter @doodle/server test`, `docker --version`.
+- Docker build validation could not complete because the Docker CLI could not connect to the Docker Desktop Linux engine daemon.
+- Push/deploy: not performed.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

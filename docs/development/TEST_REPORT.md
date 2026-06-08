@@ -2254,3 +2254,19 @@
   - `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 115 tests passed
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-ORACLE-BACKEND-DOCKERIZATION
+
+- Scope: prepare Oracle Cloud Docker deployment artifacts for the backend container while keeping Cloudflare Pages as the frontend host.
+- Changed:
+  - Added `apps/server/Dockerfile` for backend container execution from the pnpm workspace root.
+  - Added root `.dockerignore` to exclude `.env`, `.env.*`, logs, credentials/key files, `node_modules`, build artifacts, and `package-lock.json` from Docker build context.
+  - Added `docs/development/ORACLE_DOCKER_BACKEND_DEPLOYMENT.md` with runtime env names/purposes, health check, Oracle port/WebSocket/CORS checklist, and Cloudflare pairing notes.
+- Backend API/Socket contract changes: none.
+- Validation:
+  - `corepack pnpm --filter @doodle/server typecheck`: PASS
+  - `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 115 tests passed
+  - `docker --version`: PASS, Docker CLI available
+  - `docker build -f apps/server/Dockerfile -t realtime-doodle-server:local .`: NOT RUN TO COMPLETION. Docker daemon was unavailable at `dockerDesktopLinuxEngine`.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
