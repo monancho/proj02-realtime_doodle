@@ -2206,3 +2206,18 @@
 - App feature code changes: none.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-FE-FINAL-ROUND-MODAL-COPY-FIX
+
+- Scope: 마지막 라운드 종료 후 result modal이 "다음 라운드"로 이어진다고 안내하던 UX 문구를 수정했다.
+- Frontend change:
+  - `RoundResultModal` now receives `imageCount` and treats `round.roundIndex >= imageCount - 1` as the final round.
+  - Middle rounds keep next-round transition copy.
+  - Final round copy now says the flow will move to the gallery.
+  - Local preview and server result preview behavior was not changed.
+- Backend/API/Socket contract changes: none.
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Manual QA still required: deployed environment should recheck final-round modal copy, gallery delay, and download because previous issues often appeared after deployment.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

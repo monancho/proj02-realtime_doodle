@@ -2679,6 +2679,7 @@ function PlayView(props: PlayViewProps) {
     <section className="play-layout">
       {props.roundResultModal ? (
         <RoundResultModal
+          imageCount={props.imageCount}
           localPreviewUrl={props.roundLocalPreviewUrl}
           loadPreview={props.onLoadResultPreview}
           result={props.roundResultModal.result}
@@ -2856,12 +2857,14 @@ function CountdownModal({ countdownSec, remainingSec }: { countdownSec: number; 
 }
 
 function RoundResultModal({
+  imageCount,
   localPreviewUrl,
   loadPreview,
   result,
   resultSaveStatus,
   round
 }: {
+  imageCount: number;
   localPreviewUrl: string | null;
   loadPreview: (resultId: string) => Promise<Blob>;
   result: ResultMetadata | null;
@@ -2869,12 +2872,22 @@ function RoundResultModal({
   round: RoundEndedPayload;
 }) {
   const isLocalPreviewVisible = !result && Boolean(localPreviewUrl);
+  const isFinalRound = round.roundIndex >= Math.max(1, imageCount) - 1;
+  const savedMessage = isFinalRound
+    ? "저장된 결과를 확인했어요. 잠시 후 갤러리로 이동합니다."
+    : "저장된 결과를 확인했어요. 잠시 후 다음 라운드로 이어집니다.";
+  const localPreviewMessage = isFinalRound
+    ? "먼저 미리보기를 보여드리고, 저장된 결과가 도착하면 갤러리로 이동합니다."
+    : "먼저 미리보기를 보여드리고, 저장된 결과가 도착하면 다음 라운드로 이어집니다.";
+  const waitingMessage = isFinalRound
+    ? "잠시 후 갤러리로 자연스럽게 이어집니다."
+    : "잠시 후 다음 라운드로 자연스럽게 이어집니다.";
 
   return (
     <div className="round-result-backdrop" role="status" aria-live="polite" aria-label="라운드 결과">
       <section className="round-result-modal">
         <p className="round-result-kicker">Round {round.roundIndex + 1} 종료</p>
-        <h2>{result ? "이번 라운드 결과" : "라운드가 끝났어요"}</h2>
+        <h2>{result ? "이번 라운드 결과" : isFinalRound ? "마지막 라운드가 끝났어요" : "라운드가 끝났어요"}</h2>
         <div className="round-result-preview">
           {result ? (
             <ResultPreviewImage fallbackPreviewUrl={localPreviewUrl} resultId={result.id} loadPreview={loadPreview} />
@@ -2889,10 +2902,10 @@ function RoundResultModal({
         </div>
         <p>
           {resultSaveStatus === "saved"
-            ? "저장된 결과를 확인했어요. 잠시 후 다음 화면으로 이어집니다."
+            ? savedMessage
             : isLocalPreviewVisible
-              ? "먼저 미리보기를 보여드리고, 저장된 결과가 도착하면 자동으로 바뀝니다."
-              : "잠시 후 다음 화면으로 자연스럽게 이어집니다."}
+              ? localPreviewMessage
+              : waitingMessage}
         </p>
       </section>
     </div>

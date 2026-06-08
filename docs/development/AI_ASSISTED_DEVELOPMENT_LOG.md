@@ -2407,3 +2407,16 @@
 - Files changed: `docs/development/TEST_REPORT.md`, `docs/development/AI_ASSISTED_DEVELOPMENT_LOG.md` only.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-FE-FINAL-ROUND-MODAL-COPY-FIX
+
+- Agent: `frontend`
+- Goal: 마지막 라운드 종료 후 result modal에서 다음 라운드로 이어진다는 잘못된 안내를 제거하고 갤러리 진입 안내를 표시한다.
+- Frontend: `RoundResultModal`에 `imageCount`를 전달하고, `round.roundIndex >= imageCount - 1`이면 final round로 판단하도록 했다.
+- Frontend: 중간 라운드는 다음 라운드 안내를 유지하고, 마지막 라운드는 갤러리 이동 안내로 분기했다.
+- Local preview/result preview behavior: unchanged.
+- Backend/API/Socket contract changes: none.
+- Validation passed: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build`.
+- Remaining productization risk: deployed-environment QA is still required because the user noted issues usually appeared after deployment.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
