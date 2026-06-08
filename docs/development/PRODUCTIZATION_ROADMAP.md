@@ -187,3 +187,28 @@ qa
 4. secret 값은 출력하지 않는다.
 5. push는 하지 않는다.
 ```
+
+## Productization Execution Order
+
+제품화 작업은 아래 순서를 기본으로 진행한다. 앞 단계의 안정화가 끝나기 전에는 배포 구조 변경이나 secret 회전처럼 되돌리기 어려운 작업을 먼저 진행하지 않는다.
+
+| 순서 | Phase | 작업명 | 목적 | 선행 조건 | 완료 기준 | 추천 담당 agent |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Stabilization | 라운드 종료/갤러리 안정화 | 라운드 종료 후 다음 라운드 또는 최종 갤러리로 넘어가는 흐름을 끊기지 않게 만든다. | 현재 MVP 흐름과 `deploy/round-transition-test` 비교 기준 확인 | 1인/2인 기준 라운드->라운드, 라운드->갤러리 전환이 자연스럽다. | frontend, qa-frontend |
+| 2 | Image UX | 이미지 preload/cache/local preview | 결과 이미지 생성/전송 지연이 있어도 사용자가 즉시 preview를 볼 수 있게 한다. | 라운드 종료 modal 흐름 안정화 | local preview가 먼저 보이고, 서버 저장 완료 후 최종 result와 동기화된다. | frontend |
+| 3 | Result Reliability | 서버 authoritative result 저장 안정화 | client preview와 서버 최종 저장 결과를 분리해 다운로드/갤러리 신뢰성을 유지한다. | local preview 정책 정리 | result-saved 실패/지연/재시도 기준이 명확하고 gallery fallback이 동작한다. | backend, frontend |
+| 4 | Storage Cleanup | GridFS cleanup/스토리지 정책 | 원본/결과 이미지와 room/result 데이터를 필요 이상으로 보관하지 않는다. | room 상태와 result 보관 기간 기준 합의 | 만료된 finished room과 연결 GridFS 데이터가 안전하게 정리된다. | backend, qa-backend |
+| 5 | Presence Lifecycle | Socket.IO presence 기반 room lifecycle cleanup | 모든 사용자가 떠난 방을 상태별 grace period 후 정리한다. | cleanup 대상과 grace period 정책 정의 | waiting/playing/finished 상태별 disconnect/reconnect 시나리오가 안전하다. | backend |
+| 6 | Deployment Split Plan | Cloudflare Pages frontend 분리 계획 | frontend 정적 자산을 CDN에 두고 backend API/Socket 운영을 분리한다. | 라운드/이미지/cleanup 안정화 | env 이름/목적, CORS, Socket URL, Firebase authorized domain 체크리스트가 준비된다. | infra, planner |
+| 7 | Backend Hosting Decision | Render/Oracle backend 운영 결정 | backend CPU/RAM/cold start 병목을 줄일 운영 환경을 선택한다. | 테스트 배포 성능 비교 | Render 유지/유료화/Oracle 이전 중 선택 기준과 rollback 기준이 명확하다. | infra, backend |
+| 8 | E2E QA | 실제 2인/4인/관전자 QA | 제품화 전 실제 사용 조건에서 주요 플로우를 검증한다. | 테스트 배포 URL과 테스트 계정 준비 | 로그인, 닉네임, 입장, 업로드, 라운드, 채팅, 갤러리, 다운로드 체크가 완료된다. | qa |
+| 9 | Observability | 운영 로그/health/error 추적 | 배포 후 문제를 재현하고 원인을 찾을 수 있게 한다. | 운영 배포 구조 결정 | health, cleanup log, result save timing, socket lifecycle log가 secret 없이 확인된다. | backend, infra |
+| 10 | Security Finalization | secret 회전 | 개발/테스트 중 노출 가능성이 있었던 credential 리스크를 회수한다. | 모든 기능/배포/QA 작업 완료 | 사용자가 직접 새 secret을 등록하고 기존 secret을 폐기한 뒤 정상 동작을 확인한다. | user, infra |
+
+### 순서 운영 원칙
+
+- 1~3단계는 사용자 체감 품질을 바로 좌우하므로 최우선으로 진행한다.
+- 4~5단계는 데이터 비용과 방 생명주기 안정성을 위한 backend 제품화 작업이다.
+- 6~7단계의 Cloudflare/Oracle/Render 배포 구조 변경은 기능 안정화 이후 진행한다.
+- 8~9단계는 제품화 배포 전 품질 확인과 운영 가시성을 보강하는 단계다.
+- 10단계 secret 회전은 모든 작업의 마지막에 사용자가 직접 진행한다.
