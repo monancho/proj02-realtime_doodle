@@ -2122,3 +2122,16 @@
 - Validation to run: `corepack pnpm --filter @doodle/server typecheck`, `corepack pnpm --filter @doodle/web typecheck`.
 - Result: `corepack pnpm --filter @doodle/server typecheck` passed.
 - Result: `corepack pnpm --filter @doodle/web typecheck` passed.
+
+## 2026-06-08 - Codex Agent Harness Productization Alignment
+
+- Scope: Documentation and `.codex` agent harness alignment only.
+- Added `docs/development/CODEX_AGENT_BOOTSTRAP.md` for new-chat and new-agent handoff.
+- Updated `.codex/config.toml` and `.codex/agents/*.toml` to prioritize the productization roadmap and bootstrap document.
+- Added AGENTS.md note clarifying bootstrap usage and AGENTS.md precedence over `.codex` settings.
+- App feature code was not changed.
+- `.env` and `.codex` log contents were not read or printed.
+- `package-lock.json` was not touched.
+- Validation to run: `git status --short`, `git diff --check`.
+- Result: `git status --short` showed only intended documentation/.codex changes plus existing untracked `package-lock.json`.
+- Result: `git diff --check` passed with line-ending warnings only.

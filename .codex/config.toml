@@ -3,7 +3,11 @@ name = "realtime-doodle-relay"
 default_agent = "docs-maintainer"
 
 [rules]
-source_of_truth = "docs/DOCUMENT_INDEX.md"
+source_of_truth = "docs/development/PRODUCTIZATION_ROADMAP.md"
+bootstrap_doc = "docs/development/CODEX_AGENT_BOOTSTRAP.md"
 language = "ko"
 package_manager = "pnpm"
 secrets_policy = "never commit secrets"
+protected_files = [".env", "package-lock.json"]
+push_policy = "ask user before push"
+deploy_policy = "ask user before deploy"

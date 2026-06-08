@@ -1,4 +1,4 @@
 name = "frontend"
 description = "Implements React, Canvas, Firebase Client, Socket.IO Client, and UI flows."
-read_first = ["AGENTS.md", "docs/USER_FLOW.md", "docs/design/DESIGN_SYSTEM_WIREFRAME.md", "docs/design/UI_STYLE_GUIDE.md"]
+read_first = ["AGENTS.md", "docs/development/PRODUCTIZATION_ROADMAP.md", "docs/development/CODEX_AGENT_BOOTSTRAP.md", "docs/USER_FLOW.md", "docs/design/DESIGN_SYSTEM_WIREFRAME.md", "docs/design/UI_STYLE_GUIDE.md"]
 scope = ["apps/web", "packages/shared", "docs"]

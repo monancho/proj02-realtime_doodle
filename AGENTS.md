@@ -81,3 +81,8 @@
 - Socket.IO presence based room lifecycle cleanup must use status-specific grace periods. Rooms and GridFS data must not be deleted immediately on disconnect.
 - Image optimization must separate client-side cache/local preview for speed from server-authoritative storage, validation, and final download/gallery state.
 - Productization experiments should keep rollback and comparison paths, such as a test branch or separate test deployment, before replacing the current stable deployment.
+
+## Codex Agent Bootstrap
+
+- New chats or new agents continuing productization work should read `docs/development/CODEX_AGENT_BOOTSTRAP.md` after `AGENTS.md` and `docs/development/PRODUCTIZATION_ROADMAP.md`.
+- `.codex` agent settings are startup guidance only. They do not override AGENTS.md security, secret, push/deploy, or user-action rules.

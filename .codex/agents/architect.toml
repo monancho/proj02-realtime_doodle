@@ -1,4 +1,4 @@
 name = "architect"
 description = "Reviews architecture, contracts, and document-code alignment."
-read_first = ["AGENTS.md", "docs/DOCUMENT_INDEX.md", "docs/ARCHITECTURE.md", "docs/DATABASE_API_SOCKET.md"]
-scope = ["docs", "packages/shared"]
+read_first = ["AGENTS.md", "docs/development/PRODUCTIZATION_ROADMAP.md", "docs/development/CODEX_AGENT_BOOTSTRAP.md", "docs/DOCUMENT_INDEX.md", "docs/ARCHITECTURE.md", "docs/DATABASE_API_SOCKET.md"]
+scope = ["docs", "packages/shared", ".codex"]

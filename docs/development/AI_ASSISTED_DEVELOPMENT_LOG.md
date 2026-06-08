@@ -2358,3 +2358,11 @@
 - No application feature code was modified.
 - No secret values were output or stored in documentation.
 - Validation completed: server and web typecheck passed.
+
+## 2026-06-08 - PHASE-CODEX-AGENT-HARNESS-PRODUCTIZATION-ALIGNMENT
+
+- Aligned `.codex` agent read-first configuration with productization roadmap and new bootstrap document.
+- Created `docs/development/CODEX_AGENT_BOOTSTRAP.md` with branch rules, safety rules, productization priority, and new-chat prompt.
+- Documented that `deploy/round-transition-test` remains an MVP/speed-comparison branch and productization work should use main-based branches.
+- No app feature code changed, no secret values were read or output, and `package-lock.json` was not modified.
+- Validation completed: `git status --short` and `git diff --check` passed; only line-ending warnings were reported.
