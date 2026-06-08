@@ -15,6 +15,9 @@ import type { RoomRepository } from "../rooms/repository";
 import type { UserRepository } from "../users/repository";
 import { registerRoomMembershipHandlers } from "./rooms";
 
+const LOCALHOST_DEV_SOCKET_ORIGIN_PATTERN =
+  /^http:\/\/(?:localhost|127\.0\.0\.1):517[0-9]$/;
+
 export interface SocketServerDependencies {
   env: ServerEnv;
   httpServer: HttpServer;
@@ -40,13 +43,7 @@ export function createSocketServer({
 }: SocketServerDependencies): SocketIoServer {
   const io = new SocketIoServer(httpServer, {
     cors: {
-      origin:
-        env.NODE_ENV === "production"
-          ? createAllowedCorsOrigins(env.SOCKET_CORS_ORIGIN)
-          : [
-              ...createAllowedCorsOrigins(env.SOCKET_CORS_ORIGIN),
-              /^http:\/\/(?:localhost|127\.0\.0\.1):517[0-9]$/
-            ]
+      origin: createSocketCorsOrigins(env)
     }
   });
 
@@ -67,4 +64,14 @@ export function createSocketServer({
   );
 
   return io;
+}
+
+export function createSocketCorsOrigins(env: Pick<ServerEnv, "NODE_ENV" | "SOCKET_CORS_ORIGIN">): Array<string | RegExp> {
+  const configuredOrigins = createAllowedCorsOrigins(env.SOCKET_CORS_ORIGIN);
+
+  if (env.NODE_ENV === "production") {
+    return configuredOrigins;
+  }
+
+  return [...configuredOrigins, LOCALHOST_DEV_SOCKET_ORIGIN_PATTERN];
 }

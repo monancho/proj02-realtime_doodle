@@ -39,12 +39,39 @@ describe("HTTP CORS", () => {
     );
   });
 
+  it("allows browser API preflight requests from any configured comma-separated origin", async () => {
+    const app = createApp({
+      corsOrigin: "https://doodle.example.com, https://preview.pages.dev"
+    });
+
+    const response = await request(app)
+      .options("/api/users/me")
+      .set("Origin", "https://preview.pages.dev")
+      .set("Access-Control-Request-Method", "POST")
+      .set("Access-Control-Request-Headers", "authorization,content-type")
+      .expect(204);
+
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "https://preview.pages.dev"
+    );
+  });
+
   it("rejects browser API preflight requests from another origin", async () => {
     const app = createApp({ corsOrigin: "http://localhost:5173" });
 
     await request(app)
       .options("/api/users/me")
       .set("Origin", "http://localhost:3000")
+      .set("Access-Control-Request-Method", "POST")
+      .expect(403);
+  });
+
+  it("does not allow wildcard origins from configuration", async () => {
+    const app = createApp({ corsOrigin: "*" });
+
+    await request(app)
+      .options("/api/users/me")
+      .set("Origin", "https://doodle.example.com")
       .set("Access-Control-Request-Method", "POST")
       .expect(403);
   });

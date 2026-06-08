@@ -8,7 +8,7 @@ import { InMemoryResultRepository } from "../results/in-memory-result-repository
 import { InMemoryResultImageStorage } from "../results/in-memory-result-storage";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
 import { InMemoryUserRepository } from "../users/in-memory-user-repository";
-import { createSocketServer } from "./server";
+import { createSocketCorsOrigins, createSocketServer } from "./server";
 
 const env: ServerEnv = {
   NODE_ENV: "test",
@@ -45,5 +45,37 @@ describe("createSocketServer", () => {
 
     io.close();
     httpServer.close();
+  });
+});
+
+describe("createSocketCorsOrigins", () => {
+  it("keeps a single configured production origin compatible", () => {
+    expect(
+      createSocketCorsOrigins({
+        NODE_ENV: "production",
+        SOCKET_CORS_ORIGIN: "https://doodle.example.com"
+      })
+    ).toEqual(["https://doodle.example.com"]);
+  });
+
+  it("allows comma-separated production origins without wildcard origins", () => {
+    expect(
+      createSocketCorsOrigins({
+        NODE_ENV: "production",
+        SOCKET_CORS_ORIGIN:
+          "https://doodle.example.com, https://preview.pages.dev, *"
+      })
+    ).toEqual(["https://doodle.example.com", "https://preview.pages.dev"]);
+  });
+
+  it("keeps localhost Vite fallback origins only outside production", () => {
+    const origins = createSocketCorsOrigins({
+      NODE_ENV: "development",
+      SOCKET_CORS_ORIGIN: "https://doodle.example.com"
+    });
+
+    expect(origins[0]).toBe("https://doodle.example.com");
+    expect(origins[1]).toBeInstanceOf(RegExp);
+    expect((origins[1] as RegExp).test("http://localhost:5174")).toBe(true);
   });
 });

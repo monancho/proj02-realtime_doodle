@@ -52,8 +52,10 @@ export function createHttpCorsMiddleware(options: HttpCorsOptions): RequestHandl
 }
 
 export function createAllowedCorsOrigins(origin: string): string[] {
-  const trimmedOrigin = origin.trim();
-  return trimmedOrigin ? [trimmedOrigin] : [];
+  return origin
+    .split(",")
+    .map((allowedOrigin) => allowedOrigin.trim())
+    .filter((allowedOrigin) => allowedOrigin.length > 0 && allowedOrigin !== "*");
 }
 
 function isOriginAllowed(

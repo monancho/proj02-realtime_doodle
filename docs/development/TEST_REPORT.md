@@ -2238,3 +2238,19 @@
 - Remaining refactor candidates: `RoomView`, `ParticipantPanel`, `ImageList`, `ImagePreviewThumb`, gallery fallback split, and later canvas/play lifecycle separation after deployed QA risk is lower.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-BE-MULTI-ORIGIN-CORS-FOR-CLOUDFLARE
+
+- Scope: backend CORS preparation for Oracle backend with Cloudflare Pages production/custom/preview frontend origins.
+- Changed:
+  - `CLIENT_URL` / HTTP CORS origin parsing now supports comma-separated origins.
+  - `SOCKET_CORS_ORIGIN` / Socket.IO origin parsing now supports comma-separated origins through the same origin parser.
+  - Wildcard `*` entries are not accepted into the allowed origin list.
+  - Existing single-origin env values remain compatible.
+  - Non-production localhost Vite fallback remains available for Socket.IO and HTTP dev CORS behavior.
+- Backend API/Socket event contract changes: none.
+- Validation:
+  - `corepack pnpm --filter @doodle/server typecheck`: PASS
+  - `corepack pnpm --filter @doodle/server test`: PASS, 20 files / 115 tests passed
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

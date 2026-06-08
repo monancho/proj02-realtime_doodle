@@ -2467,3 +2467,20 @@
 - Push/deploy: not performed.
 - `package-lock.json` remains untracked and unstaged.
 - Validation: `git status --short --branch` checked before work.
+
+## 2026-06-08 - PHASE-BE-MULTI-ORIGIN-CORS-FOR-CLOUDFLARE
+
+- Agent: `backend`
+- Goal: allow the Oracle backend to safely accept Cloudflare Pages production/custom/preview origins for HTTP API CORS and Socket.IO CORS without wildcard origins.
+- Backend:
+  - Extended `createAllowedCorsOrigins` to parse comma-separated origin lists.
+  - Filtered wildcard `*` entries out of allowed origins.
+  - Added `createSocketCorsOrigins` so Socket.IO uses the same parsed origin list and preserves localhost Vite fallback only outside production.
+- Tests:
+  - Added HTTP preflight coverage for comma-separated origins and wildcard rejection.
+  - Added Socket.IO CORS origin list coverage for single-origin compatibility, comma-separated production origins, wildcard filtering, and non-production localhost fallback.
+- Backend API/Socket event contract changes: none.
+- Validation passed: `corepack pnpm --filter @doodle/server typecheck`, `corepack pnpm --filter @doodle/server test`.
+- Push/deploy: not performed.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
