@@ -2420,3 +2420,15 @@
 - Remaining productization risk: deployed-environment QA is still required because the user noted issues usually appeared after deployment.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-PRODUCTIZATION-INFRA-PRIORITY-REALIGNMENT
+
+- Agent: `architect`
+- Goal: 제품 polish보다 실제 서비스 정상 구동을 위한 Oracle Cloud, Cloudflare Pages, Render 배포 인프라 결정을 최우선순위로 재정렬한다.
+- User priority update: the most important next work is changing or deciding deployment infrastructure so the app can run reliably as a real service. Product polish is lower priority than a working deployed service.
+- Roadmap update: `PRODUCTIZATION_ROADMAP.md` now puts infra decision, Cloudflare frontend split planning, Oracle/Render backend decision, deployed smoke QA, and deployed E2E QA before additional round/image UX work.
+- Bootstrap update: `CODEX_AGENT_BOOTSTRAP.md` now instructs new agents to prioritize real deployment infrastructure and includes an infra-first startup prompt.
+- No app feature code changed.
+- No push, deploy, external service creation, or secret registration was performed.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

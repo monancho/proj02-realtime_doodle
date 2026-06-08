@@ -33,16 +33,18 @@
 
 `docs/development/PRODUCTIZATION_ROADMAP.md`의 `Productization Execution Order`를 따른다.
 
-1. 라운드 종료/갤러리 안정화
-2. 이미지 preload/cache/local preview
-3. 서버 authoritative result 저장 안정화
-4. GridFS cleanup/스토리지 정책
-5. Socket.IO presence 기반 room lifecycle cleanup
-6. Cloudflare Pages frontend 분리 계획
-7. Render/Oracle backend 운영 결정
-8. 실제 2인/4인/관전자 E2E QA
-9. 운영 로그/health/error 추적
+1. Oracle/Render backend와 Cloudflare Pages frontend 운영 구조 결정
+2. Cloudflare Pages frontend 분리와 backend public URL 계획
+3. Oracle 또는 Render backend 운영 결정
+4. 배포 환경 health/login/API/Socket smoke QA
+5. 실제 배포 환경 2인/4인/관전자 E2E QA
+6. 라운드 종료/갤러리 안정화
+7. 이미지 preload/cache/local preview
+8. GridFS cleanup과 서버 authoritative result 안정화
+9. Socket.IO presence lifecycle cleanup과 운영 로그/health/error 추적
 10. secret 회전
+
+로컬 QA 통과만으로 제품화 완료를 판단하지 않는다. 사용자가 확인한 주요 문제는 배포 환경에서 나타나는 경우가 많으므로, 지금은 UX polish보다 실제 서비스가 정상 구동 가능한 배포 인프라를 먼저 확정한다.
 
 secret 회전은 모든 기능, 배포, QA 작업이 끝난 뒤 사용자가 직접 수행한다.
 
@@ -87,34 +89,35 @@ secret 회전은 모든 기능, 배포, QA 작업이 끝난 뒤 사용자가 직
 # AI Task Spec
 
 ## Task ID
-PHASE-FE-ROUND-END-GALLERY-PREVIEW-STABILIZATION
+PHASE-INFRA-SERVICE-DEPLOYMENT-STRUCTURE-DECISION
 
 ## Agent
-frontend
+architect
 
 ## Goal
-제품화 로드맵 1순위인 라운드 종료/갤러리 안정화를 진행하고, result 저장 지연이 있어도 사용자가 자연스럽게 preview와 다음 라운드 전환을 경험하도록 정리한다.
+Oracle Cloud, Cloudflare Pages, Render 중 Realtime Doodle Relay가 실제 서비스로 정상 구동 가능한 배포 구조를 먼저 결정하고 전환 체크리스트를 작성한다.
 
 ## Current Context
 - `deploy/round-transition-test`는 MVP/속도 비교용 테스트 브랜치로 유지한다.
 - 제품화 작업은 `main` 기반 별도 브랜치에서 진행한다.
 - 먼저 `AGENTS.md`, `docs/development/PRODUCTIZATION_ROADMAP.md`, `docs/development/CODEX_AGENT_BOOTSTRAP.md`를 읽는다.
+- 로컬 1인/2인 QA는 주요 기능 기준으로 통과했지만, 사용자가 확인한 주요 문제는 배포 환경에서 나타났다.
+- 지금 최우선순위는 라운드 UX polish보다 실제 서비스가 정상 구동 가능한 배포 인프라 결정이다.
 - `.env`, token, private key, MongoDB URI, credential 값은 절대 읽거나 출력하지 않는다.
 - `package-lock.json`은 수정/삭제/commit하지 않는다.
 
 ## Requirements
-1. 백엔드 계약은 변경하지 않는다.
-2. 라운드 종료 시 플레이 화면은 유지하고 modal만 표시한다.
-3. 서버 `result-saved`가 늦어도 local preview 또는 안정적인 placeholder를 먼저 보여준다.
-4. 다음 라운드 전환 때 modal이 자연스럽게 닫히고 canvas/timer/toolbar 상태가 초기화되는지 확인한다.
-5. 마지막 라운드 후 gallery 전환이 자연스럽게 이어지게 한다.
-6. 이미지 preload/cache/local preview의 최소 구현 범위를 검토한다.
-7. 변경사항은 검증 후 commit한다.
-8. push는 하지 않는다.
+1. 앱 기능 코드는 수정하지 않는다.
+2. 외부 서비스 생성, push, deploy는 하지 않는다.
+3. 환경변수는 이름과 목적만 정리하고 값을 기록하지 않는다.
+4. Cloudflare Pages frontend + Oracle backend, Cloudflare Pages frontend + Render backend, Render single Web Service 구조를 비교한다.
+5. 각 구조별 Firebase authorized domain, CORS, Socket URL, API base URL, SPA fallback, MongoDB 접근, rollback 기준을 정리한다.
+6. 사용자가 직접 해야 할 외부 작업과 secret 주의사항을 구분한다.
+7. 다음 실행 작업 프롬프트를 `AI Task Spec` 형식으로 작성한다.
+8. 변경사항은 검증 후 commit한다.
+9. push는 하지 않는다.
 
 ## Validation Commands
-corepack pnpm --filter @doodle/web typecheck
-corepack pnpm --filter @doodle/web build
 git status --short
 ```
 
