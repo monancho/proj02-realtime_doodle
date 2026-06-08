@@ -2527,3 +2527,17 @@
 - Push/deploy: not performed.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-ORACLE-CADDY-INTEGRATION-PLAN
+
+- Agent: `architect`
+- Goal: document how to safely add the Doodle backend container behind the existing Oracle Docker + Caddy reverse proxy setup.
+- Extended `docs/development/ORACLE_DOCKER_BACKEND_DEPLOYMENT.md` with Docker Compose integration notes because existing containers are named like a Compose project (`infra-proxy-1`, `infra-api-1`).
+- Documented Caddy as the only public 80/443 ingress and Doodle backend as an internal `4000` port service on the Caddy-accessible Docker network.
+- Added secret-free Compose service and Caddy route templates with placeholders only.
+- Added route smoke checklist for `/health`, `/api/*`, and `/socket.io/*`.
+- App feature code changes: none.
+- Existing mini project containers were not touched.
+- Push/deploy: not performed.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

@@ -2302,3 +2302,20 @@
   - `git status --short --branch`: checked before work; only `package-lock.json` was untracked.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-ORACLE-CADDY-INTEGRATION-PLAN
+
+- Scope: documented how to add Realtime Doodle Relay backend to the existing Oracle Docker + Caddy reverse proxy setup.
+- Changed:
+  - Extended `docs/development/ORACLE_DOCKER_BACKEND_DEPLOYMENT.md` with Docker Compose and Caddy integration notes.
+  - Documented that the Doodle backend should not bind public 80/443 directly; Caddy should keep public ingress.
+  - Added a Compose service template using internal port `4000`, `expose`, external network placeholder, and env names only.
+  - Added a Caddy route template using a domain placeholder and `reverse_proxy realtime-doodle-server:4000`.
+  - Added `/health`, `/api/*`, and `/socket.io/*` smoke route checklist.
+- App feature code changes: none.
+- Existing mini project/Caddy containers: not touched.
+- Backend API/Socket contract changes: none.
+- Validation:
+  - `git status --short --branch`: checked during work.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

@@ -114,6 +114,73 @@ Docker 이미지에는 설정된 `PORT`의 `/health`를 호출하는 container `
 - Oracle runtime이 MongoDB와 Firebase Admin 검증 의존성에 접근 가능한지 확인한다.
 - secret rotation은 배포와 QA가 끝난 뒤 사용자가 직접 수행한다.
 
+## 기존 Docker Compose 및 Caddy 통합 메모
+
+현재 Oracle 인스턴스에는 이미 Docker 기반 미니 프로젝트가 배포되어 있으며, 컨테이너 이름이 `infra-proxy-1`, `infra-api-1` 형태다. 이는 Docker Compose project 이름이 `infra`일 가능성이 높다.
+
+기존 구조를 전제로 할 때 Realtime Doodle Relay backend는 아래 방식으로 붙이는 것이 안전하다.
+
+- Caddy 컨테이너가 public `80`, `443`을 계속 담당한다.
+- Doodle backend 컨테이너는 public `80`, `443`을 직접 bind하지 않는다.
+- Doodle backend는 기존 Caddy와 같은 Docker network에 붙인다.
+- Doodle backend internal port는 `4000`을 사용한다.
+- Caddy route는 별도 backend domain 또는 subdomain을 Doodle backend 컨테이너의 `4000` port로 reverse proxy한다.
+- 기존 `infra-api-1` route와 container는 건드리지 않는다.
+
+Docker Compose를 사용 중이라면 새 service는 아래 형태를 참고한다. 값은 예시 이름이며 실제 secret 값은 작성하지 않는다.
+
+```yaml
+services:
+  doodle-api:
+    image: realtime-doodle-server:local
+    container_name: realtime-doodle-server
+    restart: unless-stopped
+    expose:
+      - "4000"
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      CLIENT_URL: ${CLOUDFLARE_FRONTEND_ORIGINS}
+      SOCKET_CORS_ORIGIN: ${CLOUDFLARE_FRONTEND_ORIGINS}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+    networks:
+      - infra
+
+networks:
+  infra:
+    external: true
+```
+
+주의:
+
+- 실제 network 이름은 Oracle host에서 `docker network ls`로 확인한다.
+- Compose project 내부 network라면 이름이 `infra_default`처럼 생성되었을 수 있다.
+- 기존 Caddy compose 파일을 수정하는 경우, 기존 service와 route를 삭제하지 않는다.
+- Compose env 파일을 사용한다면 저장소 밖에 두고 파일 권한을 제한한다.
+- `ports: ["4000:4000"]` 대신 `expose: ["4000"]`을 우선한다. public ingress는 Caddy가 담당한다.
+
+## Caddy route 템플릿
+
+기존 Caddyfile에 Doodle backend용 site block을 추가하는 방식이 가장 단순하다. 실제 domain 값은 사용자가 Oracle/Caddy 설정에서만 입력한다.
+
+```caddyfile
+{$DOODLE_BACKEND_DOMAIN} {
+  reverse_proxy realtime-doodle-server:4000
+}
+```
+
+Caddy는 일반적으로 WebSocket proxy를 자동 처리하지만, 배포 smoke QA에서 `/socket.io` 연결과 upgrade를 반드시 확인한다.
+
+확인할 route:
+
+- `GET /health`
+- `/api/*`
+- `/socket.io/*`
+
 ## Reverse Proxy 및 WebSocket 체크리스트
 
 Docker 앞에 Nginx 또는 다른 reverse proxy를 둘 경우:
