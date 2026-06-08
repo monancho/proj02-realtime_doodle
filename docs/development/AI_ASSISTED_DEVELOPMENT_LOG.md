@@ -2447,3 +2447,23 @@
 - Remaining refactor candidates: `RoomView`, `ParticipantPanel`, `ImageList`, `ImagePreviewThumb`, gallery fallback extraction, and eventually canvas/play lifecycle separation after deployed QA risk is lower.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-08 - PHASE-INFRA-ORACLE-BACKEND-CLOUDFLARE-FRONTEND-PLAN
+
+- Agent: `architect`
+- Goal: document deployment preparation for Oracle Cloud backend, Cloudflare Pages frontend, Firebase OAuth, and MongoDB GridFS persistence.
+- Created `docs/development/ORACLE_CLOUDFLARE_DEPLOYMENT_PLAN.md`.
+- Deployment direction:
+  - Backend: Oracle Cloud runs `apps/server` HTTP API and Socket.IO.
+  - Frontend: Cloudflare Pages serves the Vite-built `apps/web` static app.
+  - Auth: Firebase Authentication remains browser OAuth provider; Firebase Admin verifies backend HTTP and socket tokens.
+  - Storage: MongoDB GridFS remains authoritative for original and result image binaries.
+- Env names documented by purpose only; no secret values were read, printed, or stored.
+- Key finding: Cloudflare Pages production requires `VITE_API_BASE_URL` and `VITE_SOCKET_URL` to point to the Oracle backend, otherwise production frontend falls back to the Cloudflare page origin.
+- Key risk: backend HTTP CORS and Socket.IO CORS currently allow a single configured origin in production. This is acceptable for one stable Cloudflare production/custom domain, but preview/custom domain QA needs explicit multi-origin support.
+- User-owned external work: Oracle instance/network/HTTPS, Cloudflare Pages env values, Firebase authorized domains, Firebase Admin secret handling, MongoDB URI registration, push/deploy approval.
+- Recommended next implementation: add secret-safe multi-origin CORS support for `CLIENT_URL` and `SOCKET_CORS_ORIGIN` before Cloudflare preview/custom-domain deployed QA.
+- App feature code changes: none.
+- Push/deploy: not performed.
+- `package-lock.json` remains untracked and unstaged.
+- Validation: `git status --short --branch` checked before work.
