@@ -230,6 +230,7 @@ export function App() {
   const [countdownRemainingSec, setCountdownRemainingSec] = useState<number | null>(null);
   const [roundEnded, setRoundEnded] = useState<RoundEndedPayload | null>(null);
   const [roundResultModal, setRoundResultModal] = useState<RoundResultModalState | null>(null);
+  const [roundLocalPreviewUrl, setRoundLocalPreviewUrl] = useState<string | null>(null);
   const [gameFinishedAt, setGameFinishedAt] = useState<string | null>(null);
   const [resultSaveStatus, setResultSaveStatus] = useState<ResultSaveStatus>("idle");
   const [remainingSec, setRemainingSec] = useState<number | null>(null);
@@ -238,8 +239,11 @@ export function App() {
   const [resourceErrors, setResourceErrors] = useState<ResourceErrors>(initialResourceErrors);
   const socketRef = useRef<Socket | null>(null);
   const roomStatusRef = useRef<string | null>(null);
+  const activeRoundImageUrlRef = useRef<string | null>(null);
+  const drawStrokesRef = useRef<DrawStroke[]>([]);
   const roundEndedRef = useRef<RoundEndedPayload | null>(null);
   const roundResultModalRef = useRef<RoundResultModalState | null>(null);
+  const roundLocalPreviewUrlRef = useRef<string | null>(null);
   const pendingGalleryTimeoutRef = useRef<number | null>(null);
 
   const activeToken = firebaseToken;
@@ -259,13 +263,32 @@ export function App() {
   }, [roundResultModal]);
 
   useEffect(() => {
+    activeRoundImageUrlRef.current = activeRoundImageUrl;
+  }, [activeRoundImageUrl]);
+
+  useEffect(() => {
+    drawStrokesRef.current = drawStrokes;
+  }, [drawStrokes]);
+
+  useEffect(() => {
+    roundLocalPreviewUrlRef.current = roundLocalPreviewUrl;
+  }, [roundLocalPreviewUrl]);
+
+  useEffect(() => {
     if (isProfileSetupRequired) {
       setActiveModal("nickname");
     }
   }, [isProfileSetupRequired]);
 
   useEffect(() => {
-    return () => clearPendingGalleryTransition();
+    return () => {
+      clearPendingGalleryTransition();
+      const previewUrl = roundLocalPreviewUrlRef.current;
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        roundLocalPreviewUrlRef.current = null;
+      }
+    };
   }, []);
 
   const api = useMemo(
@@ -375,7 +398,10 @@ export function App() {
         setActiveRound(null);
         setActiveRoundImageUrl(null);
         setRoundEnded(null);
+        roundEndedRef.current = null;
         setRoundResultModal(null);
+        roundResultModalRef.current = null;
+        clearRoundLocalPreview();
         setGameFinishedAt(null);
         setResultSaveStatus("idle");
         setDrawStrokes([]);
@@ -434,13 +460,16 @@ export function App() {
 
     socket.on("round-started", (payload: RoundStartedPayload) => {
       clearPendingGalleryTransition();
+      clearRoundLocalPreview();
       setGameStarting(null);
       setCountdownRemainingSec(null);
       setRemainingSec(payload.durationSec);
       setRemainingMs(payload.durationSec * 1000);
       setActiveRound({ ...payload, endedAt: null });
       setRoundEnded(null);
+      roundEndedRef.current = null;
       setRoundResultModal(null);
+      roundResultModalRef.current = null;
       setGameFinishedAt(null);
       setResultSaveStatus("idle");
       setDrawStrokes([]);
@@ -450,12 +479,16 @@ export function App() {
     });
 
     socket.on("round-ended", (payload: RoundEndedPayload) => {
+      const nextModal = { round: payload, result: null };
+      roundEndedRef.current = payload;
+      roundResultModalRef.current = nextModal;
       setRoundEnded(payload);
-      setRoundResultModal({ round: payload, result: null });
+      setRoundResultModal(nextModal);
       setActiveRound((currentRound) =>
         currentRound && currentRound.roundId === payload.roundId ? { ...currentRound, endedAt: payload.endedAt } : currentRound
       );
       setResultSaveStatus("saving");
+      void prepareRoundLocalPreview(payload.roundId);
       setMessage(`Round ${payload.roundIndex + 1}이 종료되었습니다. 잠시 후 다음 화면으로 이어집니다.`);
     });
 
@@ -472,6 +505,9 @@ export function App() {
           ? { ...currentModal, result: payload.result }
           : currentModal
       );
+      if (roundResultModalRef.current?.round.roundId === payload.roundId) {
+        roundResultModalRef.current = { ...roundResultModalRef.current, result: payload.result };
+      }
       setRemoteCursors({});
       setMessage(`Round ${payload.roundIndex + 1} 결과가 저장되었습니다.`);
     });
@@ -488,6 +524,8 @@ export function App() {
         return;
       }
       setRoundResultModal(null);
+      roundResultModalRef.current = null;
+      clearRoundLocalPreview();
       setViewMode("gallery");
       void refreshResults(payload.roomCode);
       setMessage("게임이 종료되었습니다. 갤러리에서 결과를 확인하세요.");
@@ -1082,9 +1120,14 @@ export function App() {
     setActiveRound(null);
     setActiveRoundImageUrl(null);
     setRoundEnded(null);
+    roundEndedRef.current = null;
+    setRoundResultModal(null);
+    roundResultModalRef.current = null;
+    clearRoundLocalPreview();
     setGameFinishedAt(null);
     setResultSaveStatus("idle");
     setRemainingSec(null);
+    setRemainingMs(null);
     setGameStarting(null);
     setCountdownRemainingSec(null);
     setSocketError(null);
@@ -1109,6 +1152,47 @@ export function App() {
     }
   }
 
+  function replaceRoundLocalPreviewUrl(nextUrl: string | null) {
+    setRoundLocalPreviewUrl((currentUrl) => {
+      if (currentUrl && currentUrl !== nextUrl) {
+        URL.revokeObjectURL(currentUrl);
+      }
+
+      roundLocalPreviewUrlRef.current = nextUrl;
+      return nextUrl;
+    });
+  }
+
+  function clearRoundLocalPreview() {
+    replaceRoundLocalPreviewUrl(null);
+  }
+
+  async function prepareRoundLocalPreview(roundId: string) {
+    const backgroundImageUrl = activeRoundImageUrlRef.current;
+    const strokes = drawStrokesRef.current;
+
+    if (!backgroundImageUrl) {
+      clearRoundLocalPreview();
+      return;
+    }
+
+    try {
+      const previewUrl = await composeLocalRoundPreview(backgroundImageUrl, strokes);
+
+      if (
+        roundEndedRef.current?.roundId !== roundId &&
+        roundResultModalRef.current?.round.roundId !== roundId
+      ) {
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+
+      replaceRoundLocalPreviewUrl(previewUrl);
+    } catch {
+      clearRoundLocalPreview();
+    }
+  }
+
   function clearPendingGalleryTransition() {
     if (pendingGalleryTimeoutRef.current !== null) {
       window.clearTimeout(pendingGalleryTimeoutRef.current);
@@ -1120,6 +1204,8 @@ export function App() {
     clearPendingGalleryTransition();
     pendingGalleryTimeoutRef.current = window.setTimeout(() => {
       setRoundResultModal(null);
+      roundResultModalRef.current = null;
+      clearRoundLocalPreview();
       setViewMode("gallery");
       void refreshResults(roomCode);
       pendingGalleryTimeoutRef.current = null;
@@ -1305,6 +1391,7 @@ export function App() {
           remainingSec={remainingSec}
           room={room}
           roundEnded={roundEnded}
+          roundLocalPreviewUrl={roundLocalPreviewUrl}
           roundResultModal={roundResultModal}
           resultSaveStatus={resultSaveStatus}
           socketError={socketError}
@@ -1520,6 +1607,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           remainingSec={83}
           room={mockPlayingRoom}
           roundEnded={null}
+          roundLocalPreviewUrl={null}
           roundResultModal={null}
           resultSaveStatus="idle"
           socketError={null}
@@ -2546,6 +2634,7 @@ interface PlayViewProps {
   activeRound: ActiveRound | null;
   activeRoundImageUrl: string | null;
   roundEnded: RoundEndedPayload | null;
+  roundLocalPreviewUrl: string | null;
   roundResultModal: RoundResultModalState | null;
   resultSaveStatus: ResultSaveStatus;
   gameFinishedAt: string | null;
@@ -2590,6 +2679,7 @@ function PlayView(props: PlayViewProps) {
     <section className="play-layout">
       {props.roundResultModal ? (
         <RoundResultModal
+          localPreviewUrl={props.roundLocalPreviewUrl}
           loadPreview={props.onLoadResultPreview}
           result={props.roundResultModal.result}
           resultSaveStatus={props.resultSaveStatus}
@@ -2766,16 +2856,20 @@ function CountdownModal({ countdownSec, remainingSec }: { countdownSec: number; 
 }
 
 function RoundResultModal({
+  localPreviewUrl,
   loadPreview,
   result,
   resultSaveStatus,
   round
 }: {
+  localPreviewUrl: string | null;
   loadPreview: (resultId: string) => Promise<Blob>;
   result: ResultMetadata | null;
   resultSaveStatus: ResultSaveStatus;
   round: RoundEndedPayload;
 }) {
+  const isLocalPreviewVisible = !result && Boolean(localPreviewUrl);
+
   return (
     <div className="round-result-backdrop" role="status" aria-live="polite" aria-label="라운드 결과">
       <section className="round-result-modal">
@@ -2783,15 +2877,22 @@ function RoundResultModal({
         <h2>{result ? "이번 라운드 결과" : "라운드가 끝났어요"}</h2>
         <div className="round-result-preview">
           {result ? (
-            <ResultPreviewImage resultId={result.id} loadPreview={loadPreview} />
+            <ResultPreviewImage fallbackPreviewUrl={localPreviewUrl} resultId={result.id} loadPreview={loadPreview} />
+          ) : localPreviewUrl ? (
+            <>
+              <img className="result-preview-image" alt="" src={localPreviewUrl} />
+              <span className="round-result-preview-badge">미리보기</span>
+            </>
           ) : (
             <span>결과를 준비하고 있어요</span>
           )}
         </div>
         <p>
           {resultSaveStatus === "saved"
-            ? "잠시 후 다음 라운드로 이어집니다."
-            : "잠시 후 다음 라운드로 자연스럽게 이어집니다."}
+            ? "저장된 결과를 확인했어요. 잠시 후 다음 화면으로 이어집니다."
+            : isLocalPreviewVisible
+              ? "먼저 미리보기를 보여드리고, 저장된 결과가 도착하면 자동으로 바뀝니다."
+              : "잠시 후 다음 화면으로 자연스럽게 이어집니다."}
         </p>
       </section>
     </div>
@@ -3569,9 +3670,11 @@ function GalleryViewPolished(props: GalleryViewProps) {
 }
 
 function ResultPreviewImage({
+  fallbackPreviewUrl,
   resultId,
   loadPreview
 }: {
+  fallbackPreviewUrl?: string | null;
   resultId: string;
   loadPreview: (resultId: string) => Promise<Blob>;
 }) {
@@ -3610,7 +3713,9 @@ function ResultPreviewImage({
     };
   }, [resultId, loadPreview]);
 
-  return previewUrl ? <img className="result-preview-image" alt="" src={previewUrl} /> : null;
+  const imageUrl = previewUrl ?? fallbackPreviewUrl;
+
+  return imageUrl ? <img className="result-preview-image" alt="" src={imageUrl} /> : null;
 }
 
 function formatError(error: unknown): string {
@@ -3770,6 +3875,42 @@ function redrawCanvas(
   }
 
   context.drawImage(drawingLayer, 0, 0);
+}
+
+async function composeLocalRoundPreview(backgroundImageUrl: string, strokes: DrawStroke[]): Promise<string> {
+  const image = await loadCanvasImage(backgroundImageUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = 960;
+  canvas.height = 720;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas preview context is unavailable.");
+  }
+
+  redrawCanvas(context, canvas.width, canvas.height, image, strokes);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((nextBlob) => {
+      if (nextBlob) {
+        resolve(nextBlob);
+        return;
+      }
+
+      reject(new Error("Canvas preview export failed."));
+    }, "image/png");
+  });
+
+  return URL.createObjectURL(blob);
+}
+
+function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Canvas preview image load failed."));
+    image.src = src;
+  });
 }
 
 function drawCanvasBackground(context: CanvasRenderingContext2D, width: number, height: number) {

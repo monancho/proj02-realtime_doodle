@@ -2366,3 +2366,16 @@
 - Documented that `deploy/round-transition-test` remains an MVP/speed-comparison branch and productization work should use main-based branches.
 - No app feature code changed, no secret values were read or output, and `package-lock.json` was not modified.
 - Validation completed: `git status --short` and `git diff --check` passed; only line-ending warnings were reported.
+
+## 2026-06-08 - PHASE-FE-ROUND-END-GALLERY-PREVIEW-STABILIZATION
+
+- Agent: `frontend`
+- Goal: 제품화 로드맵 1순위인 라운드 종료/갤러리 안정화를 진행하고, result 저장 지연 중에도 자연스러운 preview와 전환 경험을 제공한다.
+- Frontend: `round-ended` 수신 시 현재 라운드 배경 이미지와 stroke 목록을 960x720 canvas에 합성해 local PNG preview object URL을 생성한다.
+- Frontend: result modal은 서버 `result-saved` 전에는 local preview 또는 placeholder를 표시하고, 서버 result preview blob이 로드되면 authoritative result preview로 대체한다.
+- Frontend: `round-started`, waiting room reset, gallery transition, room reset, unmount 경로에서 local preview object URL을 revoke하도록 정리했다.
+- Backend/API/Socket contract changes: none.
+- Validation passed: `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/web build`.
+- Remaining manual QA: 실제 1인/2인 브라우저에서 round-ended modal, round-to-round 전환, final gallery 진입, result download를 확인해야 한다.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

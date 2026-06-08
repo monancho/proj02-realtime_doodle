@@ -121,6 +121,10 @@ corepack pnpm --filter @doodle/server smoke:bootstrap
 - Recommended architecture:
   - Short term: server authoritative async save, client shows optimistic/local preview while waiting for `result-saved`.
   - Later optimization: client-generated preview/result upload can be considered, but only with server-side validation and fallback server composition.
+- Frontend mitigation applied:
+  - `PHASE-FE-ROUND-END-GALLERY-PREVIEW-STABILIZATION` keeps the play page visible and shows the round result modal immediately after `round-ended`.
+  - The client composes a temporary local PNG preview from the already loaded round image and current stroke list while server result storage continues.
+  - When `result-saved` arrives, the modal switches to the server authoritative result preview. The local preview object URL is revoked on next round, gallery transition, room reset, or unmount.
 - Secret handling:
   - Logs and docs must not include raw file ids, database URI, token, private key, or credential values.
 

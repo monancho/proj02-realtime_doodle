@@ -2135,3 +2135,17 @@
 - Validation to run: `git status --short`, `git diff --check`.
 - Result: `git status --short` showed only intended documentation/.codex changes plus existing untracked `package-lock.json`.
 - Result: `git diff --check` passed with line-ending warnings only.
+
+## 2026-06-08 - PHASE-FE-ROUND-END-GALLERY-PREVIEW-STABILIZATION
+
+- Scope: 제품화 1순위인 라운드 종료/갤러리 preview 안정화를 frontend에서 진행했다.
+- 변경 확인:
+  - `round-ended` 수신 시 현재 라운드 배경 이미지와 stroke 목록으로 local PNG preview object URL을 생성한다.
+  - 서버 `result-saved`가 늦어도 result modal은 local preview 또는 안정적인 placeholder를 먼저 표시한다.
+  - 서버 결과 preview blob이 로드되기 전에는 local preview를 fallback으로 유지하고, 로드 후 서버 authoritative result preview로 대체한다.
+  - `round-started`, waiting room reset, gallery transition, room reset, unmount 경로에서 local preview object URL을 정리한다.
+- `corepack pnpm --filter @doodle/web typecheck`: PASS
+- `corepack pnpm --filter @doodle/web build`: PASS
+- Manual QA still required: 실제 1인/2인 브라우저 흐름에서 round-ended modal, 다음 round 전환, final gallery 진입, result download를 확인해야 한다.
+- `package-lock.json` remains untracked and unstaged.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
