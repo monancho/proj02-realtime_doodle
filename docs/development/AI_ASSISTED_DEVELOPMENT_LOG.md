@@ -2588,3 +2588,11 @@
 - Changed blocked image copy to a concise harmful-content filter warning.
 - Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
 - No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.
+
+## 2026-06-10 - Review Moderation Warning Tone
+
+- Treated `IMAGE_MODERATION_REVIEW_REQUIRED` as a warning/notice tone in the Doodle upload card instead of a red error tone.
+- Kept upload rejection behavior unchanged; review-required images are still not saved.
+- Updated the review-required user copy to explain that the upload was held for review and the user should choose another image.
+- Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
+- No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.

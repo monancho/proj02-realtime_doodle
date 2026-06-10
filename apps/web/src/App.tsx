@@ -159,6 +159,7 @@ interface UploadStatusState {
 }
 
 type ResultSaveStatus = "idle" | "saving" | "saved";
+type UploadFeedbackTone = "warning" | "error";
 
 const defaultApiBaseUrl = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 const defaultSocketUrl = resolveSocketUrl(import.meta.env.VITE_SOCKET_URL, defaultApiBaseUrl);
@@ -235,6 +236,7 @@ export function App() {
   const [isBusy, setIsBusy] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<UploadPreview | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadFeedbackTone, setUploadFeedbackTone] = useState<UploadFeedbackTone>("error");
   const [uploadStatus, setUploadStatus] = useState<UploadStatusState | null>(null);
   const [socketStatus, setSocketStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const [socketError, setSocketError] = useState<string | null>(null);
@@ -824,6 +826,7 @@ export function App() {
     const validationError = validateImageFile(file);
 
     if (validationError) {
+      setUploadFeedbackTone("error");
       setUploadError(validationError);
       setMessage(validationError);
       return;
@@ -831,6 +834,7 @@ export function App() {
 
     clearUploadPreview();
     setUploadError(null);
+    setUploadFeedbackTone("error");
     setUploadStatus({
       phase: "optimizing",
       title: "사진을 가볍게 정리하는 중",
@@ -852,6 +856,7 @@ export function App() {
       setMessage("업로드 전 확인 패널에서 이미지를 확인해 주세요.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "이미지 최적화를 완료하지 못했습니다. 다른 이미지를 선택해 주세요.";
+      setUploadFeedbackTone("error");
       setUploadError(message);
       setMessage(message);
     } finally {
@@ -872,9 +877,11 @@ export function App() {
 
     await runAction(async () => {
       setUploadError(null);
+      setUploadFeedbackTone("error");
       setResourceState((current) => ({ ...current, images: "loading" }));
       const uploadedImage = await api.uploadImage(room.roomCode, uploadPreview.file).catch((error) => {
         const message = formatError(error);
+        setUploadFeedbackTone(getUploadFeedbackTone(error));
         setUploadError(message);
         setResourceState((current) => ({ ...current, images: "ready" }));
         throw error;
@@ -1408,6 +1415,7 @@ export function App() {
           readyParticipantCount={readyParticipantCount}
           uploadPreview={uploadPreview}
           uploadError={uploadError}
+          uploadFeedbackTone={uploadFeedbackTone}
           uploadStatus={uploadStatus}
           chatDraft={chatDraft}
           chatMessages={chatMessages}
@@ -1625,6 +1633,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           readyParticipantCount={mockRoom.participants.length}
           uploadPreview={null}
           uploadError={null}
+          uploadFeedbackTone="error"
           uploadStatus={null}
           chatDraft=""
           chatMessages={mockChatMessages}
@@ -1946,6 +1955,7 @@ interface RoomViewProps {
   resourceErrors: ResourceErrors;
   uploadPreview: UploadPreview | null;
   uploadError: string | null;
+  uploadFeedbackTone: UploadFeedbackTone;
   uploadStatus: UploadStatusState | null;
   chatMessages: ChatMessage[];
   chatDraft: string;
@@ -2089,7 +2099,9 @@ function RoomView(props: RoomViewProps) {
           </label>
         )}
         {props.uploadStatus ? <UploadProgress status={props.uploadStatus} /> : null}
-        {props.uploadError ? <p className="error-copy">{props.uploadError}</p> : null}
+        {props.uploadError ? (
+          <p className={props.uploadFeedbackTone === "warning" ? "notice-copy" : "error-copy"}>{props.uploadError}</p>
+        ) : null}
         <ImageList
           error={props.resourceErrors.images}
           images={props.images}
@@ -3277,6 +3289,14 @@ function formatError(error: unknown): string {
   return "알 수 없는 오류가 발생했습니다.";
 }
 
+function getUploadFeedbackTone(error: unknown): UploadFeedbackTone {
+  if (error instanceof ApiClientError && error.code === "IMAGE_MODERATION_REVIEW_REQUIRED") {
+    return "warning";
+  }
+
+  return "error";
+}
+
 function validateNickname(value: string): { value: string; error: null } | { value: null; error: string } {
   const normalized = value.trim().replace(/\s+/g, " ");
 
@@ -3319,7 +3339,7 @@ function formatApiError(error: ApiClientError): string {
     IMAGE_FILE_TOO_LARGE: "이 사진은 전송 크기를 줄여도 너무 큽니다. 더 작은 사진을 선택해 주세요.",
     IMAGE_FILE_TYPE_UNSUPPORTED: "JPEG, PNG, WebP 이미지만 업로드할 수 있습니다.",
     IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
-    IMAGE_MODERATION_REVIEW_REQUIRED: "자동 검사에서 애매한 요소가 있어 저장하지 않았어요. 다른 사진을 선택해 주세요.",
+    IMAGE_MODERATION_REVIEW_REQUIRED: "검토가 필요한 이미지라 업로드를 보류했어요. 다른 사진을 선택해 주세요.",
     IMAGE_MODERATION_BLOCKED: "유해 콘텐츠 필터에 걸려 업로드할 수 없습니다. 다른 사진을 선택해 주세요.",
     IMAGE_MODERATION_FAILED: "안전 검사가 끝나지 않아 저장하지 않았어요. 잠시 후 다시 시도해 주세요.",
     RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",
