@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { FormEvent, PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import type { ImageMetadata, ListRoomResultsResponse, ResultMetadata, RoomDetail, UserProfile } from "@doodle/shared";
+import type { ImageMetadata, ListRoomResultsResponse, ResultMetadata, RoomDetail, UploadImageResponse, UserProfile } from "@doodle/shared";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { io, type Socket } from "socket.io-client";
 import { ApiClientError, createApiClient, normalizeRoomCode } from "./api/client";
@@ -879,19 +879,27 @@ export function App() {
       setUploadError(null);
       setUploadFeedbackTone("error");
       setResourceState((current) => ({ ...current, images: "loading" }));
-      const uploadedImage = await api.uploadImage(room.roomCode, uploadPreview.file).catch((error) => {
+      const uploadResponse = await api.uploadImage(room.roomCode, uploadPreview.file).catch((error) => {
         const message = formatError(error);
         setUploadFeedbackTone(getUploadFeedbackTone(error));
         setUploadError(message);
         setResourceState((current) => ({ ...current, images: "ready" }));
         throw error;
       });
+      const uploadedImage = uploadResponse.image;
       const freshImages = await api.listImages(room.roomCode);
       setImages(freshImages);
       setResourceState((current) => ({ ...current, images: "ready" }));
       setResourceErrors((current) => ({ ...current, images: null }));
       clearUploadPreview();
-      setMessage(`${uploadedImage.originalName} 업로드가 완료되었습니다.`);
+      if (uploadResponse.warning) {
+        const warningMessage = formatUploadWarning(uploadResponse.warning);
+        setUploadFeedbackTone("warning");
+        setUploadError(warningMessage);
+        setMessage(warningMessage);
+      } else {
+        setMessage(`${uploadedImage.originalName} 업로드가 완료되었습니다.`);
+      }
     });
     setUploadStatus(null);
   }
@@ -3297,6 +3305,14 @@ function getUploadFeedbackTone(error: unknown): UploadFeedbackTone {
   return "error";
 }
 
+function formatUploadWarning(warning: NonNullable<UploadImageResponse["warning"]>): string {
+  if (warning.code === "IMAGE_MODERATION_REVIEW_REQUIRED") {
+    return "검토가 필요한 이미지로 분류됐지만 업로드는 완료됐어요.";
+  }
+
+  return warning.message;
+}
+
 function validateNickname(value: string): { value: string; error: null } | { value: null; error: string } {
   const normalized = value.trim().replace(/\s+/g, " ");
 
@@ -3339,7 +3355,7 @@ function formatApiError(error: ApiClientError): string {
     IMAGE_FILE_TOO_LARGE: "이 사진은 전송 크기를 줄여도 너무 큽니다. 더 작은 사진을 선택해 주세요.",
     IMAGE_FILE_TYPE_UNSUPPORTED: "JPEG, PNG, WebP 이미지만 업로드할 수 있습니다.",
     IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
-    IMAGE_MODERATION_REVIEW_REQUIRED: "검토가 필요한 이미지라 업로드를 보류했어요. 다른 사진을 선택해 주세요.",
+    IMAGE_MODERATION_REVIEW_REQUIRED: "검토가 필요한 이미지입니다. 계속 사용은 가능하지만 다른 사진도 고려해 주세요.",
     IMAGE_MODERATION_BLOCKED: "유해 콘텐츠 필터에 걸려 업로드할 수 없습니다. 다른 사진을 선택해 주세요.",
     IMAGE_MODERATION_FAILED: "안전 검사가 끝나지 않아 저장하지 않았어요. 잠시 후 다시 시도해 주세요.",
     RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",

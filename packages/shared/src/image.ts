@@ -25,6 +25,10 @@ export interface ImageMetadata {
 
 export interface UploadImageResponse {
   image: ImageMetadata;
+  warning?: {
+    code: "IMAGE_MODERATION_REVIEW_REQUIRED";
+    message: string;
+  };
 }
 
 export interface ListRoomImagesResponse {

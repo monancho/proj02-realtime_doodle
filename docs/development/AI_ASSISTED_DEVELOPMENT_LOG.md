@@ -2596,3 +2596,13 @@
 - Updated the review-required user copy to explain that the upload was held for review and the user should choose another image.
 - Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
 - No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.
+
+## 2026-06-10 - Review Moderation Allows Upload
+
+- Changed Doodle image moderation policy so `review` action allows the image upload and returns an optional upload warning instead of rejecting the request.
+- Added `UploadImageResponse.warning` for `IMAGE_MODERATION_REVIEW_REQUIRED` and updated the web client to show it as a notice after successful upload.
+- Kept `block` and moderation failure behavior fail-closed; blocked/failed images are not stored.
+- Added server route coverage for review images being stored with a warning response.
+- Updated API/acceptance notes for allow/review/block behavior.
+- Verified with `corepack pnpm --filter @doodle/web typecheck`, `corepack pnpm --filter @doodle/server typecheck`, and `corepack pnpm --filter @doodle/server test -- src/images/routes.test.ts`.
+- No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.

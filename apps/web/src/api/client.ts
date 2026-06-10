@@ -22,7 +22,7 @@ export interface ApiClient {
   getRoom(roomCode: string): Promise<RoomDetail>;
   joinRoom(roomCode: string): Promise<RoomDetail>;
   listImages(roomCode: string): Promise<ImageMetadata[]>;
-  uploadImage(roomCode: string, file: File): Promise<ImageMetadata>;
+  uploadImage(roomCode: string, file: File): Promise<UploadImageResponse>;
   downloadImage(imageId: string): Promise<Blob>;
   listResults(roomCode: string, cursor?: string | null): Promise<ListRoomResultsResponse>;
   downloadResult(resultId: string): Promise<{ blob: Blob; filename: string }>;
@@ -106,7 +106,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         method: "POST",
         body
       });
-      return response.image;
+      return response;
     },
     async downloadImage(imageId) {
       const token = options.getToken().trim();

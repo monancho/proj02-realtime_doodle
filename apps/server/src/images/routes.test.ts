@@ -102,6 +102,35 @@ describe("image routes", () => {
     await expect(imageStorage.getFile("file-1")).resolves.toBeNull();
   });
 
+  it("stores review images and returns a warning", async () => {
+    const imageModerationClient = createReviewModerationClient();
+    const { app, imageStorage } = await createImageRouteTestApp(
+      hostAuthContext,
+      undefined,
+      undefined,
+      imageModerationClient
+    );
+
+    const response = await request(app)
+      .post("/api/rooms/abc123/images")
+      .attach("image", Buffer.from("review-png-bytes"), {
+        filename: "review.png",
+        contentType: "image/png"
+      })
+      .expect(201);
+
+    expect(response.body.image.originalName).toBe("review.png");
+    expect(response.body.warning).toEqual({
+      code: "IMAGE_MODERATION_REVIEW_REQUIRED",
+      message: "검토가 필요한 이미지입니다."
+    });
+    await expect(imageStorage.getFile("file-1")).resolves.toEqual(
+      expect.objectContaining({
+        originalName: "review.png"
+      })
+    );
+  });
+
   it("fails closed when image moderation is unavailable", async () => {
     const imageModerationClient = {
       moderate: vi.fn().mockRejectedValue(new Error("AI server unavailable"))
@@ -376,6 +405,18 @@ function createBlockingModerationClient(): ImageModerationClient {
       action: "block",
       categories: ["violence/graphic"],
       message: "업로드할 수 없는 이미지입니다. 다른 이미지를 선택해 주세요."
+    })
+  };
+}
+
+function createReviewModerationClient(): ImageModerationClient {
+  return {
+    moderate: vi.fn().mockResolvedValue({
+      allowed: true,
+      riskLevel: "medium",
+      action: "review",
+      categories: ["sexual"],
+      message: "검토가 필요한 이미지입니다."
     })
   };
 }

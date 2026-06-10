@@ -90,14 +90,14 @@ export function createRoomImageRouter({
         );
       }
 
-      if (imageModerationClient) {
-        await moderateUploadImage({
+      const moderationWarning = imageModerationClient
+        ? await moderateUploadImage({
           client: imageModerationClient,
           filename: sanitizeOriginalName(multipartFile.filename),
           buffer: multipartFile.buffer,
           mimeType
-        });
-      }
+        })
+        : null;
 
       const storedFile = await imageStorage.storeFile({
         buffer: multipartFile.buffer,
@@ -135,7 +135,10 @@ export function createRoomImageRouter({
             exceptImageId: image.id
           });
         }
-        const payload: UploadImageResponse = { image };
+        const payload: UploadImageResponse = {
+          image,
+          ...(moderationWarning ? { warning: moderationWarning } : {})
+        };
 
         roomUpdatePublisher?.publishRoomUpdated(room);
         response.status(201).json(payload);
@@ -278,7 +281,7 @@ async function moderateUploadImage(input: {
   filename: string;
   buffer: Buffer;
   mimeType: ImageMimeType;
-}): Promise<void> {
+}): Promise<UploadImageResponse["warning"] | null> {
   let moderationResult;
 
   try {
@@ -302,13 +305,24 @@ async function moderateUploadImage(input: {
     );
   }
 
-  if (moderationResult.action === "review" || !moderationResult.allowed) {
+  if (moderationResult.action === "review") {
+    return {
+      code: "IMAGE_MODERATION_REVIEW_REQUIRED",
+      message:
+        moderationResult.message ??
+        "This image may need review, but it can still be used."
+    };
+  }
+
+  if (!moderationResult.allowed) {
     throw new ImageDomainError(
-      "IMAGE_MODERATION_REVIEW_REQUIRED",
+      "IMAGE_MODERATION_BLOCKED",
       moderationResult.message ??
-        "This image needs review. Please choose a different image."
+        "This image cannot be uploaded. Please choose a different image."
     );
   }
+
+  return null;
 }
 
 function sanitizeOriginalName(filename: string): string {

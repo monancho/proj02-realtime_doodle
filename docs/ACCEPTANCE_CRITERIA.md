@@ -31,3 +31,10 @@
 - [ ] AI 작업 문서, Agent 역할 문서, Agent workflow 문서가 분리된다.
 - [ ] 디자인 이미지가 디자인 문서에 연결된다.
 - [ ] 충돌, 누락 정보, 남은 리스크를 보고한다.
+
+## 2026-06-10 Image Moderation Acceptance Update
+
+- AI moderation `allow` images are stored normally.
+- AI moderation `review` images are still usable: store the image, return an upload warning, and show a warning/notice tone in the frontend.
+- AI moderation `block` images are rejected and must not be stored in GridFS or image metadata.
+- AI moderation failures are rejected fail-closed and must not be stored.

@@ -2073,3 +2073,11 @@ This section records the Doodle-only AI Server integration added on 2026-06-10. 
 
 - Doodle image upload now uses a 5MB maximum file size to match the AI Server image moderation limit and the MVP acceptance criteria.
 - Files larger than 5MB are rejected before AI Server moderation and before GridFS storage with `IMAGE_FILE_TOO_LARGE`.
+
+## 2026-06-10 Doodle Image Moderation Policy Update
+
+- `POST /api/rooms/:roomCode/images` uses AI image moderation before GridFS storage.
+- `action: allow`: store the image and return `{ image }`.
+- `action: review`: store the image and return `{ image, warning: { code: "IMAGE_MODERATION_REVIEW_REQUIRED", message } }`; the frontend should show this as a warning/notice, not as a blocking error.
+- `action: block`: reject the upload with `IMAGE_MODERATION_BLOCKED`; the image must not be stored in GridFS or metadata.
+- AI moderation request failure remains fail-closed with `IMAGE_MODERATION_FAILED`; the image must not be stored.
