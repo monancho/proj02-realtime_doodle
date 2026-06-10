@@ -2581,3 +2581,10 @@
 - Kept the existing Doodle image upload API contract and did not add Quiz UI or endpoints.
 - Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
 - No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.
+
+## 2026-06-10 - Upload Loading Simplification
+
+- Simplified Doodle image upload loading UI by removing the extra step chips and keeping only the compact spinner/status copy.
+- Changed blocked image copy to a concise harmful-content filter warning.
+- Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
+- No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.

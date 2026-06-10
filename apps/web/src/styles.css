@@ -1645,32 +1645,6 @@ button.lobby-cta-card {
   animation: upload-spin 0.9s linear infinite;
 }
 
-.upload-progress-steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.upload-progress-steps span {
-  border: 1px solid rgba(46, 82, 110, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.56);
-  padding: 6px 8px;
-  color: #587086;
-  font-size: 0.82rem;
-  text-align: center;
-}
-
-.upload-progress-steps span.active {
-  background: #fff4cf;
-  color: #4f463c;
-}
-
-.upload-progress-steps span.done {
-  background: #dff1e4;
-  color: #43634d;
-}
-
 @keyframes upload-spin {
   to {
     transform: rotate(360deg);

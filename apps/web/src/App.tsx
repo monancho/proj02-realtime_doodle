@@ -2227,9 +2227,6 @@ function ImagePreviewThumb({
 }
 
 function UploadProgress({ status }: { status: UploadStatusState }) {
-  const optimizingActive = status.phase === "optimizing";
-  const checkingActive = status.phase === "checking";
-
   return (
     <section className="upload-progress" aria-live="polite" aria-label="이미지 업로드 진행 상태">
       <div className="upload-progress-header">
@@ -2238,11 +2235,6 @@ function UploadProgress({ status }: { status: UploadStatusState }) {
           <strong>{status.title}</strong>
           <p>{status.detail}</p>
         </div>
-      </div>
-      <div className="upload-progress-steps" aria-hidden="true">
-        <span className={optimizingActive ? "active" : "done"}>최적화</span>
-        <span className={checkingActive ? "active" : ""}>안전 검사</span>
-        <span>저장</span>
       </div>
     </section>
   );
@@ -3328,7 +3320,7 @@ function formatApiError(error: ApiClientError): string {
     IMAGE_FILE_TYPE_UNSUPPORTED: "JPEG, PNG, WebP 이미지만 업로드할 수 있습니다.",
     IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
     IMAGE_MODERATION_REVIEW_REQUIRED: "자동 검사에서 애매한 요소가 있어 저장하지 않았어요. 다른 사진을 선택해 주세요.",
-    IMAGE_MODERATION_BLOCKED: "이 사진은 업로드 기준에 맞지 않아 저장하지 않았어요. 다른 사진을 선택해 주세요.",
+    IMAGE_MODERATION_BLOCKED: "유해 콘텐츠 필터에 걸려 업로드할 수 없습니다. 다른 사진을 선택해 주세요.",
     IMAGE_MODERATION_FAILED: "안전 검사가 끝나지 않아 저장하지 않았어요. 잠시 후 다시 시도해 주세요.",
     RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",
     RESULT_FILE_NOT_FOUND: "결과 이미지 파일을 찾을 수 없습니다.",
