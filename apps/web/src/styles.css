@@ -1584,11 +1584,27 @@ button.lobby-cta-card {
   margin-top: 4px;
 }
 
+.upload-size-summary {
+  color: #4f463c;
+}
+
 .upload-preview p {
   margin: 6px 0 0;
   color: #5f5a52;
   font-weight: 800;
   line-height: 1.45;
+}
+
+.upload-safety-note {
+  color: #4f6b55;
+}
+
+.upload-optimization-note {
+  color: #6b6258;
+}
+
+.upload-status {
+  margin-top: 10px;
 }
 
 .preview-actions {

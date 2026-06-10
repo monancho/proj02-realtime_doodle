@@ -144,6 +144,11 @@ interface ActiveRound extends RoundStartedPayload {
 
 interface UploadPreview {
   file: File;
+  originalFile: File;
+  originalSize: number;
+  uploadSize: number;
+  wasOptimized: boolean;
+  optimizationMessage: string;
   url: string;
 }
 
@@ -152,7 +157,11 @@ type ResultSaveStatus = "idle" | "saving" | "saved";
 const defaultApiBaseUrl = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 const defaultSocketUrl = resolveSocketUrl(import.meta.env.VITE_SOCKET_URL, defaultApiBaseUrl);
 const acceptedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-const maxImageSizeBytes = 10 * 1024 * 1024;
+const maxSelectableImageSizeBytes = 10 * 1024 * 1024;
+const maxUploadImageSizeBytes = 5 * 1024 * 1024;
+const maxUploadImageLongEdgePx = 1600;
+const imageCompressionQualities = [0.82, 0.74, 0.66, 0.58, 0.5];
+const imageResizeLongEdges = [1600, 1280, 1024];
 const maxChatMessageLength = 200;
 const maxStrokePointsPerPayload = 128;
 const maxRenderedStrokeBatches = 10000;
@@ -220,6 +229,7 @@ export function App() {
   const [isBusy, setIsBusy] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<UploadPreview | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [socketStatus, setSocketStatus] = useState<"idle" | "connecting" | "connected" | "error">("idle");
   const [socketError, setSocketError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -795,7 +805,7 @@ export function App() {
     });
   }
 
-  function handleSelectUploadFile(file: File | null) {
+  async function handleSelectUploadFile(file: File | null) {
     if (!room || !file) {
       return;
     }
@@ -815,10 +825,28 @@ export function App() {
 
     clearUploadPreview();
     setUploadError(null);
-    setUploadPreview({
-      file,
-      url: URL.createObjectURL(file)
-    });
+    setUploadStatus("이미지 최적화 중입니다.");
+
+    try {
+      const optimizedImage = await optimizeImageForUpload(file);
+
+      setUploadPreview({
+        file: optimizedImage.file,
+        originalFile: file,
+        originalSize: file.size,
+        uploadSize: optimizedImage.file.size,
+        wasOptimized: optimizedImage.wasOptimized,
+        optimizationMessage: optimizedImage.message,
+        url: URL.createObjectURL(optimizedImage.file)
+      });
+      setMessage("업로드 전 확인 패널에서 이미지를 확인해 주세요.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "이미지 최적화를 완료하지 못했습니다. 다른 이미지를 선택해 주세요.";
+      setUploadError(message);
+      setMessage(message);
+    } finally {
+      setUploadStatus(null);
+    }
   }
 
   async function handleConfirmUpload() {
@@ -826,10 +854,17 @@ export function App() {
       return;
     }
 
+    setUploadStatus("안전 검사 중입니다. 통과하면 바로 업로드합니다.");
+
     await runAction(async () => {
       setUploadError(null);
       setResourceState((current) => ({ ...current, images: "loading" }));
-      const uploadedImage = await api.uploadImage(room.roomCode, uploadPreview.file);
+      const uploadedImage = await api.uploadImage(room.roomCode, uploadPreview.file).catch((error) => {
+        const message = formatError(error);
+        setUploadError(message);
+        setResourceState((current) => ({ ...current, images: "ready" }));
+        throw error;
+      });
       const freshImages = await api.listImages(room.roomCode);
       setImages(freshImages);
       setResourceState((current) => ({ ...current, images: "ready" }));
@@ -837,6 +872,7 @@ export function App() {
       clearUploadPreview();
       setMessage(`${uploadedImage.originalName} 업로드가 완료되었습니다.`);
     });
+    setUploadStatus(null);
   }
 
   function clearUploadPreview() {
@@ -1358,6 +1394,7 @@ export function App() {
           readyParticipantCount={readyParticipantCount}
           uploadPreview={uploadPreview}
           uploadError={uploadError}
+          uploadStatus={uploadStatus}
           chatDraft={chatDraft}
           chatMessages={chatMessages}
           socketError={socketError}
@@ -1574,6 +1611,7 @@ function PreviewApp({ mode }: { mode: PreviewMode }) {
           readyParticipantCount={mockRoom.participants.length}
           uploadPreview={null}
           uploadError={null}
+          uploadStatus={null}
           chatDraft=""
           chatMessages={mockChatMessages}
           socketError={null}
@@ -1894,6 +1932,7 @@ interface RoomViewProps {
   resourceErrors: ResourceErrors;
   uploadPreview: UploadPreview | null;
   uploadError: string | null;
+  uploadStatus: string | null;
   chatMessages: ChatMessage[];
   chatDraft: string;
   socketStatus: "idle" | "connecting" | "connected" | "error";
@@ -1905,7 +1944,7 @@ interface RoomViewProps {
   onConfirmUpload: () => void;
   onRefreshRoom: () => void;
   onSendMessage: (event: FormEvent<HTMLFormElement>) => void;
-  onSelectUploadFile: (file: File | null) => void;
+  onSelectUploadFile: (file: File | null) => void | Promise<void>;
   onStartGame: () => void;
 }
 
@@ -1917,6 +1956,7 @@ function RoomView(props: RoomViewProps) {
   const uploadDisabled =
     !props.canUseRoomActions ||
     props.isBusy ||
+    Boolean(props.uploadStatus) ||
     props.room?.status !== "waiting" ||
     props.isCurrentUserSpectator;
   const startDisabled =
@@ -1971,14 +2011,21 @@ function RoomView(props: RoomViewProps) {
             <img alt="" src={props.uploadPreview.url} />
             <div>
               <strong>{props.uploadPreview.file.name}</strong>
-              <small>{formatBytes(props.uploadPreview.file.size)}</small>
+              <small className="upload-size-summary">
+                원본 {formatBytes(props.uploadPreview.originalSize)} · 전송 {formatBytes(props.uploadPreview.uploadSize)}
+              </small>
+              <p>{props.uploadPreview.optimizationMessage}</p>
+              <p className="upload-optimization-note">
+                {props.uploadPreview.wasOptimized ? "압축/리사이즈 적용됨" : "압축/리사이즈 없이 전송"}
+              </p>
+              <p className="upload-safety-note">업로드하면 안전 검사를 진행합니다.</p>
               <p>이 이미지로 업로드할까요?</p>
             </div>
             <div className="preview-actions">
-              <button className="primary-button" disabled={props.isBusy} onClick={props.onConfirmUpload} type="button">
+              <button className="primary-button" disabled={props.isBusy || Boolean(props.uploadStatus)} onClick={props.onConfirmUpload} type="button">
                 업로드
               </button>
-              <button className="secondary-button" disabled={props.isBusy} onClick={props.onCancelUploadPreview} type="button">
+              <button className="secondary-button" disabled={props.isBusy || Boolean(props.uploadStatus)} onClick={props.onCancelUploadPreview} type="button">
                 취소
               </button>
             </div>
@@ -2014,7 +2061,8 @@ function RoomView(props: RoomViewProps) {
           <label className={uploadDisabled ? "upload-box disabled" : "upload-box"}>
             <Upload size={28} />
             <strong>이미지 추가</strong>
-            <span>JPG, PNG, WebP 이미지를 선택하세요. 선택 후 확인 패널에서 업로드합니다.</span>
+            <span>JPG, PNG, WebP, 최대 10MB 선택 가능</span>
+            <span>업로드 전 5MB 이하로 최적화하고 안전 검사를 진행합니다.</span>
             <input
               accept="image/jpeg,image/png,image/webp"
               disabled={uploadDisabled}
@@ -2026,6 +2074,7 @@ function RoomView(props: RoomViewProps) {
             />
           </label>
         )}
+        {props.uploadStatus ? <p className="state-copy upload-status">{props.uploadStatus}</p> : null}
         {props.uploadError ? <p className="error-copy">{props.uploadError}</p> : null}
         <ImageList
           error={props.resourceErrors.images}
@@ -3239,9 +3288,12 @@ function formatApiError(error: ApiClientError): string {
     IMAGE_UPLOAD_LIMIT_EXCEEDED: "이미 이 방에 이미지를 업로드했습니다.",
     IMAGE_NOT_FOUND: "라운드 이미지를 찾을 수 없습니다. 이미지를 다시 업로드하거나 방을 새로고침해 주세요.",
     IMAGE_FILE_EMPTY: "빈 파일은 업로드할 수 없습니다.",
-    IMAGE_FILE_TOO_LARGE: "이미지는 10MB 이하만 업로드할 수 있습니다.",
+    IMAGE_FILE_TOO_LARGE: "이미지를 5MB 이하로 최적화하지 못했습니다. 다른 이미지를 선택해 주세요.",
     IMAGE_FILE_TYPE_UNSUPPORTED: "JPEG, PNG, WebP 이미지만 업로드할 수 있습니다.",
     IMAGE_FILE_INVALID: "이미지 파일을 확인해 주세요.",
+    IMAGE_MODERATION_REVIEW_REQUIRED: "이 이미지는 검토가 필요해 업로드할 수 없습니다. 다른 이미지를 선택해 주세요.",
+    IMAGE_MODERATION_BLOCKED: "업로드할 수 없는 이미지입니다. 다른 이미지를 선택해 주세요.",
+    IMAGE_MODERATION_FAILED: "이미지 안전 검사를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.",
     RESULT_NOT_FOUND: "결과를 찾을 수 없습니다.",
     RESULT_FILE_NOT_FOUND: "결과 이미지 파일을 찾을 수 없습니다.",
     RESULT_QUERY_INVALID: "결과 목록 요청 조건이 올바르지 않습니다."
@@ -3398,6 +3450,110 @@ function drawImageCover(context: CanvasRenderingContext2D, image: HTMLImageEleme
   context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 }
 
+interface OptimizedImageFile {
+  file: File;
+  wasOptimized: boolean;
+  message: string;
+}
+
+async function optimizeImageForUpload(file: File): Promise<OptimizedImageFile> {
+  const imageUrl = URL.createObjectURL(file);
+  let image: HTMLImageElement;
+
+  try {
+    image = await loadCanvasImage(imageUrl);
+  } catch {
+    throw new Error("이미지를 읽지 못했습니다. 다른 이미지를 선택해 주세요.");
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+
+  const longEdge = Math.max(image.naturalWidth, image.naturalHeight);
+
+  if (file.size <= maxUploadImageSizeBytes && longEdge <= maxUploadImageLongEdgePx) {
+    return {
+      file,
+      wasOptimized: false,
+      message: "전송 용량 기준을 충족해 원본 품질로 보냅니다."
+    };
+  }
+
+  const outputMimeType = file.type === "image/webp" ? "image/webp" : "image/jpeg";
+  let bestBlob: Blob | null = null;
+
+  for (const targetLongEdge of imageResizeLongEdges) {
+    const scale = Math.min(1, targetLongEdge / longEdge);
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    for (const quality of imageCompressionQualities) {
+      const blob = await encodeCanvasImage(image, width, height, outputMimeType, quality);
+      bestBlob = blob;
+
+      if (blob.size <= maxUploadImageSizeBytes) {
+        const optimizedFile = new File([blob], createOptimizedFileName(file.name, outputMimeType), {
+          type: outputMimeType,
+          lastModified: Date.now()
+        });
+        const convertedMessage = file.type === "image/png" ? " PNG는 전송 최적화를 위해 JPEG로 변환됩니다." : "";
+
+        return {
+          file: optimizedFile,
+          wasOptimized: true,
+          message: `${longEdge > targetLongEdge ? "해상도를 줄이고 " : ""}용량을 5MB 이하로 최적화했습니다.${convertedMessage}`
+        };
+      }
+    }
+  }
+
+  if (bestBlob) {
+    throw new Error("이미지를 5MB 이하로 줄이지 못했습니다. 더 작은 이미지를 선택해 주세요.");
+  }
+
+  throw new Error("브라우저에서 이미지 최적화를 완료하지 못했습니다. 다른 이미지를 선택해 주세요.");
+}
+
+async function encodeCanvasImage(
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  mimeType: string,
+  quality: number
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("브라우저 이미지 처리 기능을 사용할 수 없습니다.");
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+
+        reject(new Error("이미지 최적화를 완료하지 못했습니다. 다른 이미지를 선택해 주세요."));
+      },
+      mimeType,
+      quality
+    );
+  });
+}
+
+function createOptimizedFileName(fileName: string, mimeType: string): string {
+  const extension = mimeType === "image/webp" ? "webp" : "jpg";
+  const baseName = fileName.replace(/\.[^.]+$/, "") || "image";
+
+  return `${baseName}-optimized.${extension}`;
+}
+
 function previewDraftStroke(
   canvas: HTMLCanvasElement,
   backgroundImage: HTMLImageElement | null,
@@ -3472,7 +3628,7 @@ function validateImageFile(file: File): string | null {
     return "빈 파일은 업로드할 수 없습니다.";
   }
 
-  if (file.size > maxImageSizeBytes) {
+  if (file.size > maxSelectableImageSizeBytes) {
     return "이미지는 10MB 이하만 업로드할 수 있습니다.";
   }
 

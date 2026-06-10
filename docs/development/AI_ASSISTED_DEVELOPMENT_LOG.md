@@ -2563,3 +2563,13 @@
 - Documented Docker image `ghcr.io/monancho/ocl-ai-server:0.1.0` and local base URL `http://localhost:8000` in README/operations notes.
 - Updated example timeout from `20` to `30` seconds to match the AI Server notice.
 - Secret check: no API key, token, Firebase private key, MongoDB URI, or credential value was read, printed, or recorded.
+
+## 2026-06-10 - Frontend Image Upload Optimization UX
+
+- Doodle frontend upload selection remains 10MB for JPG/PNG/WebP.
+- Added client-side canvas optimization before upload so the file sent to the existing `POST /api/rooms/:roomCode/images` endpoint targets 5MB or less.
+- Optimization policy: keep already-small images unchanged, otherwise resize long edge from 1600px downward and encode JPEG/WebP quality from 0.82 downward.
+- Added upload preview details for original size, transfer size, optimization applied state, and safety-check copy.
+- Added frontend messages for `IMAGE_MODERATION_REVIEW_REQUIRED`, `IMAGE_MODERATION_BLOCKED`, and `IMAGE_MODERATION_FAILED`.
+- Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
+- Browser/manual upload smoke was not run in this step because authenticated local Firebase/Doodle runtime was not started.
