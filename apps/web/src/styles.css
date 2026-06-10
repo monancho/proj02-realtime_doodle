@@ -1603,8 +1603,78 @@ button.lobby-cta-card {
   color: #6b6258;
 }
 
-.upload-status {
+.upload-progress {
+  display: grid;
+  gap: 10px;
   margin-top: 10px;
+  border: 2px solid rgba(37, 33, 29, 0.2);
+  border-radius: 14px 9px 13px 10px / 10px 14px 9px 13px;
+  background: #e4f0fb;
+  padding: 12px;
+  color: #2e526e;
+  font-weight: 800;
+}
+
+.upload-progress-header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.upload-progress-header strong,
+.upload-progress-header p {
+  display: block;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.upload-progress-header p {
+  margin-top: 3px;
+  color: #46677f;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.upload-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(46, 82, 110, 0.2);
+  border-top-color: #2e526e;
+  border-radius: 999px;
+  animation: upload-spin 0.9s linear infinite;
+}
+
+.upload-progress-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.upload-progress-steps span {
+  border: 1px solid rgba(46, 82, 110, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  padding: 6px 8px;
+  color: #587086;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.upload-progress-steps span.active {
+  background: #fff4cf;
+  color: #4f463c;
+}
+
+.upload-progress-steps span.done {
+  background: #dff1e4;
+  color: #43634d;
+}
+
+@keyframes upload-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .preview-actions {

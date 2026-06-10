@@ -2573,3 +2573,11 @@
 - Added frontend messages for `IMAGE_MODERATION_REVIEW_REQUIRED`, `IMAGE_MODERATION_BLOCKED`, and `IMAGE_MODERATION_FAILED`.
 - Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
 - Browser/manual upload smoke was not run in this step because authenticated local Firebase/Doodle runtime was not started.
+
+## 2026-06-10 - Upload Moderation Waiting UX
+
+- Improved Doodle image upload waiting state with an in-card progress panel for client optimization and safety check phases.
+- Replaced terse moderation failure copy with friendlier user-facing guidance that explains the image was not saved and prompts choosing another image.
+- Kept the existing Doodle image upload API contract and did not add Quiz UI or endpoints.
+- Verified with `corepack pnpm --filter @doodle/web typecheck` and `corepack pnpm --filter @doodle/server typecheck`.
+- No secret, token, AI Server key, Firebase token, MongoDB URI, or image binary was logged or recorded.
