@@ -168,3 +168,25 @@ Operational notes:
 Image upload size note:
 
 - Doodle backend rejects uploads larger than 5MB before AI Server moderation so the Doodle upload limit matches the AI Server image moderation limit.
+
+## AI Server Docker Image Notice
+
+Latest Doodle image moderation integration notice:
+
+```txt
+Image: ghcr.io/monancho/ocl-ai-server:0.1.0
+Local base URL: http://localhost:8000
+Health: GET http://localhost:8000/health
+Ready: GET http://localhost:8000/ready
+Swagger: http://localhost:8000/docs
+```
+
+Doodle backend environment variable names and local examples:
+
+```txt
+AI_SERVER_BASE_URL=http://localhost:8000
+AI_SERVER_API_KEY=<AI Server AI_SERVER_API_KEY value>
+AI_SERVER_TIMEOUT_SECONDS=30
+```
+
+Doodle uses only `POST /ai/image/moderate`. Quiz endpoints remain out of scope for Realtime Doodle Relay.

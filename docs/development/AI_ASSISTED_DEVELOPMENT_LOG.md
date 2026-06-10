@@ -2554,3 +2554,12 @@
 - Updated `.env.example` and README with variable names and secret-safe integration notes.
 - `docs/DATABASE_API_SOCKET.md` and `docs/DEPLOYMENT_OPERATION.md` contain invalid UTF-8 byte sequences, so they were not patched to avoid rewriting large mixed-encoding documents.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+
+## 2026-06-10 - AI-SERVER-DOCKER-NOTICE-ALIGNMENT
+
+- Agent: `backend`
+- Goal: align Doodle image moderation docs/env examples with the announced AI Server Docker image.
+- Confirmed Doodle remains image-moderation only; Quiz endpoints are intentionally out of scope.
+- Documented Docker image `ghcr.io/monancho/ocl-ai-server:0.1.0` and local base URL `http://localhost:8000` in README/operations notes.
+- Updated example timeout from `20` to `30` seconds to match the AI Server notice.
+- Secret check: no API key, token, Firebase private key, MongoDB URI, or credential value was read, printed, or recorded.

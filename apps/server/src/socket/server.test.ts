@@ -22,7 +22,7 @@ const env: ServerEnv = {
   FIREBASE_PRIVATE_KEY: "placeholder-private-key",
   AI_SERVER_BASE_URL: "http://127.0.0.1:8000",
   AI_SERVER_API_KEY: "placeholder-ai-server-key",
-  AI_SERVER_TIMEOUT_SECONDS: "20"
+  AI_SERVER_TIMEOUT_SECONDS: "30"
 };
 
 describe("createSocketServer", () => {
