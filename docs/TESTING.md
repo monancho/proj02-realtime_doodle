@@ -11,7 +11,7 @@
 | Room | 생성, 조회, 입장, 인원 제한 |
 | Socket | 인증 실패, `join-room`, `room-updated` |
 | Chat | 같은 방 사용자에게만 broadcast |
-| Upload | MIME/용량 검증, metadata 저장, GridFS 저장 |
+| Upload | MIME/용량 검증, AI image moderation allow/block/fail-closed, metadata 저장, GridFS 저장 |
 | Round | host 권한, 랜덤 선택, 종료 처리 |
 | Drawing | payload validation, 종료 라운드 차단 |
 | Result | 저장, 조회, 다운로드 |
@@ -23,6 +23,7 @@
 3. B 사용자가 로그인한다.
 4. B가 방 코드로 입장한다.
 5. A/B가 각각 사진을 업로드한다.
+   - 유해 이미지 moderation 차단과 AI Server 장애 시 업로드 fail-closed도 별도 확인한다.
 6. A가 게임을 시작한다.
 7. A가 그린 선이 B 화면에 보인다.
 8. B가 보낸 채팅이 A 화면에 보인다.

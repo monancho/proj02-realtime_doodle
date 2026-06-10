@@ -25,7 +25,10 @@ const env: ServerEnv = {
   MONGODB_DB_NAME: "realtime-doodle-relay",
   FIREBASE_PROJECT_ID: "placeholder-project",
   FIREBASE_CLIENT_EMAIL: "placeholder@example.com",
-  FIREBASE_PRIVATE_KEY: "placeholder-private-key"
+  FIREBASE_PRIVATE_KEY: "placeholder-private-key",
+  AI_SERVER_BASE_URL: "http://127.0.0.1:8000",
+  AI_SERVER_API_KEY: "placeholder-ai-server-key",
+  AI_SERVER_TIMEOUT_SECONDS: "20"
 };
 
 const authContext: AuthContext = {

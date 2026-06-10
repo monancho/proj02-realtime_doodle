@@ -7,6 +7,7 @@ import { createApp } from "../app";
 import type { AuthenticatedRequest } from "../auth/http";
 import { InMemoryRoomRepository } from "../rooms/in-memory-room-repository";
 import { InMemoryUserRepository } from "../users/in-memory-user-repository";
+import type { ImageModerationClient } from "./ai-image-moderation-client";
 import { InMemoryImageRepository } from "./in-memory-image-repository";
 import { InMemoryImageStorage } from "./in-memory-image-storage";
 
@@ -36,8 +37,13 @@ const guestAuthContext: AuthContext = {
 
 describe("image routes", () => {
   it("uploads image metadata and stores the original file", async () => {
-    const { app, roomUpdatePublisher } =
-      await createImageRouteTestApp(hostAuthContext);
+    const imageModerationClient = createAllowingModerationClient();
+    const { app, roomUpdatePublisher } = await createImageRouteTestApp(
+      hostAuthContext,
+      undefined,
+      undefined,
+      imageModerationClient
+    );
 
     const response = await request(app)
       .post("/api/rooms/abc123/images")
@@ -67,6 +73,56 @@ describe("image routes", () => {
     expect(roomUpdatePublisher.publishRoomUpdated).toHaveBeenCalledWith(
       expect.objectContaining({ roomCode: "ABC123" })
     );
+    expect(imageModerationClient.moderate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filename: "doodle.png",
+        mimeType: "image/png"
+      })
+    );
+  });
+
+  it("rejects blocked images before storing the original file", async () => {
+    const imageModerationClient = createBlockingModerationClient();
+    const { app, imageStorage } = await createImageRouteTestApp(
+      hostAuthContext,
+      undefined,
+      undefined,
+      imageModerationClient
+    );
+
+    const response = await request(app)
+      .post("/api/rooms/abc123/images")
+      .attach("image", Buffer.from("blocked-png-bytes"), {
+        filename: "blocked.png",
+        contentType: "image/png"
+      })
+      .expect(400);
+
+    expect(response.body.error.code).toBe("IMAGE_MODERATION_BLOCKED");
+    await expect(imageStorage.getFile("file-1")).resolves.toBeNull();
+  });
+
+  it("fails closed when image moderation is unavailable", async () => {
+    const imageModerationClient = {
+      moderate: vi.fn().mockRejectedValue(new Error("AI server unavailable"))
+    };
+    const { app, imageStorage } = await createImageRouteTestApp(
+      hostAuthContext,
+      undefined,
+      undefined,
+      imageModerationClient
+    );
+
+    const response = await request(app)
+      .post("/api/rooms/abc123/images")
+      .attach("image", Buffer.from("png-bytes"), {
+        filename: "doodle.png",
+        contentType: "image/png"
+      })
+      .expect(502);
+
+    expect(response.body.error.code).toBe("IMAGE_MODERATION_FAILED");
+    await expect(imageStorage.getFile("file-1")).resolves.toBeNull();
   });
 
   it("uses the stored user profile for uploaded image metadata", async () => {
@@ -240,7 +296,8 @@ async function createImageRouteTestApp(
   storedProfile?: {
     nickname?: string | null;
     avatarUrl?: string | null;
-  }
+  },
+  imageModerationClient?: ImageModerationClient
 ) {
   const roomRepository = new InMemoryRoomRepository({
     initialRooms,
@@ -282,6 +339,7 @@ async function createImageRouteTestApp(
   };
   const app = createApp({
     authMiddleware: createStubAuthMiddleware(authContext),
+    imageModerationClient,
     imageRepository,
     imageStorage,
     roomRepository,
@@ -295,6 +353,30 @@ async function createImageRouteTestApp(
     imageStorage,
     roomRepository,
     roomUpdatePublisher
+  };
+}
+
+function createAllowingModerationClient(): ImageModerationClient {
+  return {
+    moderate: vi.fn().mockResolvedValue({
+      allowed: true,
+      riskLevel: "low",
+      action: "allow",
+      categories: [],
+      message: null
+    })
+  };
+}
+
+function createBlockingModerationClient(): ImageModerationClient {
+  return {
+    moderate: vi.fn().mockResolvedValue({
+      allowed: false,
+      riskLevel: "high",
+      action: "block",
+      categories: ["violence/graphic"],
+      message: "업로드할 수 없는 이미지입니다. 다른 이미지를 선택해 주세요."
+    })
   };
 }
 

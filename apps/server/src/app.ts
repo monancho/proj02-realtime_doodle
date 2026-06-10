@@ -15,6 +15,7 @@ import {
   createAllowedCorsOrigins,
   createHttpCorsMiddleware
 } from "./http-cors";
+import type { ImageModerationClient } from "./images/ai-image-moderation-client";
 import { InMemoryImageRepository } from "./images/in-memory-image-repository";
 import { InMemoryImageStorage } from "./images/in-memory-image-storage";
 import type { ImageRepository } from "./images/repository";
@@ -43,6 +44,7 @@ export interface AppDependencies {
   allowLocalhostDevOrigins?: boolean;
   authMiddleware?: RequestHandler;
   corsOrigin?: string;
+  imageModerationClient?: ImageModerationClient;
   imageRepository?: ImageRepository;
   imageStorage?: ImageStorage;
   resultRepository?: ResultRepository;
@@ -105,6 +107,7 @@ export function createApp(dependencies: AppDependencies = {}): Express {
     "/api/rooms/:roomCode/images",
     createRoomImageRouter({
       authMiddleware,
+      imageModerationClient: dependencies.imageModerationClient,
       imageRepository,
       imageStorage,
       roomUpdatePublisher: dependencies.roomUpdatePublisher,

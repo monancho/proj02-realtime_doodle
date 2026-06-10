@@ -11,12 +11,13 @@ import type { RoomUpdatePublisher } from "../rooms/broadcast";
 import type { RoomRepository } from "../rooms/repository";
 import { normalizeRoomCode } from "../rooms/room-code";
 import type { UserRepository } from "../users/repository";
+import type { ImageModerationClient } from "./ai-image-moderation-client";
 import { getImageErrorHttpStatus, ImageDomainError } from "./errors";
 import { parseSingleImageMultipart } from "./multipart";
 import type { ImageRepository } from "./repository";
 import type { ImageStorage } from "./storage";
 
-const MAX_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_MIME_TYPES = new Set<ImageMimeType>([
   "image/jpeg",
   "image/png",
@@ -25,6 +26,7 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set<ImageMimeType>([
 
 export interface ImageRouterDependencies {
   authMiddleware: RequestHandler;
+  imageModerationClient?: ImageModerationClient;
   imageRepository: ImageRepository;
   imageStorage: ImageStorage;
   roomUpdatePublisher?: RoomUpdatePublisher;
@@ -34,6 +36,7 @@ export interface ImageRouterDependencies {
 
 export function createRoomImageRouter({
   authMiddleware,
+  imageModerationClient,
   imageRepository,
   imageStorage,
   roomUpdatePublisher,
@@ -83,8 +86,17 @@ export function createRoomImageRouter({
       if (multipartFile.buffer.byteLength > MAX_IMAGE_FILE_SIZE_BYTES) {
         throw new ImageDomainError(
           "IMAGE_FILE_TOO_LARGE",
-          "Image file must be 10MB or smaller."
+          "Image file must be 5MB or smaller."
         );
+      }
+
+      if (imageModerationClient) {
+        await moderateUploadImage({
+          client: imageModerationClient,
+          filename: sanitizeOriginalName(multipartFile.filename),
+          buffer: multipartFile.buffer,
+          mimeType
+        });
       }
 
       const storedFile = await imageStorage.storeFile({
@@ -259,6 +271,44 @@ function parseImageMimeType(value: string): ImageMimeType | null {
   }
 
   return null;
+}
+
+async function moderateUploadImage(input: {
+  client: ImageModerationClient;
+  filename: string;
+  buffer: Buffer;
+  mimeType: ImageMimeType;
+}): Promise<void> {
+  let moderationResult;
+
+  try {
+    moderationResult = await input.client.moderate({
+      buffer: input.buffer,
+      filename: input.filename,
+      mimeType: input.mimeType
+    });
+  } catch {
+    throw new ImageDomainError(
+      "IMAGE_MODERATION_FAILED",
+      "Image safety check failed. Please try again later."
+    );
+  }
+
+  if (moderationResult.action === "block") {
+    throw new ImageDomainError(
+      "IMAGE_MODERATION_BLOCKED",
+      moderationResult.message ??
+        "This image cannot be uploaded. Please choose a different image."
+    );
+  }
+
+  if (moderationResult.action === "review" || !moderationResult.allowed) {
+    throw new ImageDomainError(
+      "IMAGE_MODERATION_REVIEW_REQUIRED",
+      moderationResult.message ??
+        "This image needs review. Please choose a different image."
+    );
+  }
 }
 
 function sanitizeOriginalName(filename: string): string {

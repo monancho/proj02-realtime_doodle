@@ -70,7 +70,7 @@ async function readRequestBody(
     if (size > maxBodySizeBytes) {
       throw new ImageDomainError(
         "IMAGE_FILE_TOO_LARGE",
-        "Image file must be 10MB or smaller."
+        "Image file must be 5MB or smaller."
       );
     }
 

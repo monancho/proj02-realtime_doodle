@@ -20,6 +20,10 @@ import {
 } from "./cleanup/room-cleanup";
 import type { ServerEnv } from "./config/env";
 import { connectMongoDb, type MongoDbConnection } from "./db/mongodb";
+import {
+  AiImageModerationClient,
+  type ImageModerationClient
+} from "./images/ai-image-moderation-client";
 import { createGridFsImageStorage } from "./images/gridfs-image-storage";
 import {
   createMongoImageRepository,
@@ -75,6 +79,7 @@ export interface BootstrapAdapters {
   createImageRepository?: (
     connection: MongoDbConnection
   ) => Promise<ImageRepository>;
+  createImageModerationClient?: (env: ServerEnv) => ImageModerationClient;
   createImageStorage?: (connection: MongoDbConnection) => ImageStorage;
   createResultRepository?: (
     connection: MongoDbConnection
@@ -109,6 +114,9 @@ export async function createServerDependencies(
   const imageStorage =
     adapters.createImageStorage?.(mongoConnection) ??
     createDefaultImageStorage(mongoConnection);
+  const imageModerationClient =
+    adapters.createImageModerationClient?.(env) ??
+    new AiImageModerationClient(env);
   const resultRepository =
     (await adapters.createResultRepository?.(mongoConnection)) ??
     (await createDefaultResultRepository(mongoConnection));
@@ -140,6 +148,7 @@ export async function createServerDependencies(
       allowLocalhostDevOrigins: env.NODE_ENV !== "production",
       authMiddleware: createHttpAuthMiddleware(tokenVerifier),
       corsOrigin: env.CLIENT_URL,
+      imageModerationClient,
       imageRepository,
       imageStorage,
       resultRepository,

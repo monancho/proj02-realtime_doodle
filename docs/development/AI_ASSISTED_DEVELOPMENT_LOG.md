@@ -2541,3 +2541,16 @@
 - Push/deploy: not performed.
 - `package-lock.json` remains untracked and unstaged.
 - Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.
+## 2026-06-10 - DOODLE-AI-IMAGE-MODERATION-INTEGRATION
+
+- Agent: `backend`
+- Goal: connect the completed AI Server Docker service to Doodle image uploads for harmful-content filtering only.
+- Quiz-related AI Server endpoints and documents were intentionally ignored for this Doodle-only integration.
+- Added server env names `AI_SERVER_BASE_URL`, `AI_SERVER_API_KEY`, and `AI_SERVER_TIMEOUT_SECONDS`; no values or secrets were written.
+- Added an AI image moderation client that calls `POST /ai/image/moderate` with `X-Internal-Api-Key`.
+- Image upload now calls moderation after local MIME/size validation and before GridFS storage.
+- `allow` continues upload; `review` returns `IMAGE_MODERATION_REVIEW_REQUIRED`; `block` returns `IMAGE_MODERATION_BLOCKED`; AI Server errors/timeouts fail closed with `IMAGE_MODERATION_FAILED`.
+- Added route tests for allow, blocked image, and AI Server unavailable paths using stub clients only.
+- Updated `.env.example` and README with variable names and secret-safe integration notes.
+- `docs/DATABASE_API_SOCKET.md` and `docs/DEPLOYMENT_OPERATION.md` contain invalid UTF-8 byte sequences, so they were not patched to avoid rewriting large mixed-encoding documents.
+- Secret check: `.env`, token, Firebase private key, MongoDB URI, credential values were not read, printed, or recorded.

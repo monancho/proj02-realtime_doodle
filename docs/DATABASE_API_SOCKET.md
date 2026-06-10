@@ -2053,3 +2053,23 @@ Recommended deletion order:
 - Mongo room finish flow stores `finishedAt` and `expiresAt` using the MVP 24-hour retention default.
 - `prepare-next-game` clears `finishedAt` and `expiresAt` so reused rooms are not selected by cleanup.
 - Live MongoDB/GridFS cleanup verification remains a deployment/manual QA item; automated tests use mock/in-memory storage and repositories.
+
+## Doodle AI Image Moderation Integration
+
+This section records the Doodle-only AI Server integration added on 2026-06-10. Quiz-related AI Server endpoints are intentionally out of scope for this service integration.
+
+### Upload Moderation Contract
+
+- `POST /api/rooms/:roomCode/images` performs AI image moderation before GridFS storage.
+- Doodle backend calls the internal AI Server endpoint `POST /ai/image/moderate` using `AI_SERVER_BASE_URL`, `AI_SERVER_API_KEY`, and `AI_SERVER_TIMEOUT_SECONDS`.
+- `allow` continues GridFS storage and image metadata creation.
+- `review` is rejected as `IMAGE_MODERATION_REVIEW_REQUIRED` because MVP has no manual review UI.
+- `block` is rejected as `IMAGE_MODERATION_BLOCKED`.
+- AI Server request failure, timeout, non-JSON response, or invalid response schema fails closed as `IMAGE_MODERATION_FAILED`.
+- Rejected or failed moderation images are not written to GridFS and do not create `images` metadata.
+- API keys, token values, original image binaries, and harmful image originals must not be logged.
+
+### Latest Image Size Policy
+
+- Doodle image upload now uses a 5MB maximum file size to match the AI Server image moderation limit and the MVP acceptance criteria.
+- Files larger than 5MB are rejected before AI Server moderation and before GridFS storage with `IMAGE_FILE_TOO_LARGE`.

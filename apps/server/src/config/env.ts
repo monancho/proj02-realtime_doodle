@@ -13,6 +13,9 @@ export interface ServerEnv {
   FIREBASE_PROJECT_ID: string;
   FIREBASE_CLIENT_EMAIL: string;
   FIREBASE_PRIVATE_KEY: string;
+  AI_SERVER_BASE_URL: string;
+  AI_SERVER_API_KEY: string;
+  AI_SERVER_TIMEOUT_SECONDS: string;
 }
 
 export type EnvValidationResult =

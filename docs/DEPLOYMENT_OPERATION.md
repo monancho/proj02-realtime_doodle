@@ -143,3 +143,28 @@ Notes:
 - Do not include `corepack enable` in Render build commands. It can fail on Render read-only filesystem.
 - Keep Firebase Authorized Domains aligned with the final single service domain.
 - The previous two-service setup remains a rollback option, but it requires matching frontend/backend URLs and redeploying both sides after env changes.
+
+## Doodle AI Image Moderation Runtime
+
+This section records the Doodle-only AI Server runtime integration added on 2026-06-10. Quiz-related AI Server endpoints are not used by Realtime Doodle Relay.
+
+Required backend environment variable names:
+
+```txt
+AI_SERVER_BASE_URL
+AI_SERVER_API_KEY
+AI_SERVER_TIMEOUT_SECONDS
+```
+
+Operational notes:
+
+- `AI_SERVER_BASE_URL` points to the internal AI Server Docker service base URL.
+- `AI_SERVER_API_KEY` must match the AI Server internal API key and must never be exposed to the frontend.
+- `AI_SERVER_TIMEOUT_SECONDS` controls image moderation request timeout; local examples may use `20`.
+- Doodle backend calls only `POST /ai/image/moderate`.
+- If AI Server moderation is unavailable, Doodle image upload fails closed and does not store the image in GridFS.
+- Before production traffic, verify allow, review/block, and AI Server unavailable paths without logging secrets or image binaries.
+
+Image upload size note:
+
+- Doodle backend rejects uploads larger than 5MB before AI Server moderation so the Doodle upload limit matches the AI Server image moderation limit.
